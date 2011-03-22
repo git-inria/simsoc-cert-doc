@@ -1,0 +1,159 @@
+\documentclass[a4paper, 11pt]{article}
+
+\usepackage[english, francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\usepackage{calc,array,alltt}
+\usepackage{url}
+
+\usepackage{tikz}
+\usepackage{xcolor}
+
+%\usepackage{xltxtra}
+
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+%\usepackage{latexsym}
+%\usepackage{graphicx}
+%\usepackage{multirow}
+
+%\ifhevea\setboolean{footer}{false}\fi
+
+
+% \newenvironment{fontsans}
+%   {\begin{divstyle}{fontsans}}
+%   {\end{divstyle}}
+
+
+\newenvironment{bash}
+  {\selectlanguage{english} \begin{alltt}}
+  {\end{alltt} \selectlanguage{francais}}
+\newenvironment{coq}
+  {\selectlanguage{english} \begin{alltt}} %% 8.3pl1 (January 2011)
+  {\end{alltt} \selectlanguage{francais}}
+\newenvironment{ml}
+  {\selectlanguage{english} \begin{alltt}} %% 3.12.0
+  {\end{alltt} \selectlanguage{francais}}
+
+\newenvironment{fontsans}
+  {}
+  {}
+
+%\newcommand{\ML}[1]{$\text{#1}^{ml}$}
+%\newcommand{\COQ}[1]{$\text{#1}^{coq}$}
+
+\newcommand{\ML}[1]{#1 ML}
+\newcommand{\COQ}[1]{#1 Coq}
+
+
+\author{Frédéric Tuong}
+\title{...}
+\date{Novembre 2010 - Août 2011}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+La stabilité d'un système embarqué repose sur le bon fonctionnement de ses composants. Pour effectuer des tests complets sur l'ensemble, avant la phase de fabrication matérielle, les concepteurs s'intéressent à avoir des logiciels simulant le système, prenant en entré un binaire exécutable quelconque. Le projet SimSoC vise à mettre à la disposition des développeurs un tel simulateur, ce dernier étant organisé en différents composants modulaires. Parmi les composants d'un système, le processeur est un élément important aussi bien lors de sa fabrication que lors de sa simulation. D'une part les erreurs de conception engendrent un coût élevé, et d'autre part la durée d'un programme est liée aux instructions du processeur. Pour obtenir une machine sûre, il y a donc une nécessité de travailler avec les simulateurs. Néanmoins, comment garantir qu'un simulateur se comporte \emph{exactement} comme une machine ?
+Le but de SimSoC-Cert est justement de répondre à cette question, en proposant de certifier chacune des parties de SimSoC. S'agissant d'un projet ambitieux et d'envergure, en commençant par la correction du processeur, nous nous concentrons en premier sur le c\oe ur du simulateur. 
+
+Plus particulièrement, SimSoC-Cert contient un simulateur du processeur ARMv6 écrit en Coq. Pour modéliser le processeur ARM et l'intégrer au sein de Coq, il a été nécessaire de construire un modèle formel du processeur, ce modèle nous informe précisément sur la sémantique de chaque instruction. 
+Notre travail s'intéresse à l'importation d'un autre type de processeur au projet SimSoC-Cert : il s'agit du processeur SH4. Comme pour l'ARM, nous montrons à la section [?] comment obtenir un modèle mathématique du SH4 à partir de son manuel de référence.
+
+\section{Simulation du SH4}
+
+  \subsection{Présentation du SH4}
+
+Les spécifications du SH4 sont fournies dans un document disponible au format pdf et le fonctionnement de chaque instruction est décrit en langage naturel. Notre but est de construire un modèle mathématique du processeur à partir de cette documentation, un modèle qui soit le plus proche possible de la sémantique informelle fournie par le constructeur.
+
+Pour l'ARM, un travail similaire a été accompli en extrayant les informations du manuel de référence avec un programme, et après une phase de correction préliminaire sur la syntaxe.
+
+De manière générale, un simulateur de processeur a essentiellement besoin de deux informations pour fonctionner.
+\begin{itemize}
+\item La première est celle décrivant le comportement de chaque instruction, appelé ``pseudo-code''. Chaque instruction du processeur (ADD, CPY, MOV ...) est précisément composé d'une séquence de primitives bas niveau : copie ou affectation de registres, opérations d'accès à la mémoire... Parfois, le manuel de référence précise que le comportement n'est pas défini ou incertain dans certaines situations (``unpredictable'' pour l'ARM, ``Appendix B'' pour SH4).
+\item La deuxième information dirige la phase du ``décodage'' des instructions. Étant donné un mot binaire de taille fixe, il s'agit de retrouver à partir de ce mot l'instruction qui lui est associée (pour l'exécuter), et quels sont éventuellement ses arguments. À priori, il pourrait y avoir une ambiguïté sur la recherche d'une instruction correspondant à un mot donné, on pourrait trouver plusieurs instructions candidates pour un mot. L'ordre des instructions à tester en premier a également une importance. Normalement, les indications disponibles dans les manuels sont suffisament clairs pour éviter ces ambiguïtés.
+%Chaque instruction s'accompagnant d'un motif prédéfini dans le manuel, cette recherche s'effectue en les testant un par un jusqu'à l'obtention d'un succès. Cependant, l'ordre des tests peut être important
+%Dans le manuel de référence, ces indications s'obtiennent facilement, car rassemblées sous la forme d'un tableau pour chaque instruction.
+\end{itemize}
+
+  \subsection{(* Besoin au final et état des répertoires *)}
+description des fichiers arm6inst.v et arm6dec.v
+description sommaire de l'importation arm : pdf -> pseudocode -> coq
+présenter simlight
+l'intégration C au sein de SimSoC
+expliquer la présence initial d'un AST dans pseudocode, but : réutilisation maximale du code existant pour l'ARM 
+
+
+  \subsection{Phase d'importation du SH4}
+Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudo-code et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
+
+    \begin{itemize}
+    \item description de la section 9
+ entête flottant + instruction (langage C)
+    \end{itemize}
+%%  Pour SH4, ces séquences sont écrites dans un langage proche du C.
+%% Le pseudo-code est décrit dans une syntaxe ressemblant au C. 
+%% Nous envisageons donc d'appliquer le même procédé, c'est-à-dire corriger dans un premier temps les fautes de syntaxes 
+%% importer le plus possible d'informations à l'aide d'un programme. Mais cette importation nécessite en premier de corriger 
+%%  et 
+
+%% Nous avons l'intention de construire un modèle formel du processeur Sh4 en Coq. 
+%% Comme pour l'ARM, le fonctionnementPar conséquent, nous envisageons d'importer ces informations à l'aide d'un programme et de compléter .
+
+    \subsubsection{pré-modification du code (phase de patch)}
+      \paragraph{vérification statique avec OCaml (assert false de l'importation)}
+      \paragraph{expansion de Rn\_BANK}
+
+    \subsubsection{Importation vers un AST, spécificité de CompCert}
+recherche d'un AST suffisamment riche pour contenir le code C, remarque sur le choix de compcert
+présentation de compcert
+
+      \paragraph{but final = parseur compcert, mais simulation par le typage faible souhaitable}
+      \paragraph{"typage faible" du code C par CompCert}
+      \paragraph{déclaration de prototype}
+      \paragraph{inversion des instructions, ordre des déclarations}
+      \paragraph{existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?}
+
+
+    \subsubsection{bilan} 
+      (nombre de lignes générées, ...)
+      tests à effectuer, intégration des flottants et MMU, modification manuelle (condition spécifique au début de chaque instruction comme pour l'arm ?) explication textuelle non prise en compte ?
+    %\item comparaison avec l'ARM
+ (absence d'adressing mode, ...)
+pattern matching général pour le décodeur
+
+  \subsection{Intégration dans le pseudocode et Coq}
+      \paragraph{spécificité de certaines transformations monadiques : Read\_Byte}
+    \subsubsection{modification du type représentant l'ast} 
+    float, case, let (information de type présent au niveau C sh4), return
+    \subsubsection{fusion et modularité}
+    module premier ordre en ocaml, foncteur
+    \subsubsection{simplification sur la forme}
+      \paragraph{comparaison de la génération entre Coq et HOL}
+      (pour HOL : papier A Trustworthy Monadic Formalization of the
+ARMv7 Instruction Set Architecture)
+      système de coercion dans Coq, coercion d'ordre supérieur possible dans l'un et l'autre ?
+      \paragraph{description des modifications}
+      abstraction de l'état, 
+      discussion de l'intégration de <s0> dans le type des enregistrements,
+      simplification {loc b st}, instanciation top niveau
+    \subsubsection{Bilan}
+    extension : utiliser les sources de Coq, sans passer par les chaînes + retypage ?
+    écriture initiale du pseudocode en Coq envisageable ?
+
+\section{Correction de la génération de code C}
+\subsection{Pretty-printer}
+récurseur, ordre supérieur
+\subsection{...}
+  ( motivation sur la preuve de correspondance entre Coq et C )
+  2 fichiers générés par un même programme ML, au lieu de prouver les équivalences 
+  pseudocode <-> code C
+  pseudocode <-> code Coq
+  on prouve code C <-> code Coq. sémantique de pseudocode ?
+
+\end{document}
