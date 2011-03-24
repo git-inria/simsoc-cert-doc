@@ -131,8 +131,12 @@ pattern matching général pour le décodeur
       \paragraph{spécificité de certaines transformations monadiques : Read\_Byte}
     \subsubsection{modification du type représentant l'ast} 
     float, case, let (information de type présent au niveau C sh4), return
-    \subsubsection{fusion et modularité}
+    \subsubsection{fusion et modularité, limite des systèmes}
     module premier ordre en ocaml, foncteur
+    désactivation de l'optimisation pour :
+      - eta-red non reconnu
+      - instanciation module impossible "The kernel does not recognize yet that a parameter can be instantiated by an inductive type." => optimisation entraîne une sur-simplification côté caml => compilation erreur 
+      
     \subsubsection{simplification sur la forme}
       \paragraph{comparaison de la génération entre Coq et HOL}
       (pour HOL : papier A Trustworthy Monadic Formalization of the
@@ -149,6 +153,9 @@ ARMv7 Instruction Set Architecture)
 \section{Correction de la génération de code C}
 \subsection{Pretty-printer}
 récurseur, ordre supérieur
+ne pas activer les optimisations dans le code extrait
+grand entier dépassant la pile OCaml
+pretty-printer vs coq pretty-printer : les positives non delta-notation-reduits
 \subsection{...}
   ( motivation sur la preuve de correspondance entre Coq et C )
   2 fichiers générés par un même programme ML, au lieu de prouver les équivalences 
