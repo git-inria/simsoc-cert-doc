@@ -1,0 +1,148 @@
+digraph G {
+  compound=true
+  node [color=grey, shape=box, fontname="Gill Sans"]
+  subgraph cluster_pdf {
+    label=<<font color="grey60">PDF</font>>
+    style=dotted
+    color=grey60
+    pdf_arm6 [shape=note, color=darksalmon, label=<ARM6 manual>]
+    pdf_sh4 [shape=note, color=darksalmon, label=<SH4 manual>]
+  }
+
+  subgraph cluster_pdf_txt {
+    label=<<font color="grey60">TXT extracted</font>>
+    style=dotted
+    color=grey60
+    pdf_txt_arm6 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM6 manual>]
+    pdf_txt_sh4 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<SH4 manual>]
+  }
+
+  subgraph cluster_arm6 {
+    color=grey70
+    arm6inst [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<instruction>]
+    arm6dec [shape=ellipse, color=dodgerblue, label=<decoder>]
+  }
+  pseudocode [shape=ellipse, color=dodgerblue, label=<pseudo-code generator>]
+
+  sh4ast [shape=ellipse, color=dodgerblue, label=<instruction <font color="white">(<font color="white">contains the type</font> <font color="white">Cparser</font>)</font><br />+<br />decoder>]
+
+
+  subgraph cluster_c {
+    label=<<font color="grey60">C source</font>>
+    style=dotted
+    color=grey60
+    subgraph cluster_simlight {
+      label=<<font color="grey60">simlight</font>>
+      color=darksalmon
+      iss [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM6 manual>]
+//      iss_pp [shape=note, color=saddlebrown, style=dotted, label=<<font color="saddlebrown">ARM6 manual</font>>]
+      simlight_dots [shape=note, color=darksalmon, label=<...>]
+    }
+  }
+
+
+  subgraph cluster_coq {
+    label=<<font color="grey60">Coq source</font>>
+    style=dotted
+    color=grey60
+
+    subgraph cluster_compcert_src {
+      label=<<font color="white">compiles with CompCert</font>>
+      color=white
+//    compcert_src_c_parser [shape=note, color=darksalmon, label=<Cparser>]
+    subgraph cluster_compcert_src_src {
+      label=<<font color="white">CompCert source</font>>
+      color=white
+    compcert_src_c_syntax [shape=note, color=white, label=<<font color="white">CompCert C<br />deep embedding</font>>]
+    compcert_src_dot [shape=note, color=white, label=<<font color="white">...</font>>]
+    }
+    coq_pp [shape=note, color=white, label=<<font color="white">pretty printer</font>>]
+    coq_src2 [shape=note, color=white, style=filled, fillcolor=white, label=<<table border="0">
+        <tr><td><font color="white">CompCert C</font></td></tr>
+        <tr><td border="1" bgcolor="white"><font color="white">ARM6 manual</font></td></tr>
+      </table>>]
+    }
+
+    subgraph cluster_simulateur {
+      label=<<font color="grey60">simulator</font>>
+      color=darksalmon
+      coq_src [shape=note, color=white, label=<<font color="white">semfun<br />shallow embedding</font>>]
+      coq_src1a [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<<table border="0">
+        <tr><td><font color="papayawhip">semfun</font></td></tr>
+        <tr><td>ARM6 manual</td></tr>
+      </table>>]
+      coq_src1b [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<<table border="0">
+        <tr><td><font color="papayawhip">semfun</font></td></tr>
+        <tr><td>SH4 manual</td></tr>
+      </table>>]
+      coq_src_dot [shape=note, color=darksalmon, label=<...>]
+    }
+    coq_proof [shape=note, color=white, label=<<font color="white">Theorem :<br />deep &#x21D4; shallow ?</font>>]
+  }
+
+  subgraph cluster_compcert {
+    label=<<font color="white">CompCert AST</font>>
+    color=white
+    c_parser [shape=ellipse, color=white, label=<<font color="white">Cparser<br />&#x2717; semantics</font>>]
+    c_syntax [shape=ellipse, color=white, label=<<font color="white">CompCert C<br />&#x2713; semantics</font>>]
+    c_dots [shape=ellipse, color=white, label=<<font color="white">...</font>>]
+  }
+//    coq_ast [shape=ellipse, color=dodgerblue, label=<&#x3bb;>]
+
+  /* */
+  mid [shape=point, color=white]
+
+  iss -> simlight_dots [color=white, arrowhead=none]
+  coq_src -> coq_src1a [color=white, arrowhead=none]
+  coq_src -> coq_src1b [color=white, arrowhead=none]
+  coq_src1a -> coq_src_dot [color=white, arrowhead=none]
+  coq_src1b -> coq_src_dot [color=white, arrowhead=none]
+  compcert_src_c_syntax -> compcert_src_dot [color=white, arrowhead=none]
+  coq_src2 -> coq_pp [color=white, arrowhead=none]
+  coq_proof -> coq_src [color=white, arrowhead=none]
+  coq_proof -> compcert_src_c_syntax [color=white, arrowhead=none]
+  compcert_src_c_syntax -> coq_src2 [color=white, arrowhead=none]
+  /* */
+  pdf_arm6 -> pdf_txt_arm6 [color=dodgerblue]
+  pdf_sh4 -> pdf_txt_sh4 [color=dodgerblue]
+
+  pdf_txt_arm6 -> arm6inst [lhead=cluster_arm6, color=dodgerblue]
+  arm6inst -> pseudocode [ltail=cluster_arm6, color=dodgerblue]
+
+  pdf_txt_sh4 -> sh4ast [color=dodgerblue]
+  sh4ast -> pseudocode [color=dodgerblue]
+
+  pseudocode -> iss [color=dodgerblue]
+
+  c_parser -> c_syntax [color=white]
+  c_syntax -> c_dots [color=white]
+
+
+  sh4ast -> c_parser [color=white, style=dotted, arrowhead=none]
+
+  pseudocode -> coq_src1a [color=dodgerblue]
+  pseudocode -> coq_src1b [color=dodgerblue]
+
+//  iss -> coq_ast [color=saddlebrown]
+//  c_syntax -> coq_ast [color=saddlebrown]
+//  coq_ast -> coq_src2 [color=saddlebrown]
+  c_syntax -> mid [color=white, arrowhead=none]
+  mid -> coq_src2 [color=white]
+  iss -> c_parser [color=white, arrowhead=none]
+  c_parser -> c_syntax [color=white, arrowhead=none]
+
+  coq_pp -> mid [color=white, arrowhead=none, style=dotted]
+//  c_syntax -> coq_src2 [color=dodgerblue4]
+
+
+  iss -> c_parser [ltail=cluster_c, color=white]
+//  c_syntax -> c_dots [style=dotted, color=saddlebrown, arrowhead=none]
+//  c_dots -> iss_pp [style=dotted, color=saddlebrown]
+
+//  coq_proof -> coq_ast [ltail=cluster_coq]
+
+  compcert_src_c_syntax -> c_parser [color=white, ltail=cluster_compcert_src_src, lhead=cluster_compcert]
+
+  coq_proof -> coq_src2 [color=white, dir=both, arrowhead=dot, arrowtail=dot]
+  coq_proof -> coq_src1a [color=white, dir=both, arrowhead=dot, arrowtail=dot]
+}
