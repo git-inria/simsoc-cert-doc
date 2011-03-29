@@ -82,6 +82,16 @@ De manière générale, un simulateur de processeur a essentiellement besoin de 
 \end{itemize}
 
   \subsection{(* Besoin au final et état des répertoires *)}
+The Coq simulator needs the instruction semantics and the decoder to pilot the whole simulation. To get these informations, we use a generic toolkit named 'simgen'. It takes from input the informations parsed from the ARM manual, and performs a raw printing into Coq syntax for the output. The following paragraph gives a brief overview of the files \verb|arm6inst.v| for instructions and \verb|arm6dec.v| for pseudocode.
+\begin{itemize}
+\item \verb|arm6inst.v|
+
+\item \verb|arm6dec.v|
+
+\end{itemize}
+
+ raw   These informations are furnished by a tool taking from 
+ SimSoC-Cert project contains a code generator from several input.
 description des fichiers arm6inst.v et arm6dec.v
 description sommaire de l'importation arm : pdf -> pseudocode -> coq
 présenter simlight
@@ -162,5 +172,8 @@ pretty-printer vs coq pretty-printer : les positives non delta-notation-reduits
   pseudocode <-> code C
   pseudocode <-> code Coq
   on prouve code C <-> code Coq. sémantique de pseudocode ?
+
+\section{Conclusion}
+remplacement de ASM compcert par le simulateur vérifié ARM.
 
 \end{document}
