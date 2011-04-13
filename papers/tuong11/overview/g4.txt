@@ -5,26 +5,26 @@ digraph G {
     label=<<font color="grey60">PDF</font>>
     style=dotted
     color=grey60
-    pdf_arm6 [shape=note, color=darksalmon, label=<ARM6 manual>]
-    pdf_sh4 [shape=note, color=darksalmon, label=<SH4 manual>]
+    pdf_arm [shape=note, color=darksalmon, label=<ARM manual>]
+    pdf_sh [shape=note, color=darksalmon, label=<SH manual>]
   }
 
   subgraph cluster_pdf_txt {
     label=<<font color="grey60">TXT extracted</font>>
     style=dotted
     color=grey60
-    pdf_txt_arm6 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM6 manual>]
-    pdf_txt_sh4 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<SH4 manual>]
+    pdf_txt_arm [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM manual>]
+    pdf_txt_sh [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<SH manual>]
   }
 
-  subgraph cluster_arm6 {
+  subgraph cluster_arm {
     color=grey70
-    arm6inst [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<instruction>]
-    arm6dec [shape=ellipse, color=dodgerblue, label=<decoder>]
+    arminst [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<instruction>]
+    armdec [shape=ellipse, color=dodgerblue, label=<decoder>]
   }
   pseudocode [shape=ellipse, color=dodgerblue, label=<pseudo-code generator>]
 
-  sh4ast [shape=ellipse, color=dodgerblue, label=<instruction <font color="dodgerblue">(<font color="grey60">contains the type</font> <font color="black">Cparser</font>)</font><br />+<br />decoder>]
+  shast [shape=ellipse, color=dodgerblue, label=<instruction <font color="dodgerblue">(<font color="grey60">contains the type</font> <font color="black">Cparser</font>)</font><br />+<br />decoder>]
 
 
   subgraph cluster_c {
@@ -34,8 +34,8 @@ digraph G {
     subgraph cluster_simlight {
       label=<<font color="grey60">simlight</font>>
       color=darksalmon
-      iss [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM6 manual>]
-//      iss_pp [shape=note, color=saddlebrown, style=dotted, label=<<font color="saddlebrown">ARM6 manual</font>>]
+      iss [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<ARM manual>]
+//      iss_pp [shape=note, color=saddlebrown, style=dotted, label=<<font color="saddlebrown">ARM manual</font>>]
       simlight_dots [shape=note, color=darksalmon, label=<...>]
     }
   }
@@ -59,7 +59,7 @@ digraph G {
     coq_pp [shape=note, color=darksalmon, label=<pretty printer>]
     coq_src2 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<<table border="0">
         <tr><td>CompCert C</td></tr>
-        <tr><td border="1" bgcolor="white"><font color="saddlebrown">ARM6 manual</font></td></tr>
+        <tr><td border="1" bgcolor="white"><font color="saddlebrown">ARM manual</font></td></tr>
       </table>>]
     }
 
@@ -69,11 +69,11 @@ digraph G {
       coq_src [shape=note, color=white, label=<<font color="white">semfun<br />shallow embedding</font>>]
       coq_src1a [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<<table border="0">
         <tr><td><font color="papayawhip">semfun</font></td></tr>
-        <tr><td>ARM6 manual</td></tr>
+        <tr><td>ARM manual</td></tr>
       </table>>]
       coq_src1b [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, label=<<table border="0">
         <tr><td><font color="papayawhip">semfun</font></td></tr>
-        <tr><td>SH4 manual</td></tr>
+        <tr><td>SH manual</td></tr>
       </table>>]
       coq_src_dot [shape=note, color=darksalmon, label=<...>]
     }
@@ -103,14 +103,14 @@ digraph G {
   coq_proof -> compcert_src_c_syntax [color=white, arrowhead=none]
   compcert_src_c_syntax -> coq_src2 [color=white, arrowhead=none]
   /* */
-  pdf_arm6 -> pdf_txt_arm6 [color=dodgerblue]
-  pdf_sh4 -> pdf_txt_sh4 [color=dodgerblue]
+  pdf_arm -> pdf_txt_arm [color=dodgerblue]
+  pdf_sh -> pdf_txt_sh [color=dodgerblue]
 
-  pdf_txt_arm6 -> arm6inst [lhead=cluster_arm6, color=dodgerblue]
-  arm6inst -> pseudocode [ltail=cluster_arm6, color=dodgerblue]
+  pdf_txt_arm -> arminst [lhead=cluster_arm, color=dodgerblue]
+  arminst -> pseudocode [ltail=cluster_arm, color=dodgerblue]
 
-  pdf_txt_sh4 -> sh4ast [color=dodgerblue]
-  sh4ast -> pseudocode [color=dodgerblue]
+  pdf_txt_sh -> shast [color=dodgerblue]
+  shast -> pseudocode [color=dodgerblue]
 
   pseudocode -> iss [color=dodgerblue]
 
@@ -118,7 +118,7 @@ digraph G {
   c_syntax -> c_dots [color=dodgerblue]
 
 
-  sh4ast -> c_parser [color=dodgerblue, style=dotted, arrowhead=none]
+  shast -> c_parser [color=dodgerblue, style=dotted, arrowhead=none]
 
   pseudocode -> coq_src1a [color=dodgerblue]
   pseudocode -> coq_src1b [color=dodgerblue]
