@@ -257,7 +257,7 @@ Definition step (s0 : state) (i : inst) : result :=
 \end{coq}
 In contrast with {\tt MRS}, the execution of {\tt LDM2} is precedded by an extra call to {\tt mode4\_step}.
 \subsubsection{The ARMv6 {\tt decoder.v}}
-The structure of this file is rather simple. Given a word, we decompose it into a list of raw bit, then a pattern matching is applied to this list. The bits in each clause comes directly from the manual, as well as the instruction associated to and they specified a specific instructions.
+The structure of this file is rather simple. Given a word, we decompose it into a list of raw bit, then a pattern matching is applied to this list. The bits in each clause comes directly from the manual, as well as the instruction associated to each list.
 \subsection{The CompCert project}
 The goal of CompCert is precisely to transform most of the \hC programs to an assembler program, with a semantic preservation certificate. 
 
@@ -273,7 +273,7 @@ The first point is not very problematic as discussed in~\cite{Leroy-Compcert-CAC
 \section{Simulation of the SH4}
 \label{s:simu_sh4}
 
-The integration of SH4 in \SScert follows the same algorithm as ARMv6. The first step is to transform the raw $string$ of the manual into a more structured type. For the ARM, the transformation from the manual to Coq has precisely crossed a quite structured abstract syntax tree\footnote{The AST is approximatively formed with 400 OCaml words.}. Because the ARM generation to Coq is done from this AST, we plan to fix it as our target for SH. Consequently, we hope the algorithm generating to Coq can be reused for ``free'' for the SH.
+The integration of SH4 in \SScert follows the same algorithm as ARMv6. The first step is to transform the raw $string$ of the manual into a more structured type. For the ARM, the transformation from the manual to Coq has precisely crossed a quite structured abstract syntax tree\footnote{The AST is approximatively formed with 400 OCaml words.}. Because the ARM generation to Coq is done from this AST, we plan to fix it as our target for SH. Consequently, we hope the algorithm generating to Coq can be reused rapidly for the SH.
 
 \hspace{1ex}
 
@@ -286,36 +286,30 @@ Besides the target fixed at this advanced AST, we show at the next part how the 
 %% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudo-code et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
 The SH manual totalizes about 450 pages, informations corresponding to the pseudo-code and decoder occupies an important part, approximately the half of the file. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
-Furthermore, while eyeballing briefly the manual, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To put our intuition into experimentation, we plan to use the CIL library~\cite{necula} as type representing the \gccC in OCaml, in the same way CompCert did before reaching a \C code. Then, starting from the manual considered as a string, the first step is to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for decoder...).
+Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we used the CIL library~\cite{necula} as type representing the \gccC in OCaml (as CompCert did for the parsing step). Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
+
+The parsing of the decoder informations was merely fast because for each instructions, they are clearly specified in an array. We explains now the process done for the instructions.
 
 \paragraph{Patching phase}
 
-Interesting informations in the SH manual are located at ``section 9, Instruction Descriptions''. It is composed of a preliminary header containing functions specific to floatting instructions, followed by a sequence of description of the instructions. 
+Interesting informations in the SH manual are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions specific to floatting instructions, followed by a sequence of description of the instructions. 
 
 Corrections needed to bring to the manual are essentially composed of missing symbol ``;'', missing type informations before some parameters and unbounded value encountered. 
 
-For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the unbound variable \verb|Rn_BANK|.  After a search, we finally found that it is an abbreviation for \verb|R|$n$\verb|_BANK|, with $n \in [|0;7|]$, as described in the function's comment. 
+For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the unbound variable \verb|Rn_BANK|.  After a search, we finally found that it is an abbreviation for \verb|R|$n$\verb|_BANK|, with $n \in [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by \simgen.
 
     \paragraph{More confidence by type-checking}
-Besides the obtention of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by trying to convert the obtained CIL AST into a \C AST, by using the algorithm employed in CompCert for example. 
+Besides the obtention of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with CompCert.
 
+The typing process from the CIL AST to \C has actually permitted us to correct new errors.
 \begin{itemize}
-\item This typing process has actually helped us to discover some new misleading types (e.g. ...). 
-\item The passage from CIL to \C required a more rigorous code, it becomes mandatory to specify the type annotation of undefined functions (e.g. the 9.91 SLEEP instruction use the unbound \verb|Sleep_standby| function name). 
+\item We have discovered some new misleading types (see in particular the introduction of \verb|bool_of_word| and \verb|nat_of_word|).
+\item It becomes mandatory to specify the type annotation of undefined functions (e.g. the 9.91 SLEEP instruction use the unbound \verb|Sleep_standby| function name). 
 \item The order of function declarations has an importance : like OCaml, permutations are not allowed for functions not specified as recursive. This problem has been resolved by rearranging the order at top-level of SH functions.
 
 \end{itemize}
 
 % \paragraph{existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?}
-
-
-    \paragraph{Discussions} 
-The SH
-      (nombre de lignes générées, ...)
-      tests à effectuer, intégration des flottants et MMU, modification manuelle (condition spécifique au début de chaque instruction comme pour l'arm ?) explication textuelle non prise en compte ?
-    %\item comparaison avec l'ARM
- (absence d'addressing mode, ...)
-pattern matching général pour le décodeur
 
   \subsection{Fusion of ARMv6 and SH4}
     \subsubsection{modification du type représentant l'ast} 
@@ -403,6 +397,14 @@ Definition step (i : inst) : semfun unit :=
   \end{itemize}
 
     \subsubsection{Bilan}
+
+    \paragraph{Discussions} 
+Besides the SH
+      tests à effectuer, intégration des flottants et MMU, modification manuelle (condition spécifique au début de chaque instruction comme pour l'arm ?)
+
+
+      (nombre de lignes générées, ...)
+pattern matching général pour le décodeur
     extension : utiliser les sources de Coq, sans passer par les chaînes + retypage ?
     écriture initiale du pseudocode en Coq envisageable ?
     temps de compilation long de sh4dec
@@ -416,7 +418,7 @@ Recall that our objective is to garantee the termination, within a supposed give
 We plan to prove this in Coq, because the sources of \SL are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a \gccC code, in particular to be able to work further with the \gccSL. 
 Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behaviour is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitely the termination property for \gccSL, as this last aim to mimic \SL. 
 
-Now, for representing the \gccSL code in Coq and reason with, we think obviously about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behaviour (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtention of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation.
+Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behaviour (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtention of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation.
 
 \hspace{1ex}
 
@@ -521,7 +523,7 @@ Note that the function \verb|_RECORD| can be implemented using only \verb|_INDUC
 
 The last ambiguity to resolve is the meaning of \verb|__floatsize|, \verb|__type|, \verb|__typelist| and \verb|__program|. In fact, it suffices us to rename them as the function \verb|floatsize_rect|, ..., \verb|program_rect|, where all the ``\verb|..._rect|'' functions are already furnished by Coq everytime a type is defined. However, for mutually recursive defined type such as \verb|type| and \verb|typelist|, we can use a function which fold completely the structure and also perform the mutually call explicitely (see the \verb|Scheme| command for this purpose). This justifies why we have regrouped above the constructors of \verb|type| and \verb|typelist| together in a unique folding function \verb|_type_|.
 
-Finally, as \verb|_INDUCTIVE| and \verb|_RECORD| return the function type ``\verb|_ ** _|'', we need to enhance the type of our recursors \verb|__floatsize|, ..., \verb|__program| by a more powerful one, and at least \emph{convertible} to its initial type (the ``convertibility'' relation is defined in~\cite{Coq:manual}). It means that we need to write explicitely their type~:
+Finally, as \verb|_INDUCTIVE| and \verb|_RECORD| return the function type ``\verb|_ ** _|'', we need to enhance the type of our recursors \verb|__floatsize|, ..., \verb|__program| by a more powerful one, and at least \emph{convertible} to its initial type (the ``convertibility'' relation as defined in~\cite{Coq:manual}). It means that we need to write explicitely their type~:
 \begin{coq}
 Definition __floatsize {A} : 
     A ** 0 ->                (* F32       :           _ *)
@@ -585,16 +587,26 @@ pretty-printer vs coq pretty-printer : les positives non delta-notation-reduits
 
 \subsection{Future work : the equivalence proof}
 \paragraph{Coq $\Longrightarrow$ \C~?}
-Initially, before the creation of any simulator in \simsoc, remark that to get at the end at least one \C simulator, we could initially take another approach, that is to start with a complete simulator in Coq (a similar one to \simsoc, not only \gccSL), then to modify and equip Coq with a constructive extraction procedure into \C (like ML, Haskell or Scheme). This solution is feasible because \C has a formal semantic and rather general as the extraction process can be applied to any Coq program. However, as the project \simsoc has historically been established before \SScert, the organization of the \gccC code behind \simsoc is currently rather detailed and complex now, compared to the existing one at Coq side. Now, the extraction from Coq is interesting, but we are also interested to know which large part of this \gccC simulator can automatically be translated in Coq and which can not.
+Initially, before the creation of any simulator in \simsoc, remark that to get at the end at least one \C simulator, we could initially take another approach, that is to start with a complete simulator in Coq (a similar one to \simsoc, not only \gccSL), then to modify and equip Coq with a constructive extraction procedure into \C (like ML, Haskell or Scheme). This solution is feasible, because \C has a formal semantic, and rather general as the extraction process can be applied to any Coq program. However, as the project \simsoc has historically been established before \SScert, the organization of the \gccC code behind \simsoc is currently rather detailed and complex now, compared to the existing one at Coq side. Now, the extraction from Coq is interesting, but we are also interested to know which large part of this \gccC simulator can automatically be translated in Coq and which can not.
 
 \paragraph{Coq $\Longleftarrow$ \C~?}
-The question we are interested in are more general than only oriented from Coq to \C : given a \C or \gccC code, under which conditions can one ``retrieve'' a corresponding Coq code, similar to the inversion of the extraction process ?
-insister sur l'équivalence, équivalence finale => correction de la sémantique vis à vis du manuel mais équivalence proche => erreur possible sur le manuel. équivalence permet d'aller dans une direction vers l'autre.
+The problem we are focusing are more open than only oriented from Coq to \C. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \C side to Coq. 
+
+More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \C manuel is only formed with recursive function. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \C code. Given a \C, \gccC or even a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+
+Notice that before starting a termination proof of a \C code, it is useful to check further if this code can actually be compiled by CompCert to an assembler source. This check can clearly be omitted in the case we just want to translate the not sure well-typed\footnote{We roughly approximate the Coq convertion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} \C AST into another deep embedded AST.
+However, we have mentioned at the beginning that one of the motivation of choosing \C, as type for working in Coq, is precisely the CompCert certification proof leading to assembler. Thus, we are attentive at the result of the compilation of \gccSL with CompCert.
 
 \paragraph{ML $\Longrightarrow$ (Coq $\Longleftrightarrow$ \C) ?}
 
-In~\ref{s:simgendef} and the SH part, we have precised the automatic importation of the ARM/SH manual by \simgen into \gccC. By following our reasonning of translating \gccC into some form of Coq code, it is legitimate to ask if we can also translate the \gccC manual in Coq directly. However, the generation of the \gccC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \gccC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is not more astonishing.
-traduction purement AST, sémantique de pseudocode ?
+In~\ref{s:simgendef} and the SH part, we have precised the automatic importation of the ARM/SH manual by \simgen into \gccC. By following our reasonning of translating \gccC into some form of Coq code, it is legitimate to ask if we can also translate the \gccC manual in Coq directly. However, the generation of the \gccC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \gccC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is less astonishing. 
+
+For this particular case, the generation of \gccC being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the \simgen AST. Indeed, by approximating the raw Coq source into its AST, the Coq AST, as well as approximating the \gccC source into the \C AST, 
+\begin{itemize}
+\item on one hand we have an ML function translating from \simgen AST to Coq AST,
+\item on the other hand, we have another ML function from \simgen AST to \C AST.
+\end{itemize} 
+As we think they can easily be translated in Coq, the problem of good equivalence between the Coq manual and the \gccC manual can be simplified to the problem of building a couple given a particular \simgen AST, i.e writting a Coq function of type : \verb!simgen_AST -> { (man_C, man_coq) | man_C <~> man_coq }!. Of course, the equivalence function ``\verb|<~>|'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
