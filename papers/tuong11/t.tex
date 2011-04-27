@@ -64,15 +64,15 @@
 \newcommand{\C}{$_{\tt compcert}{\tt C}$\xspace}
 \newcommand{\gccC}{$_{\tt gcc}{\tt C}$\xspace}
 \newcommand{\hC}{$_{\tt human}{\tt C}$\xspace}
-\newcommand{\ps}{{\tt pseudo-code}\xspace}
+\newcommand{\ps}{{\tt pseudocode}\xspace}
 \newcommand{\dec}{{\tt decoder}\xspace}
 \newcommand{\outworld}{the outside world\xspace}
 \newcommand{\simsoc}{SimSoC\xspace}
 \newcommand{\SScert}{SimSoC-Cert\xspace}
 
 \author{Frédéric Tuong}
-\title{...}
-\date{November 2010 - April ??, 2011}
+\title{Fast certified simulation with the SH4 model}
+\date{November 2010 - April 2011}
 
 \begin{document}
 
@@ -88,10 +88,10 @@
 %% Plus particulièrement, \SScert contient un simulateur du processeur ARMv6 écrit en Coq. Pour le modéliser et l'intégrer au sein de Coq, il a été nécessaire de construire un modèle formel du processeur, ce modèle nous informe précisément sur la sémantique de chaque instruction. 
 %% Notre travail s'intéresse à l'importation d'un autre type de processeur au projet \SScert : il s'agit du processeur SH4. Comme pour l'ARM, nous montrons à la section [?] comment obtenir un modèle mathématique du SH4 à partir de son manuel de référence.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
-Stability of embedded systems depends on the good behaviour of their components. Before reaching the construction of the final material in factory, performing exhaustif test are thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the \simsoc project is to permit engineers to develop systems with such a tool, it contains a simulator splitted modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economically impact. On the other side, the time execution of a program reflects the correctness and termination of the processor instructions. To get a safe system, the need to work with simulators are then going increasingly. However, how can we garantee the \emph{exact} behaviour between simulator and embedded systems ? 
+Stability of embedded systems depends on the good behavior of their components. Before reaching the construction of the final material in factory, performing exhaustive test are thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the \simsoc project is to permit engineers to develop systems with such a tool, it contains a simulator split modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economical impact. On the other side, the time execution of a program reflects the correctness and termination of the processor instructions. To get a safe system, the need to work with simulators are then going increasingly. However, how can we guarantee the \emph{exact} behavior between simulator and embedded systems ? 
 The goal of \SScert is precisely to answer this question, we propose to certify each part of \simsoc. Being an ambitious project, we plan to begin with the correction of the processor, this targets directly the heart of the simulator.
 
-In particular, \SScert contains a simulator of the ARMv6 written in Coq~\cite{arm6refman, arm}. To modelize and integrate it within Coq, it was necessary to build a formal model of the processor, this model informs us precisely on the semantics of each instruction.
+In particular, \SScert contains a simulator of the ARMv6 written in Coq~\cite{arm6refman, arm}. The language Coq is a system which builds a constructive proof from a specification by looking at the programmer's hints~\cite{Coq:manual}. One common application is the extraction procedure which translates the proof, considered as a $\lambda$-term, to another functional language like OCaml~\cite{OCaml}. To model and integrate the simulator within Coq, it was necessary to build a formal model of the processor, this model informs us precisely on the semantics of each instruction.
 Our work focuses on the importation of another type of processor into the \SScert project : it is the SH4 processor~\cite{sh4refman}. 
 
 As for ARM, we show at section~\ref{s:simu_sh4} how to get a mathematical model of SH from his reference manual. Section~\ref{s:fast_certi} presents our first step into the certification problem. Our work begin now with some general definitions in section~\ref{s:certi_sim}.
@@ -101,9 +101,9 @@ As for ARM, we show at section~\ref{s:simu_sh4} how to get a mathematical model 
 \section*{Notation}
 For the following, we will use the symbols
 \begin{itemize}
-\item \hC to designate an arbitrary sequences of character, 
-\item \gccC for programs compiled successfully with GCC 4.4.5 (tested at least one time),
-\item \C for programs for which a generated CompCert C file can be successfully dumped (tested at least one time), in general before the end of the compilation. For a demonstration with CompCert 1.8.1, see the option \verb|-dc|.
+\item \hC to designate an arbitrary sequence of character, 
+\item \gccC for programs compiled successfully with GCC 4.4.5~\cite{gcc} (tested at least one time),
+\item \C for programs for which a generated CompCert C file~\cite{Leroy-Compcert-CACM} can be successfully dumped (tested at least one time), in general before the end of the compilation. For a demonstration with CompCert 1.8.1, see the option \verb|-dc|.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,7 +120,7 @@ This section introduces the concept of software simulation by explaining how sim
 
 %% De manière générale, un simulateur de processeur a essentiellement besoin de deux informations pour fonctionner.
 %% \begin{itemize}
-%% \item La première est celle décrivant le comportement de chaque instruction, appelé ``pseudo-code''. Chaque instruction du processeur (ADD, CPY, MOV ...) est précisément composé d'une séquence de primitives bas niveau : copie ou affectation de registres, opérations d'accès à la mémoire... Parfois, le manuel de référence précise que le comportement n'est pas défini ou incertain dans certaines situations (``unpredictable'' pour l'ARM, ``Appendix B'' pour SH4).
+%% \item La première est celle décrivant le comportement de chaque instruction, appelé ``pseudocode''. Chaque instruction du processeur (ADD, CPY, MOV ...) est précisément composé d'une séquence de primitives bas niveau : copie ou affectation de registres, opérations d'accès à la mémoire... Parfois, le manuel de référence précise que le comportement n'est pas défini ou incertain dans certaines situations (``unpredictable'' pour l'ARM, ``Appendix B'' pour SH4).
 %% \item La deuxième information dirige la phase du ``décodage'' des instructions. Étant donné un mot binaire de taille fixe, il s'agit de retrouver à partir de ce mot l'instruction qui lui est associée (pour l'exécuter), et quels sont éventuellement ses arguments. À priori, il pourrait y avoir une ambiguïté sur la recherche d'une instruction correspondant à un mot donné, on pourrait trouver plusieurs instructions candidates pour un mot. L'ordre des instructions à tester en premier a également une importance. Normalement, les indications disponibles dans les manuels sont suffisament clairs pour éviter ces ambiguïtés.
 %% %Chaque instruction s'accompagnant d'un motif prédéfini dans le manuel, cette recherche s'effectue en les testant un par un jusqu'à l'obtention d'un succès. Cependant, l'ordre des tests peut être important
 %% %Dans le manuel de référence, ces indications s'obtiennent facilement, car rassemblées sous la forme d'un tableau pour chaque instruction.
@@ -130,33 +130,32 @@ This section introduces the concept of software simulation by explaining how sim
 
 Generally, a processor simulator basically needs two informations in order to accomplish his task.
 \begin{itemize}
-\item The ``pseudo-code'' describes the behaviour of each instruction. Each processor instruction (add, cpy, mov ...) are precisely composed of sequences of low-level primitives : copy, affectation of register or access operation to the memory... The unknown or uncertainty behaviour in some situations are in general precised in the reference manual (for example, ``unpredictable'' case in instruction for the ARM, the same is described in ``Appendix B'' for the SH). In any case, precised or not, when importing the semantics to some formal model, we will be forced to explicitely specify the meaning of all the unknown behaviour.
-\item The ``decoder'' pilots the association from binary word to instruction. Given a binary word of fixed size, the goal is to retrieve from this word \emph{the} instruction associated to the word, in order to execute it, as well as his potentially arguments. At first sight, the search for the instruction given a specified word can be ambiguous, one can find several matching instructions for a word. Our goal is precisely to avoid such ambiguities. Then we will see that the order of instructions to test first is also important.
+\item The ``pseudocode'' describes the behavior of each instruction. Each processor instruction (add, cpy, mov ...) are precisely composed of sequences of low-level primitives : copy, affectation of register or access operation to the memory... The unknown or uncertainty behavior in some situations are in general stated in the reference manual (for example, ``unpredictable'' case in instruction for the ARM, the same is described in ``Appendix B'' for the SH). In any case, specified or not, when importing the semantics to some formal model, we will be forced to explicitly specify the meaning of all the unknown behavior.
+\item The ``decoder'' pilots the association from binary word to instruction. Given a binary word of fixed size, the goal is to retrieve from this word the instruction associated to the word, in order to execute it, as well as his potential arguments. 
+The correction of the decoder is as important as the pseudocode for a good simulation. We want for example to be sure that there is only one instruction associated to a word.
 \end{itemize}
-Providing these two informations, we are able to modelize a simple simulator. In fact, it is essentially a simple recursive function and can easily be written in OCaml or Coq\footnote{The difference being the ability to write a total or partial function, as Coq is a strongly normalizing language. %In any case, the simulation can be parameterized by a fixed number of predefined step, then the terminating problem reduces to the termination of the {\tt pseudo-code} and {\tt decoder}.
-In this case, we can consider the termination of a partial function within a fixed number of recursive step.
-}. This is exactly what the \SScert project contains.
+Providing these two informations, we are able to model a simple simulator in Coq\footnote{Coq being a strongly normalizing language, the simulation is performed within a fixed number of recursive step.}. This is exactly what the \SScert project contains.
 
 \subsection{The \SScert project}
-The goal of \SScert is to certify \simsoc. Because the large part of \simsoc is written in \gccC~\cite{ossc09}, we would like to have a formal proof that this \gccC code behaves correctly. But what does ``formal proof'' mean in the case we are comparing a virtual software and a real hardware ? Even if the hardware is produced with the help of the computer, its specification depends directly on the format of the documentation the constructor gives. For our subject of processor certification, the processor documentation is generally available in raw text. For example, specifications of the SH4 are published in a pdf document and inside, the behaviour of each instruction are described in natural language. Our goal is to build a mathematical model of the processor from the processor documentation, one which is as closer as possible to the one furnished by the constructor. Then, understanding this definition of ``formal proof'', the \gccC code which is the foundation of \simsoc needs to behave correctly with respect to the semantic of this mathematical model. Note that to be strict, because the manual can contains some erroneous specifications, further validation tests with the real hardware will remain to be performed in the final end, in order to obtain an observationnaly equivalent behaviour with the simulator.
+The goal of \SScert is to certify \simsoc. Because the large part of \simsoc is written in \gccC~\cite{ossc09}, we would like to have a formal proof that this \gccC code behaves correctly. But what does ``formal proof'' mean in the case we are comparing a virtual software and a real hardware ? Even if the hardware is produced with the help of the computer, its specification depends directly on the format of the documentation the constructor gives. For our subject of processor certification, the processor documentation is generally available in raw text. For example, specifications of the SH4 are published in a pdf document and inside, the behavior of each instruction are described in natural language. Our goal is to build a mathematical model of the processor from the processor documentation, one which is as closer as possible to the one furnished by the constructor. Then, understanding this definition of ``formal proof'', the \gccC code which is the foundation of \simsoc needs to behave correctly with respect to the semantic of this mathematical model. Note that to be strict, because the manual can contains some erroneous specifications, further validation tests with the real hardware will remain to be performed in the final end, in order to obtain an observationally equivalent behavior with the simulator.
 
 \subsubsection{The simulator \SL and the toolkit \simgen}
 \label{s:simgendef}
 Now, before considering the SH, let us look at what we already have in \simsoc and \SScert. On one side, there is \gccSL, the simulator restricted to the component which simulates the processor (in contrast with \simsoc which is designed for simulating a bigger part). 
 On the other side, a mathematical model in Coq had automatically been built for the ARM~\cite{arm} and thus a special simulator has especially been created to integrate as well as to test the model : \SL.
-The behaviour of \gccSL and \SL, which have both been manually designed, is intentionally the same : for compiling, these two simulators need the ARM manual specification (in their respective language).
+The behavior of \gccSL and \SL, which have both been manually designed, is intentionally the same : for compiling, these two simulators need the ARM manual specification (in their respective language).
 
 Therefore, \simgen, which is also part of \SScert, has especially been created for the importation of the ARM manual.
-To illustrate this, we present here the contents of \verb|pseudo-code.v| and \verb|decoder.v|, automatically generated by the toolkit.
+To illustrate this, we present here the contents of \verb|pseudocode.v| and \verb|decoder.v|, automatically generated by the toolkit.
 
-\subsubsection{The ARMv6 {\tt pseudo-code.v}}
+\subsubsection{The ARMv6 {\tt pseudocode.v}}
 \label{s:oldarm}
 This file contains the semantics of all the instructions written in the Coq language. Each instruction from the manual of reference is translated in a similar Coq function, called ``\verb|..._step|'' function. 
-Furthermore, as for modularity the generation of the {\tt decoder.v} is currently done in a separate way than the {\tt pseudo-code.v}, we create an inductive type $inst$ containing exactly and symmetrically a constructor for each ``\verb|..._step|'' function. $inst$ will be useful for interoperability between {\tt pseudo-code.v} and {\tt decoder.v}. At the end of {\tt pseudo-code.v}, there is a main function $step$ which role is, given a value of type $inst$, to retrieve the corresponding ``\verb|..._step|'' function to run it.
+Furthermore, as for modularity the generation of the {\tt decoder.v} is currently done in a separate way than the {\tt pseudocode.v}, we create an inductive type $inst$ containing exactly a constructor for each ``\verb|..._step|'' function. $inst$ will be useful for interoperability between {\tt pseudocode.v} and {\tt decoder.v}. At the end of {\tt pseudocode.v}, there is a main function $step$ which role is, given a value of type $inst$, to retrieve the corresponding ``\verb|..._step|'' function to run it.
 
-Instructions from the ARMv6 are a bit special. Given a fixed sized word, we usually think about \emph{the} instruction corresponding to this word, in particular during the decoding phase. But in ARMv6, we need to parameterized our thought one step higher. Indeed, some instructions take as argument a special parameter. This parameter is intended to be specially treated and a preliminary function need to be apply before the real execution of \emph{the} instruction. This case is characteristical of the \emph{addressing mode}.
+Instructions from the ARMv6 are a bit special. Given a fixed sized word, we usually think about the instruction corresponding to this word, in particular during the decoding phase. But in ARMv6, we need to parameterized our thought one step higher. Indeed, some instructions take as argument a special parameter. This parameter is intended to be specially treated and a preliminary function need to be apply before the real execution of the instruction. This typical case is the \emph{addressing mode}.
 
-Because the ARM manual contains roughly 150~instructions, we will sketch an example with just 2 instructions : {\tt LDM2} and {\tt SMLSD}. Without entering deeply in details, the reader is invited to have a quick look at the Coq code or to jump directly to the next section.
+Because the ARM manual contains roughly 150~instructions (and about 75 special THUMB instructions), we will sketch an example with just 2 instructions : {\tt A4.1.21 LDM (2)} and {\tt A4.1.80 SMLSD}. Without entering deeply in details, the reader is invited to have a quick look at the Coq code or to jump directly to the next section.
 
 \paragraph{The addressing mode case}
   \subparagraph{Type}
@@ -202,7 +201,7 @@ Definition mode4\_step (s0 : state) (m : mode4) :=
   end.
 Definition mode5\_step (s0 : state) (m : mode5) := [...].
 \end{coq}
-Note that along the pattern matching, the state $s0$ is always present at the right hand side. Even if semantically we understand this as a monadic construction~\cite{peyton-jones-wadler-93, peyton-jones-tackling-09}, we will see in the SH part how to rewrite the whole to explicitely hide $s0$.
+Note that along the pattern matching, the state $s0$ is always present at the right hand side. Even if semantically we understand this as a monadic construction~\cite{peyton-jones-wadler-93, peyton-jones-tackling-09}, we will see in the SH part how to rewrite the whole to explicitly hide $s0$.
 \paragraph{The instruction case}
 Here, the same structure as the \emph{addressing mode} is done for the \emph{instruction} case, i.e. we define a structure for type, definitions, and at the end, we relate them with a main correspondence function.
   \subparagraph{Type}
@@ -270,16 +269,16 @@ Definition step (s0 : state) (i : inst) : result :=
 [...]
   end.
 \end{coq}
-In contrast with {\tt SMLSLD\_step}, the execution of {\tt LDM2\_step} is precedded by an extra call to {\tt mode4\_step}.
+In contrast with {\tt SMLSLD\_step}, the execution of {\tt LDM2\_step} is preceded by an extra call to {\tt mode4\_step}.
 \subsubsection{The ARMv6 {\tt decoder.v}}
 The structure of this file is rather simple. Given a word, we decompose it into a list of raw bit, then a pattern matching is applied to this list. The bits in each clause comes directly from the manual, as well as the instruction associated to each list.
 \subsection{The CompCert project}
 The goal of CompCert is precisely to transform most of the \hC programs to an assembler program, with a semantic preservation certificate. 
 
-Generally, if the compiler can produce an assembler file from a \hC program, the well behaviour at runtime of the assembler produced depends on two facts :
+Generally, if the compiler can produce an assembler file from a \hC program, the well behavior at runtime of the assembler produced depends on two facts :
 \begin{itemize}
 \item how the generated assembler file is interpreted,
-\item and the well behaviour of the \C code (as well as a heuristically\footnote{Starting from \hC or \gccC, there is currently no Coq proof of semantic preservation to \C%, because
+\item and the well behavior of the \C code (as well as a heuristically\footnote{Starting from \hC or \gccC, there is currently no Coq proof of semantic preservation to \C%, because
 . } good translation from \hC to \C).
 \end{itemize}
 The first point is not very problematic as discussed in~\cite{Leroy-Compcert-CACM} and we will give a short comment later.
@@ -293,68 +292,66 @@ The integration of SH4 in \SScert follows the same algorithm as ARMv6. The first
 \hspace{1ex}
 
 Besides the target fixed at this advanced AST, we show at the next part how the parsing of the SH manual is performed, as well as another intermediate type which is finally used before getting this AST.
-%We obtain it like the generated Coq file for ``pseudo-code'' and ``decoder'', this \gccC file is also generated by \simgen.
 
 
   \subsection{Parsing of the SH4 manual}
 %% %%%%%%%%%%%%%%%%%%%%%%%% french
-%% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudo-code et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
+%% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
-The SH manual totalizes about 450 pages, informations corresponding to the pseudo-code and decoder occupies an important part, approximately the half of the file. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
+The SH manual totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of the file. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
 Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the CIL library~\cite{necula} as type representing the \gccC in OCaml (as CompCert did for the parsing step). Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
 
 The parsing of the decoder informations was merely fast because for each instructions, they are clearly specified in an array. We explains now the process done for the instructions.
 
 \paragraph{Patching phase}
 
-Interesting informations in the SH manual are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions specific to floatting instructions, followed by a sequence of description of the instructions. 
+Interesting informations in the SH manual are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions specific to floating instructions, followed by a sequence of description of the instructions. 
 
 Corrections needed to bring to the manual are essentially composed of missing symbol ``;'', missing type informations before some parameters and unbounded value encountered. 
 
 For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the unbound variable \verb|Rn_BANK|.  After a search, we finally found that it is an abbreviation for \verb|R|$n$\verb|_BANK|, with $n \in [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser.
 
     \paragraph{More confidence by type-checking}
-Besides the obtention of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with CompCert.
+Besides the obtaining of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with CompCert.
 
 The typing process from the CIL AST to \C has actually permitted us to correct new errors.
 \begin{itemize}
-\item We have discovered some new misleading types (see in particular the introduction of \verb|bool_of_word| and \verb|nat_of_word|).
+\item We have discovered some new misleading types (notice in particular the manual introduction of \verb|bool_of_word| and \verb|nat_of_word|).
 \item It becomes mandatory to specify the type annotation of undefined functions (e.g. the 9.91 SLEEP instruction use the unbound \verb|Sleep_standby| function name). 
 \item The order of function declarations has an importance : like OCaml, permutations are not allowed for functions not specified as recursive. This problem has been resolved by rearranging the order at top-level of SH functions, in general a simple reversing suffices.
-
+% \paragraph{existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?}
 \end{itemize}
 
-% \paragraph{existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?}
 
   \subsection{Fusion of ARMv6 and SH4}
-The next step after the obtention of a ML value representing the SH4 manual is its integration in \SScert. To this end, we have performed two modifications : 
+The next step after the obtaining of a ML value representing the SH4 manual is its integration in \SScert. To this end, we have performed two modifications : 
 \begin{itemize}
-\item at the \SL source by adding the modelization of the SH4 processor (modelization of the state, particular numerotation of register, semantics of remaining undefined functions...),
+\item at the \SL source by adding the model of the SH4 processor (model of the state, particular numbering of register, semantics of remaining undefined functions...),
 \item at \simgen to generate the Coq SH4 manual in the same way as what is done for ARMv6.
 \end{itemize}
-The goal was not only to accomplish these tasks but also to fusion the changes with ARMv6 using modules and functors, to permit futur integration of processors.
+The goal was not only to accomplish these tasks but also to fusion the changes with ARMv6 using modules and functors, to permit future integration of processors.
 
 \hspace{1ex}
 
 Generating the Coq code was rather long but easy, because a lot of factorization was necessary. We give briefly the modifications required in the AST.
 \begin{itemize}
-\item Unlike the ARM, the parameter of each SH instructions are clearly specified in the pseudo-code. We then modified the internal AST to support these argument informations.
-\item In term of semantics, there is a specific constructor, namely \verb|return|, presents in the SH pseudo-code. It has been represented in the semantic of the Coq code using monadic form.
+\item Unlike the ARM, the parameter of each SH instructions are clearly specified in the pseudocode. We then modified the internal AST to support these argument informations.
+\item In term of semantics, there is a specific constructor, namely \verb|return|, presents in the SH pseudocode. It has been represented in the semantic of the Coq code using monadic form.
 \item The default case for the \verb|switch| option is also present in several SH instructions, then the necessary changes in the AST has been done.
 \end{itemize}
     \subsubsection{$\lambda$-optimization of the Coq manual}
-In section~\ref{s:oldarm}, we have seen that the body of the function \verb|LDM2_step| and \verb|SMLSLD_step| are explicitely informative. Indeed, the words \verb|fun loc b st| are for example repeated a lot. However, the purpose of the variable \verb|st| is to carry the transformation on the state, acting like an accumulator. \verb|b| and \verb|loc| are also accumulators but we remark that \verb|b| is just used at a higher function call level, not inside each instruction. So we want to abstract all of them now. Initially, the code present for the ARM was designed and really thought using monadic specifications, but the current shape is currently not entirely satisfactory. Then we think instead, to simplify these accumulators by hiding them at the cost of rearranging the arguments of several functions, in particular by putting all the accumulators at the end.
+In section~\ref{s:oldarm}, we have seen that the body of the function \verb|LDM2_step| and \verb|SMLSLD_step| are explicitly informative. Indeed, the words \verb|fun loc b st| are for example repeated a lot. However, the purpose of the variable \verb|st| is to carry the transformation on the state, acting like an accumulator. \verb|b| and \verb|loc| are also accumulators but we remark that \verb|b| is just used at a higher function call level, not inside each instruction. So we want to abstract all of them now. Initially, the code present for the ARM was designed and really thought using monadic specifications, but the current shape is currently not entirely satisfactory. Then we think instead, to simplify these accumulators by hiding them at the cost of rearranging the arguments of several functions, in particular by putting all the accumulators at the end.
 
-Additionally, we also notice that the \verb|loc| variable, used to modelize some local stack for variable, is used frequently even for variable which is affected only once. Indeed, we are attempted to replace them by a native Coq ``\verb|let|'' construct when needed.
-
-\hspace{1ex}
-
-We will explain later that our goal is to prove the well-defined behaviour of the Coq manual, as well as another \gccC manual generated by \simgen. Modifications on the Coq manual can thus be considered as superfluous, except for precisely readability of the proof we plan to do. In particular, it is close to some form of compilation to a factorized $\lambda$-code. Without going formally, we are interested to minimize, as possible as it can be, the number of node representing the Coq AST (for example, the optimizations cited above or transformations similar to {\tt if [...] then f f\_true else f f\_false} becoming {\tt f (if [...] then f\_true else f\_false)}).
+Additionally, we also notice that the \verb|loc| variable, used to model some local stack for variable, is used frequently even for variable which is affected only once. Indeed, we are attempted to replace them by a native Coq ``\verb|let|'' construct when needed.
 
 \hspace{1ex}
 
-Here comes the file obtained after performing some simplifications and rewriting to monadic style. We present the ARMv6 file rather than the SH4 because its manual contains rich examples. In any case, modifications affect both outputs in the same manner. For more details, the reader is invited to see the real generated file.
-\paragraph{The new ARMv6 {\tt pseudo-code.v}}
+We will explain later that our goal is to prove the well-defined behavior of the Coq manual, as well as another \gccC manual generated by \simgen. Modifications on the Coq manual can thus be considered as superfluous, except for precisely readability of the proof we plan to do. In particular, it is close to some form of compilation to a factorized $\lambda$-code. Without going formally, we are interested to minimize, as possible as it can be, the number of node representing the Coq AST for simplifying the future proof (for example, among the optimizations cited above, one can imagine transforming a {\tt if [...] then f f\_true else f f\_false} into a {\tt f (if [...] then f\_true else f\_false)}).
+
+\hspace{1ex}
+
+Here comes the file obtained after performing some simplifications and rewriting to monadic style. We present the ARMv6 file rather than the SH4 because its manual contains rich examples. In any case, modifications affect both outputs in the same manner. For more details, the reader is invited to see the both generated file.
+\paragraph{The new ARMv6 {\tt pseudocode.v}}
 Simplifications are done inside the semantic definition and the correspondence type-definition, in particular declaration for types remains the same.
 
 \hspace{1ex}
@@ -366,7 +363,7 @@ We assume below
   Notation "\{\{ a ; .. ; b \}\}" := 
     (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..).
 \end{coq}
-(see the library \verb|Bvector|). In particular, we rely on the type-checker to guess the \verb|nat| associated to each element.
+(see the Coq library \verb|Bvector|). In particular, we rely on the type-checker to guess the \verb|nat| associated to each element.
 \item having a function \verb|_ret| which is like the \verb|return| monadic combinator~\cite{peyton-jones-tackling-09} except that it also returns \verb|true| as a couple with the default value.
 \item having these notations
 \begin{coq}
@@ -426,7 +423,7 @@ Definition SMLSLD_step X cond dHi dLo m s : semfun _ := <s0>
 \end{coq}
 As for \verb|M4_Incr_after_step|, the state parameter \verb|st| is encapsulated in the monadic type \verb|semfun|. The underscore in the return type \verb|semfun _| is present not only to let the type-checker deduce the real answer but also the part corresponding to the generation of this type information in \simgen are merged for \verb|M4_Incr_after_step| and all the \verb|..._step|. In particular, the type behind the \verb|_| is not necessarily the same in the both cases.
 
-In the body, \simgen detects automatically the use of \verb|st| or \verb|loc|. Hence it adds the corresponding notation.
+In the body, \simgen detects automatically the use of \verb|st| or \verb|loc|. Hence it adds the corresponding notation when needed.
 \subparagraph{(instruction) Correspondence type-definition}
 \begin{coq}
 Definition step (i : inst) : semfun unit :=
@@ -443,80 +440,70 @@ The parameter \verb|st| having been moved to the end, we observe a certain symme
 \subsubsection{Discussions}
 
 \paragraph{Limit of the Coq generation}
-The packing system of module as a first-class value in OCaml 3.12 encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing of the module contents. The typing information becomes also mandatory in Coq, when sometimes we need to explicitely redefine by hand some record\footnote{We frequently encounter the message : "The kernel does not recognize yet that a parameter can be instantiated by an inductive type."}. Finally, we sometimes have problem with type containing a singleton constructor during the extraction when optimization is enabled.
+The packing system of module as a first-class value in OCaml 3.12 encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record\footnote{We frequently encounter the message : "The kernel does not recognize yet that a parameter can be instantiated by an inductive type."}. Finally, we sometimes have erroneous OCaml extracted files with some Coq type containing a singleton constructor (in this case, we disable extraction optimization).
 
 \hspace{1ex}
 
 We can wonder if the manual we generate can be written in a total monadic style~\cite{conf/itp/FoxM10}. For example, the \verb|if_then| constructor can become a \verb|if_then| monadic combinator, as well as the several encountered \verb|ConditionPassed|. Then we hope one can rewrite ``{\tt <s0> if\_then (ConditionPassed s0 cond) [...]}'' as ``{\tt if\_then (ConditionPassed\_s0 cond) [...]}'' annihilating the need to use \verb|_get_loc| and \verb|_get_st|\footnote{Because the first call to {\tt \_get\_st} at the start affects the variable {\tt s0}, this variable needs to be treated carefully, in a monadic reference for example, if we delete {\tt \_get\_st}.}. However we are in front of a difficulty. Indeed, the automatically generated Coq manual uses extensively the coercion facility, for instance to consider a boolean value as a word (or integer)~\cite{arm}. Hence, the Coq code is finally very close to the original \gccC code from the manual. Because sometimes the \verb|st| is deeply embedded in arithmetical expressions, we 
 have a problem of coercion at higher-order level. Currently an
 expression like
-\verb|zeq 1 true| is implicitly translated to \verb|zeq 1 (intval (word_of_bool true))|
+\verb|zeq 1 true| is implicitly translated to \verb|zeq 1 (Z_of_bool true)|
 with \verb|zeq : Z -> Z -> bool|.
 If now, we have a \verb|zeq_| of type \verb|semfun Z -> semfun Z -> semfun bool|,
 this is not well-typed :
 \verb|zeq_ (ret 1) (ret true)|,
 unless we give explicitly the hint annotation
 \verb|zeq_ (ret (1 : Z)) (ret (true : Z))|.
-Note that for lisibility we can also introduce a notation and write
+Note that for readability we can also introduce a notation and write
 something similar to \verb| zeq_ { 1 } { true }|.
 
 Because the final goal of the manual is also the proof, we can now wonder if it is finally convenient to perform some proof with notations.
 
 \paragraph{Performance}
-Currently, the generation of the SH4 manual is complete except for floatting and MMU instructions. The Coq ARMv6 manual contains 148 instruction cases and 204 for the SH4 (by considering also the expansing of the \verb|R|$n$\verb|_BANK|) but the SH {\tt pseudo-code.v} file size occupies only 2/3 of the one of ARM. The SH output for instructions is very simple because it does not contain pre-computation for addressing mode. Consequently, the correspondence between type and definition is completely symmetric, we can easily delete the type and replace them by their equivalent ``\verb|..._step|'' function.
+Currently, the generation of the SH4 manual is complete except for floating and MMU instructions. The Coq ARMv6 manual contains 148 instruction cases (without THUMB) and 204 for the SH4 (by considering also the expansing of the \verb|R|$n$\verb|_BANK|) but the SH {\tt pseudocode.v} file size occupies only 2/3 of the one of ARM. The SH output for instructions is very simple because it does not contain precomputation for addressing mode. Consequently, the correspondence between type and definition is completely symmetric, for example we can easily delete the type and replace them by their equivalent ``\verb|..._step|'' function.
 
-The compilation of SH {\tt decoder.v} is long~: about 30s on a recent computer while for the ARM we get only 4s. Its time is spent mostly on the pattern-matching for retrieving an instruction given a word, the non redundancy detection may be a possible cause of the long analysis.
+The compilation of SH {\tt decoder.v} is long~: about 30s on a recent computer while for the ARM we get only 4s. Its time is spent mostly on the pattern-matching for retrieving an instruction given a word, the non redundancy detection may be a possible cause of the long analysis. In particular, by performing some sorting on the clause, we get a better compilation time.
 
 \hspace{1ex}
 
-However, these results is susceptible to be changed, because we mainly need to be sure that the SH model is correct with respect to the hardware.
+In any case, these results is susceptible to be changed, because we mainly need to be sure that the SH model is correct with respect to the hardware, so further modifications on the model is susceptible to be brought.
 
 \paragraph{Correction of the simplification}
-Inside each instructions in the manual, we suspect there is at most one access to modify the environment per line. It concerns the storing of value inside memory or to the local stack \verb|loc|. We have also encountered several read of mutable variable in one line, which does not seem to conflict with storing at the same time. Because the Coq manual may changed in the futur (if we discover some erroneous specifications), the current correctness guarantee relies first on its good type-checking.
-Note that for SH4, there is a specific instruction \verb|Read_Byte| to access a particular location. We found convenient to set the type of this function to a monadic one, i.e. \verb|word -> semfun word| as well as its companion \verb|Write_Byte|. Because \verb|Read_Byte| can be present several times in a line, it was necessary to enrobe it with an explicit call to \verb|bind|. Then the computation ``sequentially'' continues inside the body of \verb|bind|.
+Inside each instructions in the manual, we suspect there is at most one access to modify the environment per line. It concerns the storing of value inside memory or to the local stack \verb|loc|. We have also encountered several read of mutable variable in one line, which does not seem to conflict with storing at the same time. Because the Coq manual may changed in the future (if we discover some erroneous specifications), the current correctness guarantee relies first on its good type-checking.
+Note that for SH4, there is a specific instruction \verb|Read_Byte| to access a particular location. We found convenient to set the type of this function to a monadic one, i.e. \verb|word -> semfun word| as well as its companion \verb|Write_Byte|. Because \verb|Read_Byte| can be present several times in a line, it was necessary to coat it with an explicit call to \verb|bind|. Then the computation ``sequentially'' continues inside the body of \verb|bind|.
 
 About the correction of our simplification process of the accumulator \verb|st|, \verb|loc| and \verb|b|, 
 \begin{itemize}
-\item we can add more \verb|_get_loc| or \verb|_get_st| at any positions (accepting at least a well-typed monadic expression), because we already know there is no conflict between these name and other variable name coming from the manual, thanks to the good type-checking of the previous manual. Moreover, we also know that any variable (generally leaving in the $\lambda$-calcul theory) is captured by the nearest abstraction.
-\item If we add less \verb|_get_loc| or \verb|_get_st| at any positions (requiring at least one), the semantics can wrongly changed. Because the new manual type-checks correctly for ARM and SH, if for example we add less \verb|_get_loc| at a certain position, then it means necessarily that the \verb|loc| used refers wrongly to an old \verb|_get_loc|.
+\item we can add more \verb|_get_loc| or \verb|_get_st| at any positions (accepting at least a well-typed monadic expression), because we already know there is no conflict between these name and other variable name coming from the manual, thanks to the good type-checking of the previous manual. Moreover, we also know that any variable (generally leaving in the $\lambda$-calculus theory) is captured by the nearest abstraction.
+\item If we add less \verb|_get_loc| or \verb|_get_st| at any positions (requiring at least one), the semantics can wrongly changed. Because the new manual type-checks correctly for ARM and SH, if for example we add less \verb|_get_loc| at a certain position, then it means necessarily that the \verb|loc| used refers wrongly to an external \verb|_get_loc|.
 \end{itemize}
-Hence, in any case, we hope the test validation of the Coq manual will conclude the discussion. However, by comparing the previous validation tests for the ARMv6 before the simplification and after, we have a good confidence about its accuracy. We are going now to develop the problem of certification of the simulator, the Coq manual, and its validation.
+Hence, in any case, we hope the test validation of the Coq manual will conclude the discussion. However, by seeing the success of the current validation tests for the ARMv6 (by comparing the output of \gccSL and \SL) before the simplification and after, we have a good confidence about its accuracy. We are now going to develop the problem of certification of the simulator, the Coq manual, and its validation.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Towards a ``fast'' certified simulator}
 \label{s:fast_certi}
 
-Recall that our objective is to garantee the termination, within a supposed given finite number of allowed steps, of any program, simulated by \gccSL, written in ARMv6 or SH4, and the requirement of the same state of registers for \gccSL and \SL after each instructions. 
+Recall that our objective is to guarantee the termination, within a supposed given finite number of allowed steps, of any program, simulated by \gccSL, written in ARMv6 or SH4, and the requirement of the same state of registers for \gccSL and \SL after each instructions. 
 
 We plan to prove this in Coq, because the sources of \SL are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a \gccC code, in particular to be able to work further with the \gccSL. 
-Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behaviour is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitely the termination property for \gccSL, as this last aim to mimic \SL. 
+Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for \gccSL, as this last aim to mimic \SL. 
 
-Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behaviour (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtention of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation. The \C AST is also the first AST in the CompCert translation chain where the proof begins, and is thus the closest Coq AST to \gccC.
+Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behavior (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtaining of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation. The \C AST is also the first AST in the CompCert translation chain where the CompCert proof begins, and is thus the closest Coq AST to any \gccC.
 
 \hspace{1ex}
 
-Globally, we can approximate the Coq ARM/SH manual as a \emph{shallow embedding} because by definition, instructions in the Coq manual are generated using constructors belonging to the native Coq language. Similarly, the \C ARM/SH manual obtained from the \gccC source by CompCert is view as a \emph{deep embedding}, because this time, the information about the instructions are build in Coq with the \C constructor, the \C ast having been defined in Coq. The main goal is then to prove the equivalence between the \emph{deep} and \emph{shallow} embedding.
+Globally, we can approximate the Coq ARM/SH manual as a \emph{shallow embedding} because by definition, instructions in the Coq manual are generated using constructors belonging to the native Coq language. Similarly, the \C ARM/SH manual obtained from the \gccC source by CompCert is view as a \emph{deep embedding}, because this time, the information about the instructions are build in Coq with the \C constructor, the \C AST having been defined in Coq. The main goal is then to prove the equivalence between the \emph{deep} and \emph{shallow} embedding.
 
-As the \C type is defined in Coq, the first task is, given a \gccC file, to find a way to bring up the \C ast of this \gccC file into Coq. As first application, we could then import the \gccC code of \gccSL into Coq via its \C ast, and thus we will be ready to start the correspondence proof.
+As the \C type is defined in Coq, the first task is, given a \gccC file, to find a way to bring up the \C AST of this \gccC file into Coq. As first application, we could then import the \gccC code of \gccSL into Coq via its \C AST, and thus we will be ready to start the correspondence proof.
 
 \hspace{1ex}
 
 This leads us to the section explaining how such a pretty-printer can be constructed, and more precisely, constructively realized.
-% the    is our Coq simulator fulfills the hypothesis Our certification project begins with the proof of the generated C file, representing the ARM manual. Then we plan to extend the task to the global simulator. Indeed,  
-% Then it suffices for us to know that all the C code present in \gccSL (which is seen as a \C information) 
-%The idea is to begin our certification project with the proof of the well behaviour of our C generated file. Then we hope we can continue to certify larger and larger other components., the fina
-% for the C initially started from the idea to prove the correction of the processor. Then  construction
-%  and it is guaranted that but we 
-%We can decompose the process of certifying.
-%The first step is then to be sure that the generated C file has the same semantic as the generated Coq file (both for the ``pseudo-code'' and ``decoder'').
-%The goal is to certify \gccSL
-%, a  there is printer inside the pseudo-code to C
-%But as Moreover, there is currently no extraction procedure from Coq to \C.
-%présenter \gccSL
-%l'intégration C au sein de \simsoc
-\subsection{The Coq pretty-printer to Coq}
-%To simplify the view, let us focus on the part corresponding to the proof of correspondence restricted to the processor component, e.g. the manual of reference of the processor generated by \simgen. 
-%Recall that on one side, \simgen generates the ARM manual in Coq and on the other side the ARM manual in \gccC. 
-Our goal is to import the \gccC code in Coq via its \C ast. We need to work with the value inhabitating the \C manual, and such, during the development process of the proof. But Coq is a language where the input and output with \outworld can not easily be done in its proper language\footnote{Enriching Gallina with new tactics implies to modify the source of Coq.}. At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with \outworld. Because the language chosen for the extraction of CompCert is ML, one can modify the sources of the extracted program by adding an ML pretty-printer, which target language is Coq ; this in order to get back the value inhabitating the \C ast of the manual. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the \C ast and furthermore, we will have the possibility to evoluate in a rich dependent type system framework. 
+
+
+\subsection{The Coq pretty-printer for \C}
+
+Our goal is to import the \gccC code in Coq via its \C AST. We need to work with the value inhabiting the \C manual, and such, during the development process of the proof. But Coq is a language where the input and output with \outworld can not easily be done in its proper language%\footnote{Enriching Gallina with new tactics implies to modify the source of Coq.}
+. At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with \outworld. Because the language chosen for the extraction of CompCert is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the \C AST of the manual. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the \C AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework. 
 \subsubsection{Example}
 In our case, the origin and the target language of the printer are Coq. The type we plan to export\footnote{Export or import, depending the view we have as the origin language is the target language.}, \verb|AST.program fundef type| is formed with a lot of constructors. To illustrate this with a simple example, assume we have defined the following type, inspired from the sources of CompCert~:
 \begin{coq}
@@ -588,76 +575,53 @@ _RECORD : forall n, vector string n -> s ** n
   Notation "\{\{ a ; .. ; b \}\}" := 
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
 \end{coq}
-where the type \verb|vector| and ``\verb|_ ^^  _ --> _|'' are respectively more deeply explained in the library \verb|Bvector| and \verb|NaryFunctions|.
+where the type \verb|vector| and ``\verb|_ ^^  _ --> _|'' are respectively more deeply explained in the Coq libraries \verb|Bvector| and \verb|NaryFunctions|.
 Note that the function \verb|_RECORD| can be implemented using only \verb|_INDUCTIVE|. Hence, our combinators of pretty-printing are all simulated by only one, here \verb|_INDUCTIVE|~
 \footnote{In the same spirit, a {\tt Record} construction is basically seen as a notation for an {\tt Inductive} construction~\cite{Coq:manual}. % FIXME lien vers la théorie des inductifs plus précis
 }.
 
-The last ambiguity to resolve is the meaning of \verb|__floatsize|, \verb|__type|, \verb|__typelist| and \verb|__program|. In fact, it suffices us to rename them as the function \verb|floatsize_rect|, ..., \verb|program_rect|, where all the ``\verb|..._rect|'' functions are already furnished by Coq everytime a type is defined. However, for mutually recursive defined type such as \verb|type| and \verb|typelist|, we can use a function which fold completely the structure and also perform the mutually call explicitely (see the \verb|Scheme| command for this purpose). This justifies why we have regrouped above the constructors of \verb|type| and \verb|typelist| together in a unique folding function \verb|_type_|.
+The last ambiguity to resolve is the meaning of \verb|__floatsize|, \verb|__type|, \verb|__typelist| and \verb|__program|. In fact, it suffices us to rename them as the function \verb|floatsize_rect|, ..., \verb|program_rect|, where all the ``\verb|..._rect|'' functions are already furnished by Coq everytime a type is defined. However, for mutually recursive defined type such as \verb|type| and \verb|typelist|, we can use a function which fold completely the structure and also perform the mutually call explicitly (see the \verb|Scheme| command for this purpose). This justifies why we have regrouped above the constructors of \verb|type| and \verb|typelist| together in a unique folding function \verb|_type_|.
 
-Finally, as \verb|_INDUCTIVE| and \verb|_RECORD| return the function type ``\verb|_ ** _|'', we need to enhance the type of our recursors \verb|__floatsize|, ..., \verb|__program| by a more powerful one, and at least \emph{convertible} to its initial type (the ``convertibility'' relation as defined in~\cite{Coq:manual}). It means that we need to write explicitely their type~:
+Finally, as \verb|_INDUCTIVE| and \verb|_RECORD| return the function type ``\verb|_ ** _|'', we need to enhance the type of our recursors \verb|__floatsize|, ..., \verb|__program| by a more powerful one, and at least \emph{convertible} to its initial type (the ``convertibility'' relation as defined in~\cite{Coq:manual}). It means that we need to write explicitly their type~:
 \begin{coq}
-Definition __floatsize {A} : 
-    A ** 0 ->                (* F32       :           _ *)
-    A ** 0 ->                (* F64       :           _ *)
-    _ := [...].
-Definition _type_ A B (f : _ -> Type) := 
-  f (
-    A ** 0 ->                (* Tvoid     :           _ *)
-    A ** 1 ->                (* Tfloat    : _ ->      _ *)
-    A ** 2 ->                (* Tfunction : _ -> _ -> _ *)
+  Notation "A [ a ; .. ; b ] -> C" := 
+    (A ** a -> .. (A ** b -> C) ..) (at level 90).
 
-    A ** 0 ->                (* Tnil      :           _ *)
-    A ** 2 ->                (* Tcons     : _ -> _ -> _ *)
-  B).
+Definition __floatsize {A} : A [ 0   (* F32       :           _ *)
+                             ; 0 ] (* F64       :           _ *)
+                           -> _ := [...].
+Definition _type_ A B (f : _ -> Type) := f (
+                           A [ 0   (* Tvoid     :           _ *)
+                             ; 1   (* Tfloat    : _ ->      _ *)
+                             ; 2   (* Tfunction : _ -> _ -> _ *)
+
+                             ; 0   (* Tnil      :           _ *)
+                             ; 2 ] (* Tcons     : _ -> _ -> _ *)
+                           -> B).
 Definition __type {A} : _type_ A _ (fun ty => _ -> ty) := [...].
 Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := [...].
 \end{coq}
 Each number corresponds exactly to the arity attended by the respective constructor.
-All the informations present until now are sufficient for the type-checker to automatically deduce the remaining type. With only these declarations, our Coq library of pretty-printing considered as a functor is finished, its instanciation by a module and the definition of \verb|_INDUCTIVE| being a secondary task.
+All the informations present until now are sufficient for the type-checker to automatically deduce the remaining type. With only these declarations, our Coq library of pretty-printing considered as a functor is finished, its instantiation by a module and the definition of \verb|_INDUCTIVE| being a secondary task.
 \subsubsection{Programming discussions}
 \paragraph{Explicit annotations}
 The counterpart of using this kind of simplified way for our printer (i.e. using the dependently form as \\ 
-\verb_| "Tvoid" | "Tfloat" | "Tfunction" | "Tnil" | "Tcons"_) is highlighted by the necessity to explicitely mention the arity of each constructor. This can constitute a notable inconvenient, but in the absence of annotations, the type reconstruction becomes undecidable.
-The other alternative would be to give the constructor as a more normal form ``\verb|_ -> ... -> _|''. However, the real \verb|AST.program fundef type| contains approximatively a hundred of constructors and specifying the type with a single number is rather a good compromise.
+\verb_| "Tvoid" | "Tfloat" | "Tfunction" | "Tnil" | "Tcons"_) is highlighted by the necessity to explicitly mention the arity of each constructor. This can constitute a notable inconvenient, but in the absence of annotations, the type reconstruction becomes undecidable.
+The other alternative would be to give the constructor as a more normal form ``\verb|_ -> ... -> _|''. However, the real \verb|AST.program fundef type| contains approximatively a hundred of constructors and specifying the type with a single number has rather been a good compromise.
 \paragraph{Monadic embedding}
-Above, we have described \verb|s| as a type similar to $string$. In fact, \verb|s| is considered abstractly during the folding of each recursors, except for \verb|_INDUCTIVE| which needs to manipulate it. Therefore, we can define it as $\verb|s| := t~\alpha$ where $t$ is a monadic type and $\alpha$ the usual value a monadic type carry with. \verb|_INDUCTIVE| being instanciated in a module separate from the pretty-printing functor, the integration remains easy.
+Above, we have described \verb|s| as a type similar to $string$. In fact, \verb|s| is considered abstractly during the folding of each recursors, except for \verb|_INDUCTIVE| which needs to manipulate it. Therefore, we can define it as $\verb|s| := t~\alpha$ where $t$ is a monadic type and $\alpha$ the usual value a monadic type carry with. \verb|_INDUCTIVE| being instantiated in a module separate from the pretty-printing functor, the integration remains easy.
 
-Note that as a first consequence, because \verb|_INDUCTIVE| is the pretty-printing foundation of every constructor, we can embed inside the monadic type some extra informations, like the current indentation position. Moreover, the basic datatype \verb|s|, initially considered as a $string$ can now for example be replaced by a monadic buffer for efficiency.
+Note that as a first consequence, because \verb|_INDUCTIVE| is the pretty-printing foundation of every constructor, we can embed inside the monadic type some extra informations, like the current indentation position depending on the depth. Moreover, the basic datatype \verb|s|, initially considered as a $string$ can now for example be replaced by a monadic buffer for efficiency.
 
-%in the case we want to abstract the scope of term which is hide the printing of 
-%introduce a notation like
-
-\paragraph{Automatization versus maintainability}
+\paragraph{Automation versus maintainability}
 The process of creating a raw printing function given a type may be automated and integrated in the Coq sources. However, in the case the value we wish to import is defined with the help of the Gallina language, there may be some difficulty to print exactly the tactics used, as well as the Coq comments \verb|(* ... *)|. Hopefully, for our task of importing a \gccC data, this is not a problem because the value is rawly taken from \outworld.
 
-The \C ast contains type information at each node, so the representation of the value printed is rather expressive. The actual \SScert pretty-printer includes a pre-computation algorithm where types are first collected and declared with the Coq ``\verb|Definition|''.
-Before this optimization, the ARM {\tt pseudo-code.v} file size were about 52Mo. Now, it is approximatively 2Mo, and the type-checking time is thus clearly improved.
+The \C AST contains a lot of type information at each node (for example, every constructor of \verb|Csyntax.expr| carries a field of type \verb|Csyntax.type|), so the representation of the value printed is rather expressive. Our actual pretty-printer includes a precomputation algorithm where types are first collected and declared separately with the Coq ``\verb|Definition|''.
+Before this optimization, the ARM {\tt pseudocode.v} file size were about 52Mo. Now, it is approximatively 2Mo, and the type-checking time is thus clearly improved.
 
-This type information is not initially present in the \C ast, there is also some automated
-In theory, instead of using the \C ast, we can take any type $t$ with a semantical preservation proof. 
+Because natural number are also frequently used, it can be more readable to print them using 0-9 digits, instead of their raw inductive constructor definition. Remark that if the number we print is too big, OCaml raises a \verb|Stack_overflow| with byte-code or \verb|Segmentation fault| in native version\footnote{In the same spirit, when we try to display a large number with the Coq 8.3pl1 pretty-printer, like {\tt Check 5001.}, if it can print the number, it prints with a warning before.}, because in fact we are calling a not tail recursive function at a too nested level. This problem can hopefully be solved by abstracting the printing process for natural number with a tail recursive function, the whole being instantiated with the extracted code at OCaml side.
 
-In term of optimization, we can go further. Finally, 
-any type is  providing 
-
-The current pretty-printer is designed for exporting or importing a value of type 
-
-Instead of modifying our printer, we can change the raw Coq pretty printing of term in the Coq sources, in order to introduce some new command (like \verb|Check| or \verb|Print|). This can be useful because for example even if we have some notations like \\
-\verb|Notation "` x" := (x % positive) (at level 9).|, \\
-\verb|Check `1.| returns \verb|1%positive : positive|.
-      - eta-red non reconnu
-
-
-%The CompCert compiler takes as input a file written in a syntax similar to \C and produce an assembler file (inside the operating system). These input and output side effects cannot be performed in Coq alone, but by using an external language where it is possible to do so. Currently, the formal part corresponding to the translation from \C to \CCasm  is proved in Coq and extracted in OCaml. Thus to have a complete executable, it still remains to join with the extracted code some additionnal lines, corresponding to the interaction with the os. 
-
-%For our subject of certification,  need corresponding can be done
-%Coq is a strongly terminating system. It means that side effects cannot be easily embedded without breaking the termination law. In particular, input and output from and to the outside world . Therefore, 
-%easily performed inside without breaking, The goal of the extraction procedure in Coq is
-\paragraph{...}
-récurseur, ordre supérieur
-ne pas activer les optimisations dans le code extrait
-grand entier dépassant la pile OCaml
-pretty-printer vs coq pretty-printer : les positives non delta-notation-reduits
+With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expansing the offending term.
 
 \subsection{Future work : the equivalence proof}
 \paragraph{Coq $\Longrightarrow$ \C~?}
@@ -666,26 +630,31 @@ Initially, before the creation of any simulator in \simsoc, remark that to get a
 \paragraph{Coq $\Longleftarrow$ \C~?}
 The problem we are focusing are more open than only oriented from Coq to \C. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \C side to Coq. 
 
-More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \C manuel is only formed with recursive function. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \C code. Given a \C, \gccC or even a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \C manual is only formed with recursive function. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \C code. Given a \C, \gccC or even a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
 
-Notice that before starting a termination proof of a \C code, it is useful to check further if this code can actually be compiled by CompCert to an assembler source. This check can clearly be omitted in the case we just want to translate the not sure well-typed\footnote{We roughly approximate the Coq convertion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} \C AST into another deep embedded AST.
-However, we have mentioned at the beginning that one of the motivation of choosing \C, as type for working in Coq, is precisely the CompCert certification proof leading to assembler. Thus, we are attentive at the result of the compilation of \gccSL with CompCert.
+Notice that before starting a termination proof of a \C code, it is useful to check further if this code can actually be compiled by CompCert to an assembler source. This check can clearly be omitted in the case we just want to translate the not sure well-typed\footnote{We roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} \C AST into another deep embedded AST.
+However, we have mentioned at the beginning that one of the motivation of choosing \C, as type for our work in Coq, is precisely the CompCert certification proof leading to assembler. Thus, we are attentive at the result of the compilation of \gccSL with CompCert.
 
 \paragraph{ML $\Longrightarrow$ (Coq $\Longleftrightarrow$ \C) ?}
 
-In~\ref{s:simgendef} and the SH part, we have precised the automatic importation of the ARM/SH manual by \simgen into \gccC. By following our reasonning of translating \gccC into some form of Coq code, it is legitimate to ask if we can also translate the \gccC manual in Coq directly. However, the generation of the \gccC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \gccC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is less astonishing. 
+In~\ref{s:simgendef} and the SH part, we have explained the automatic importation of the ARM/SH manual by \simgen into \gccC. By following our reasoning of translating \gccC into some form of Coq code, it is legitimate to ask if we can also translate the \gccC manual in Coq directly. However, the generation of the \gccC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \gccC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is less astonishing. 
 
-For this particular case, the generation of \gccC being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the \simgen AST. Indeed, by approximating the raw Coq source into its AST, the Coq AST, as well as approximating the \gccC source into the \C AST, 
+For this particular case, the generation of \gccC being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the \simgen AST. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the \gccC source into the \C AST, 
 \begin{itemize}
 \item on one hand we have an ML function translating from \simgen AST to Coq AST,
 \item on the other hand, we have another ML function from \simgen AST to \C AST.
 \end{itemize} 
-As we think they can easily be translated in Coq, the problem of good equivalence between the Coq manual and the \gccC manual can be simplified to the problem of building a couple given a particular \simgen AST, i.e writting a Coq function of type : \verb!simgen_AST -> { (man_C, man_coq) | man_C <~> man_coq }!. Of course, the equivalence function ``\verb|<~>|'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
+As we think they can easily be translated in Coq, the problem of good equivalence between the Coq manual and the \gccC manual can be simplified to the problem of building a couple given a particular \simgen AST, i.e writing a Coq function of type : \verb!simgen_AST -> { (man_C, man_coq) | man_C <~> man_coq }!. Of course, the equivalence function ``\verb|<~>|'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 \label{s:concl}
-remplacement de ASM compcert par le simulateur vérifié ARM.
+
+We have obtained a SH4 formal model using the same algorithm as was employed for the ARMv6, by automatic extraction of pseudo-formal descriptions and automatic conversion to Coq syntax. The merge into \SScert was performed modularly with functors in order to facilitate the integration of future processor.
+
+The importation of a \C value via our Coq pretty-printer being ready, the next step is to prove the equivalence between the existing Coq model and the \gccC model. After this, we will extend our proof to the complete part of the processor and system simulator : code specialization, dynamic recompilation on the host machine...
+
+Finally, we hope to plug our certified simulator after the CompCert chain leading to assembler source. In contrast with the bootstrapping process which aim to create a higher language than existing, this would terminate the certifying chain preserving the semantics of high-level software to safe execution on hardware.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \bibliographystyle{alpha}
