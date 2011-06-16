@@ -23,7 +23,7 @@
 %\usepackage{graphicx}
 %\usepackage{multirow}
 
-\usepackage{enumerate}
+%\usepackage{enumerate}
 \usepackage{float}
 %\ifhevea\setboolean{footer}{false}\fi
 
@@ -156,7 +156,7 @@ The correction of the decoder is as important as the pseudocode for a good simul
 Providing these two informations, we are able to model a simple simulator in Coq\footnote{Coq being a strongly normalizing language, the simulation is performed within a fixed number of recursive step.}. This is exactly what the \SScert project contains.
 
 \subsection{The \SScert project}
-The goal of \SScert~\footnote{\newrelease~\cite{urlsscert}.} is to certify \simsoc~\cite{arm}, because its large part is written in C++~\cite{ossc09} and currently we are not sure about the safety of our compiler used. However, for the processor simulator, it is possible to abstract most of the surrounding C++ features. We call then \gccSL the \gccC part restricted to the component which simulates the processor. Because we are currently in the same unpredictable situation with a \gccC program, we want to have a formal proof that our \gccC code behaves correctly. But what does ``formal proof'' mean in the case we are comparing a virtual software and a real hardware ? Even if the hardware is produced with the help of the computer, its specification depends directly on the format of the documentation the constructor gives. For our subject of processor certification, the processor documentation is generally available in raw text. For example, specifications of the SH4 are published in a PDF document and inside, the behavior of each instruction are described in natural language. Our goal is to build a mathematical model of the processor from the processor documentation, one which is as closer as possible to the one furnished by the constructor. Then, understanding this definition of ``formal proof'', the \gccC code behind \gccSL needs to behave correctly with respect to the semantic of this mathematical model. Note that to be strict, because the manual can contains some erroneous specifications, further validation tests with the real hardware will remain to be performed in the final end, in order to obtain an observationally equivalent behavior with the simulator.
+The goal of \SScert~\footnote{\newrelease~\cite{urlsscert}.} is to certify \simsoc~\cite{arm}, because its large part is written in C++~\cite{ossc09} and currently we are not sure about the safety of our C++ compiler used. However, for the processor simulator, it is possible to abstract most of the surrounding C++ features. We call then \gccSL the \gccC part restricted to the component which simulates the processor. Because we are currently in the same unpredictable situation with a \gccC program, we want to have a formal proof that our \gccC code behaves correctly. But what does ``formal proof'' mean in the case we are comparing a virtual software and a real hardware ? Even if the hardware is produced with the help of the computer, its specification depends directly on the format of the documentation the constructor gives. For our subject of processor certification, the processor documentation is generally available in raw text. For example, specifications of the SH4 are published in a PDF document and inside, the behavior of each instruction are described in natural language. Our goal is to build a mathematical model of the processor from the processor documentation, one which is as closer as possible to the one furnished by the constructor. Then, understanding this definition of ``formal proof'', the \gccC code behind \gccSL needs to behave correctly with respect to the semantic of this mathematical model. Note that to be strict, because the manual can contains some erroneous specifications, further validation tests with the real hardware will remain to be performed in the final end, in order to obtain an observationally equivalent behavior with the simulator.
 
 \paragraph{Related work}
 A formalization of the ARMv7 processor is reported in~\cite{conf/itp/FoxM10}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions. 
@@ -502,7 +502,7 @@ Note that for SH4, there is a specific instruction \verb|Read_Byte| to access a 
 
 About the correction of our simplification process of the accumulator \verb|st|, \verb|loc| and \verb|b|, 
 \begin{itemize}
-\item we can add more \verb|_get_loc| or \verb|_get_st| at any positions (accepting at least a well-typed monadic expression), because we already know there is no conflict between these name and other variable name coming from the manual, thanks to the good type-checking of the previous manual. Moreover, we also know that any variable (generally leaving in the $\lambda$-calculus theory) is captured by the nearest abstraction.
+\item we can add more \verb|_get_loc| or \verb|_get_st| at any positions (accepting at least a well-typed monadic expression), because we already know there is no conflict between these names and other variable names coming from the manual, thanks to the good type-checking of the previous manual. Moreover, we also know that any variable (generally leaving in the $\lambda$-calculus theory) is captured by the nearest abstraction.
 \item If we add less \verb|_get_loc| or \verb|_get_st| at any positions (requiring at least one), the semantics can wrongly changed. Because the new manual type-checks correctly for ARM and SH, if for example we add less \verb|_get_loc| at a certain position, then it means necessarily that the \verb|loc| used refers wrongly to an external \verb|_get_loc|.
 \end{itemize}
 Hence, in any case, we hope the test validation of the Coq manual will conclude the discussion. However, by seeing the success of the current validation tests for the ARMv6 (by comparing the output of \gccSL and \SL) before the simplification and after, we have a good confidence about its accuracy. We are now going to develop the problem of certification of the simulator, the Coq manual, and its validation.
@@ -513,7 +513,7 @@ Hence, in any case, we hope the test validation of the Coq manual will conclude 
 Recall that our objective is to guarantee the correction of any program simulated by \gccSL, written in ARMv6 or SH4, and the requirement of the same state of registers for \gccSL and \SL after each instructions. 
 
 We plan to prove this in Coq, because the sources of \SL are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a \gccC code, in particular to be able to work further with the \gccSL. 
-Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for \gccSL, as this last aim to mimic \SL. 
+Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for every instruction simulated by \gccSL, as this last aim to mimic \SL. 
 
 Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behavior (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtaining of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation. The \C AST is also the first AST in the CompCert translation chain where the CompCert proof begins, and is thus the closest Coq AST to any \gccC.
 
@@ -533,7 +533,7 @@ This leads us to the section explaining how such a pretty-printer can be constru
 Our goal is to import the \gccC code in Coq via its \C AST. We need to work with the value inhabiting the \C manual, and such, during the development process of the proof. But Coq is a language where the input and output with \outworld can not easily be done in its proper language%\footnote{Enriching Gallina with new tactics implies to modify the source of Coq.}
 . At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with \outworld. Because the language chosen for the extraction of CompCert is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the \C AST of the manual. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the \C AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework. 
 \subsubsection{Example}
-In our case, the origin and the target language of the printer are Coq. The type we plan to export\footnote{Export or import, depending the view we have as the origin language is the target language.}, \verb|AST.program fundef type| is formed with a lot of constructors. To illustrate this with a simple example, assume we have defined the following type, inspired from the sources of CompCert~:
+In our case, the origin and the target language of the printer are Coq. The type we plan to export\footnote{``export'' or ``import'', depending the view we have as the origin language is the target language.}, \verb|AST.program fundef type| is formed with a lot of constructors. To illustrate this with a simple example, assume we have defined the following type, inspired from the sources of CompCert~:
 \begin{coq}
 Inductive floatsize : Type :=
   | F32: floatsize
@@ -654,9 +654,9 @@ With the extraction procedure, we have also encountered an extra $\eta$-reductio
 Before starting a termination proof of a \C code, it is useful to check further if this code can actually be compiled by CompCert to an assembler source. This check can clearly be omitted in the case we just want to translate the not sure well-typed\footnote{We roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} \C AST into another deep embedded AST.
 However, we have mentioned at the beginning that one of the motivation of choosing \C, as type for our work in Coq, is precisely the CompCert certification proof leading to assembler. Thus, we are attentive at the result of the compilation of \gccSL with CompCert.
 \subsubsection{The context of compilation : 32 vs 64 bits}
-By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after several tests, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target.
+By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four tests, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target.
 
-Like GCC, CompCert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is unspecified, this choice becomes mandatory in CompCert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by CompCert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
+Like GCC, CompCert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is unspecified, this choice becomes mandatory in CompCert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by CompCert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
 \begin{humC}
 #include <inttypes.h>
 
@@ -666,28 +666,38 @@ void main() \{
 \end{humC}
 is rejected by CompCert (if we still target the \verb|ia32-linux| processor), because 64 bits data-structures are not fully supported yet, and this behavior does not depend on the 32 or 64 bits machine CompCert is running.
 
-Hence, a new problem is coming : we realize that the ARM manual uses frequently 64 bits data-structures (as shown in the {\tt A4.1.81 SMLSLD} instruction). Then so does the whole \gccSL, which is, precisely at this moment, rejected.
+Hence, a new problem is coming : we realize that the ARM manual uses frequently 64 bits data-structures (as shown in the {\tt A4.1.81 SMLSLD} instruction). Then so does the whole \gccSL, which is, precisely at this moment, rejected by CompCert.
 
 \subsubsection{Is \gccSL well-typed ?}
 \paragraph{Going to \C}
-We remarked curiously that the previous \gccC program is well accepted when the processor target is fixed to \verb|arm-linux|, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. In fact, there is no errors : starting from a \gccC code, the heuristic performed to retrieve a \C code includes an external call to a preprocessor, namely ``\verb|gcc -E|''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most \hC to a \C program. Like the GCC compiler, the behavior of \verb|gcc -E| depends on the options \verb|-m32| and \verb|-m64|, which targets the processor for the executable. If absent, \verb|gcc -E| considers by default the processor currently settled. In fact, in the case of \verb|ia32-linux|, the extra option \verb|-m32| is present everytime.
-Note that for \verb|arm-linux|, no options are specified, hence the previously success on 64 bits is now explained.
+We remarked curiously that the previous \gccC program is well accepted when the processor target is fixed to \verb|arm-linux|, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a \gccC code, the heuristic performed to retrieve a \C code includes an external call to a preprocessor, namely ``\verb|gcc -E|''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most \hC to a \C program. Like the GCC compiler, the behavior of \verb|gcc -E| depends on the options \verb|-m32| and \verb|-m64|, which targets the processor for the executable. If absent, \verb|gcc -E| considers by default the processor currently settled. In fact, in the case of \verb|ia32-linux|, the extra option \verb|-m32| is present everytime.
+Note that for \verb|arm-linux|, no options are specified, hence the previously success exhibited earlier on 64 bits is now explained.
 
 \paragraph{Going to assembler}
-Once a \C value is obtained, it is sure that the computation leading to assembler terminates (this part is from Coq). However, to use the main CompCert theorem stating that the behavior of the assembly \emph{obtained} looks like the initial \C value, we need to be sure that among others the assembly can really and constructively be \emph{obtained}. In particular, the chain leading to assembler is writen in monadic style, where some type and consistency checking are done on the fly. In case of errors, we are clearly informed, events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq pretty-printed from it, and \gccSL needs to be changed.
+Once a \C value is obtained, it is sure that the compiling process leading to assembler terminates (this part being from Coq). However, to use the main CompCert theorem stating that the behavior of the assembly \emph{obtained} looks like the initial \C value, we need to be sure that among others the assembly can really, constructively, be \emph{obtained}. In particular, the chain leading to assembler is writen in monadic style, where some type and consistency checking are done on the fly. 
+
+Finally, in case of errors, we are clearly informed, i.e. events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq value pretty-printed from it, and \gccSL needs to be changed.
 
 \paragraph{Conclusion}
-To force the compiled \gccSL to have a deterministic behavior, one which is independent of the machine used, we present two possible solutions.
-\begin{enumerate}[(a)]
-\item ``Keep the program, Modify the environment''\\
-For the \verb|ia32-linux| target, we were inspired from \verb|arm-linux|, so we tried to change the heuristic from \verb|-m32| to the explicit \verb|-m64| in the preprocessing stage. Surprisingly, on 32 and 64 bits computer, we can generate a 32 bits assembly file. Moreover, they can be executed on their respective machine, and we have the same results during validation tests.
+To force the compilation of \gccSL by CompCert to have a deterministic behavior, one which is independent of the machine used and to obtain an assembly file, which is here a synonym of well consistency checking, we present two possible solutions.
+\begin{itemize}
+\item ``Keep the program \gccSL, Modify the environment CompCert''\\
+For the \verb|ia32-linux| target, inspired from \verb|arm-linux|, we tried randomly to change the heuristic from \verb|-m32| to the explicit \verb|-m64| in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file. Moreover, they can be executed on their respective machine, and we have the same results during validation tests.
 
-\item ``Modify the program, Keep the environment''\\
+\item ``Modify the program \gccSL, Keep the environment CompCert''\\
 Here we replace, in the generated ARM manual as well as the whole \gccSL, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
-\end{enumerate}
-Contrarly to the solution (a), solution (b) requires to activate the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|). However, it does not depend on the real sources of CompCert, especially if the heuristic is going to change. 
 
-Remark that on both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
+Because 32 bits data-structures are supported, the compilation process terminates. Here, validation tests are again similar on both platforms.
+However, contrarly to the previous solution, this requires to activate in CompCert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|). 
+\end{itemize}
+\subparagraph{Remarks}
+\begin{itemize}
+\item On both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
+\item Except this 64 bits data-structures not supported in CompCert, we have not encountered others difficult problems during the compilation.
+\item At this moment, it is useful to compare the validation test of our two solutions, not only with themselves, but also with the \gccSL compiled by GCC.
+\end{itemize}
+\subsubsection{Does \gccSL terminate ?}
+We are now one step closer to invocate the main CompCert theorem, which predicts completely the behavior of the assembly file produced from \gccSL. Besides the proof of the good types and consistency checking during the compilation, the theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \gccSL has, and to show that its execution really follows $b$. Then, if $b$ is not classified as a \emph{wrong} behavior among others, CompCert will answer us that the assembly executable has surely the behavior $b$.
 
 \subsection{Future work : the equivalence proof}
 \paragraph{Coq $\Longrightarrow$ \C~?}
@@ -758,7 +768,7 @@ let u1 n to_list1 sep xs surr =
 \end{ml}
 is accepted by the OCaml type-checker but it does not match its extracted interface, because \verb|u1| has a too general type. This can be resolved by manually replacing \verb|let v_to_list = to_list0 n| by \verb|let v_to_list v = to_list0 n v|.
 
-\paragraph{Remarks}
+\paragraph{Others possible solutions}
 \begin{itemize}
 \item
 Note that in the original Coq code~:
@@ -813,7 +823,7 @@ let u1 n to_list1 sep xs surr =
 \end{ml}
 \end{itemize}
 
-\paragraph{Localization}
+\paragraph{Localization in the source}
 In {\tt coq\_svn\_\coqv[...]mlutil.ml}, the $\eta$-reduction performed in the function \verb|kill_dummy| does not perform an $\eta$-reduction test to avoid a not generalizable \verb|'_a|. At the time of writing, it is not sure that this test may or not be done in a similar way as {\tt coq\_svn\_\coqv[...]extraction.ml}.
 Remark also, even if it has not been tested, that we may factorize the part under the case \verb|MLletin| in \verb|kill_dummy| with the \verb|MLletin| part in \verb|kill_dummy_hd| by abstracting what is necessary.
 \subsubsection{The default inlining on singleton type definition}
