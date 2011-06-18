@@ -677,27 +677,74 @@ Note that for \verb|arm-linux|, no options are specified, hence the previously s
 Once a \C value is obtained, it is sure that the compiling process leading to assembler terminates (this part being from Coq). However, to use the main CompCert theorem stating that the behavior of the assembly \emph{obtained} looks like the initial \C value, we need to be sure that among others the assembly can really, constructively, be \emph{obtained}. In particular, the chain leading to assembler is writen in monadic style, where some type and consistency checking are done on the fly. 
 
 Finally, in case of errors, we are clearly informed, i.e. events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq value pretty-printed from it, and \gccSL needs to be changed.
-
 \paragraph{Conclusion}
+\subparagraph{Type-checking}
 To force the compilation of \gccSL by CompCert to have a deterministic behavior, one which is independent of the machine used and to obtain an assembly file, which is here a synonym of well consistency checking, we present two possible solutions.
 \begin{itemize}
 \item ``Keep the program \gccSL, Modify the environment CompCert''\\
-For the \verb|ia32-linux| target, inspired from \verb|arm-linux|, we tried randomly to change the heuristic from \verb|-m32| to the explicit \verb|-m64| in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file. Moreover, they can be executed on their respective machine, and we have the same results during validation tests.
+For the \verb|ia32-linux| target, inspired from \verb|arm-linux|, we tried randomly to change the heuristic from \verb|-m32| to the explicit \verb|-m64| in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file.
 
 \item ``Modify the program \gccSL, Keep the environment CompCert''\\
 Here we replace, in the generated ARM manual as well as the whole \gccSL, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
 
-Because 32 bits data-structures are supported, the compilation process terminates. Here, validation tests are again similar on both platforms.
-However, contrarly to the previous solution, this requires to activate in CompCert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|). 
+Because 32 bits data-structures are supported, the compilation process terminates. 
+However, contrarly to the previous solution, it requires here to activate in CompCert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|). 
 \end{itemize}
-\subparagraph{Remarks}
-\begin{itemize}
-\item On both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
-\item Except this 64 bits data-structures not supported in CompCert, we have not encountered others difficult problems during the compilation.
-\item At this moment, it is useful to compare the validation test of our two solutions, not only with themselves, but also with the \gccSL compiled by GCC.
-\end{itemize}
+
+Remark that on both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
+
+\subparagraph{Validation tests}
+Even if the problem of 64 bits data-structures are resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
+More precisely, at this moment, it is useful to compare validation tests of our two solutions, not only with themselves, but also with the \gccSL compiled from GCC.
+The behavior of our two CompCert solutions are the same. However, they differ when compared with a GCC executable. In fact, there exist ARM validation tests which are rejected by the CompCert simulator and accepted by GCC.
+By examinating closely the situation, we remarked for instance that this \hC program~:
+\begin{humC}
+#include <stdio.h>
+
+void main() \{
+  int i = 32;
+  printf("line1 \%lx\textbackslash{}n", 1lu << i);
+  printf("line2 \%lx\textbackslash{}n", 1lu << 32);
+\}
+\end{humC}
+which can be qualified at the same time as a \gccC and a \C program, has two surprising different behavior at runtime by considering the executable respectively produced. Indeed, we have with GCC$^{64~bits}$ a number which exceeds 32 bits :
+\begin{bash}
+line1 100000000
+line2 100000000
+\end{bash}
+and, with GCC$^{32~bits}$ and CompCert two different numbers~:
+\begin{bash}
+line1 1
+line2 0
+\end{bash}
+(note that the OCaml value \verb|Int32.shift_left 1_l 32| evaluates to \verb|1_l|).
+
+Remark that if we take the predecessor with this \gccC and \C program~:
+\begin{humC}
+#include <stdio.h>
+
+void main() \{
+  int i = 32;
+  printf("line1 \%lx\textbackslash{}n", (1lu << i) - 1);
+  printf("line2 \%lx\textbackslash{}n", (1lu << 32) - 1);
+\}
+\end{humC}
+the differences are still present, we have with GCC$^{64 bits}$~:
+\begin{bash}
+line1 ffffffff
+line2 ffffffff
+\end{bash}
+and, GCC$^{32~bits}$ and CompCert~:
+\begin{bash}
+line1 0
+line2 ffffffff
+\end{bash}
+Finally, these problems using 32 bit data-structures can be avoided by using explicitly operations on 64 bits data-structures instead.
+
+%\item Except this 64 bits data-structures not supported in CompCert, we have not encountered others difficult problems during the compilation.
+
 \subsubsection{Does \gccSL terminate ?}
-We are now one step closer to invocate the main CompCert theorem, which predicts completely the behavior of the assembly file produced from \gccSL. Besides the proof of the good types and consistency checking during the compilation, the theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \gccSL has, and to show that its execution really follows $b$. Then, if $b$ is not classified as a \emph{wrong} behavior among others, CompCert will answer us that the assembly executable has surely the behavior $b$.
+We are now one step closer to invocate the main CompCert theorem, which predicts completely the behavior of the assembly file produced from \gccSL. Besides the proof of the good types and consistency checking during the compilation, the theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \gccSL has, and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, CompCert will answer us that the assembly executable has surely the behavior $b$.
 
 \subsection{Future work : the equivalence proof}
 \paragraph{Coq $\Longrightarrow$ \C~?}
