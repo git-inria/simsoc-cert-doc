@@ -18,6 +18,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsfonts}
+\usepackage{amsthm}
 
 %\usepackage{latexsym}
 %\usepackage{graphicx}
@@ -71,27 +72,37 @@
 
 \newcommand{\gcc}{GCC 4.5.2\xspace}
 \newcommand{\compcert}{CompCert 1.8.2\xspace}
+\newcommand{\ccert}{CompCert\xspace}
 \newcommand{\ocaml}{OCaml 3.12\xspace}
 \newcommand{\coqc}{Coq 8.3pl2\xspace}
 \newcommand{\coqv}{14161}
 \newcommand{\newrelease}{A first public release will be soon available}
 
 \newcommand{\gccSL}{$_{\tt gcc}{\tt simlight}$\xspace}
-\newcommand{\SL}{$_{\tt coq}{\tt simlight}$\xspace}
+\newcommand{\cSL}{$_{\tt compcert}{\tt simlight}$\xspace}
+\newcommand{\aSL}{$_{\tt asm}{\tt simlight}$\xspace} %\overset{\checkmark}{\leadsto}
+\newcommand{\lSL}{$_{\tt preserved}{\tt simlight}$\xspace}
+\newcommand{\SL}{{\tt coq$\relbar$simlight}\xspace}
 \newcommand{\simgen}{{\tt simgen}\xspace}
 \newcommand{\CCasm}{$_{\tt compcert}{\tt ASM}$\xspace}
 \newcommand{\C}{$_{\tt compcert}{\tt C}$\xspace}
 \newcommand{\gccC}{$_{\tt gcc}{\tt C}$\xspace}
 \newcommand{\hC}{$_{\tt human}{\tt C}$\xspace}
+\newcommand{\aC}{$_{\tt asm}{\tt C}$\xspace}
+\newcommand{\lC}{$_{\tt preserved}{\tt C}$\xspace}
 \newcommand{\ps}{{\tt pseudocode}\xspace}
 \newcommand{\dec}{{\tt decoder}\xspace}
 \newcommand{\outworld}{the outside world\xspace}
 \newcommand{\simsoc}{SimSoC\xspace}
 \newcommand{\SScert}{SimSoC-Cert\xspace}
 
+\newtheorem{ex}{Example}[subsection]
+\newtheorem*{note}{Notation}
+\newtheorem{fact}{Fact}
+
 \author{Frédéric Tuong}
 \title{Fast certified simulation with the SH4 model}
-\date{November 2010 - June 2011}
+\date{November 2010 - July 2011}
 
 \begin{document}
 
@@ -117,19 +128,20 @@ As for ARM, we show at section~\ref{s:simu_sh4} how to get a mathematical model 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Notations}
+\begin{note}
 For the following, we will use the symbols
 \begin{itemize}
 \item \hC to designate an arbitrary sequence of character, 
 \item \gccC for programs compiled successfully with \gcc~\cite{gcc} (tested at least one time),
-\item \C for programs for which a generated CompCert C file~\cite{Leroy-Compcert-CACM} can be successfully dumped (tested at least one time), in general before the end of the compilation. For a demonstration with \compcert, see the option \verb|-dc|.
+\item \C for programs for which a generated \ccert C file~\cite{Leroy-Compcert-CACM} can be successfully dumped (tested at least one time), in general before the end of the compilation. For a demonstration with \compcert, see the option \verb|-dc|.
 \end{itemize}
+\end{note}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Certified simulation}
 \label{s:certi_sim}
 
-This section introduces the concept of software simulation by explaining how simulations work and what informations we need to import from the constructor manual. For the following, we restrict our attention to the simulation of the processor as it is the first and existing component studied in \SScert. We also present the current state of \simsoc and \SScert, and explain at the end the principle and goal of the CompCert compiler.
+This section introduces the concept of software simulation by explaining how simulations work and what informations we need to import from the constructor manual. For the following, we restrict our attention to the simulation of the processor as it is the first and existing component studied in \SScert. We also present the current state of \simsoc and \SScert, and explain at the end the principle and goal of the \ccert compiler.
 
 \subsection{Principle of a processor simulator}
 %% %%%%%%%%%%%%%%%%%%%%%%%% french
@@ -160,7 +172,7 @@ The goal of \SScert~\footnote{\newrelease~\cite{urlsscert}.} is to certify \sims
 
 \paragraph{Related work}
 A formalization of the ARMv7 processor is reported in~\cite{conf/itp/FoxM10}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions. 
-We are interested to automatically generate a Coq model, which aim to be as understandable as possible to the manual of reference. We will show later how coercions and notations in Coq are advantages for readability, but we will also notice some limitations of their use for a large proof project. Organizing the project modularly in Coq will also permit us to integrate simultaneously ARMv6 and SH4 in a generic simulator, and gain an easier interaction with CompCert.
+We are interested to automatically generate a Coq model, which aim to be as understandable as possible to the manual of reference. We will show later how coercions and notations in Coq are advantages for readability, but we will also notice some limitations of their use for a large proof project. Organizing the project modularly in Coq will also permit us to integrate simultaneously ARMv6 and SH4 in a generic simulator, and gain an easier interaction with \ccert.
 
 \subsubsection{The simulator \SL and the toolkit \simgen}
 \label{s:simgendef}
@@ -295,13 +307,13 @@ Definition step (s0 : state) (i : inst) : result :=
 In contrast with {\tt SMLSLD\_step}, the execution of {\tt LDM2\_step} is preceded by an extra call to {\tt mode4\_step}.
 \subsubsection{The ARMv6 {\tt decoder.v}}
 The structure of this file is rather simple. Given a word, we decompose it into a list of raw bits, then a pattern matching is applied to this list. The bits in each clause comes directly from the manual, as well as the instruction associated to each list.
-\subsection{The CompCert project}
-The goal of CompCert is precisely to transform most of the \hC programs to an assembler program, with a semantic preservation certificate. 
+\subsection{The \ccert project}
+The goal of \ccert is precisely to transform most of the \hC programs to an assembler program, with a semantic preservation certificate. 
 
 Generally, if the compiler can produce an assembler file from a \hC program, the well behavior at runtime of the assembler produced depends on two facts :
 \begin{itemize}
 \item how the generated assembler file is interpreted,
-\item and the well behavior of the \C code (as well as a heuristically\footnote{Starting from \gccC, there is currently no Coq proof of semantic preservation to \C%, because
+\item and the well behavior of the program at \C production time (as well as a heuristically\footnote{Starting from \gccC, there is currently no Coq proof of semantic preservation to \C%, because
 . } good translation from \hC to \C).
 \end{itemize}
 The first point is not very problematic as discussed in~\cite{Leroy-Compcert-CACM} and we will give a short comment later.
@@ -322,7 +334,7 @@ Besides the target fixed at this advanced AST, we show at the next part how the 
 %% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
 The SH manual totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of the file. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
-Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the CIL library~\cite{necula} as type representing the \gccC in OCaml (as CompCert did for the parsing step). Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
+Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the CIL library~\cite{necula} as type representing the \gccC in OCaml (as \ccert did for the parsing step). Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
 
 The parsing of the decoder informations was merely fast because for each instructions, they are clearly specified in an array. We explains now the process done for the instructions.
 
@@ -335,7 +347,7 @@ Corrections needed to bring to the manual are essentially composed of missing sy
 For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the unbound variable \verb|Rn_BANK|.  After a search, we finally found that it is a meta abbreviation for \verb|R|$n$\verb|_BANK|, with $n \in [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser.
 
     \paragraph{More confidence by type-checking}
-Besides the obtaining of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with CompCert.
+Besides the obtaining of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with \ccert.
 
 The typing process from the CIL AST to \C has actually permitted us to correct new errors.
 \begin{itemize}
@@ -515,11 +527,11 @@ Recall that our objective is to guarantee the correction of any program simulate
 We plan to prove this in Coq, because the sources of \SL are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a \gccC code, in particular to be able to work further with the \gccSL. 
 Because the \SL is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to \gccSL, that there is some correspondence between \SL and \gccSL. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for every instruction simulated by \gccSL, as this last aim to mimic \SL. 
 
-Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behavior (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtaining of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the CompCert semantic preservation. The \C AST is also the first AST in the CompCert translation chain where the CompCert proof begins, and is thus the closest Coq AST to any \gccC.
+Now, for representing the \gccSL code in Coq and reason with, we think about using the \C type, because we suspect that its \gccC code can be easily transformed to \C. Above all, the \emph{not wrongly} behavior (in the sense of~\cite{Leroy-Compcert-CACM}) of \gccSL implies the obtaining of a \emph{not wrongly} assembler file, observationally equivalent to its source, thanks to the \ccert semantic preservation. The \C AST is also the first AST in the \ccert translation chain where the \ccert proof begins, and is thus the closest Coq AST to any \gccC.
 
 \hspace{1ex}
 
-Globally, we can approximate the Coq ARM/SH manual as a \emph{shallow embedding} because by definition, instructions in the Coq manual are generated using constructors belonging to the native Coq language. Similarly, the \C ARM/SH manual obtained from the \gccC source by CompCert is view as a \emph{deep embedding}, because this time, the information about the instructions are build in Coq with the \C constructor, the \C AST having been defined in Coq. The main goal is then to prove the equivalence between the \emph{deep} and \emph{shallow} embedding.
+Globally, we can approximate the Coq ARM/SH manual as a \emph{shallow embedding} because by definition, instructions in the Coq manual are generated using constructors belonging to the native Coq language. Similarly, the \C ARM/SH manual obtained from the \gccC source by \ccert is view as a \emph{deep embedding}, because this time, the information about the instructions are build in Coq with the \C constructor, the \C AST having been defined in Coq. The main goal is then to prove the equivalence between the \emph{deep} and \emph{shallow} embedding.
 
 We have explained this concept of embedding with the ARM/SH manual, but it is not specially limited to, we plan indeed to generalize to the whole simulator. As the \C type is defined in Coq, the first task is, given a \gccC file, to find a way to bring up the \C AST of this \gccC file into Coq. As first application, we could then import the \gccC code of \gccSL into Coq via its \C AST, and thus we will be ready to start the correspondence proof.
 
@@ -531,9 +543,9 @@ This leads us to the section explaining how such a pretty-printer can be constru
 \subsection{The Coq pretty-printer for \C}
 
 Our goal is to import the \gccC code in Coq via its \C AST. We need to work with the value inhabiting the \C manual, and such, during the development process of the proof. But Coq is a language where the input and output with \outworld can not easily be done in its proper language%\footnote{Enriching Gallina with new tactics implies to modify the source of Coq.}
-. At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with \outworld. Because the language chosen for the extraction of CompCert is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the \C AST of the manual. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the \C AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework. 
+. At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with \outworld. Because the language chosen for the extraction of \ccert is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the \C AST of the manual. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the \C AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework. 
 \subsubsection{Example}
-In our case, the origin and the target language of the printer are Coq. The type we plan to export\footnote{``export'' or ``import'', depending the view we have as the origin language is the target language.}, \verb|AST.program fundef type| is formed with a lot of constructors. To illustrate this with a simple example, assume we have defined the following type, inspired from the sources of CompCert~:
+In our case, the origin and the target language of the printer are Coq. The type we plan to export\footnote{``export'' or ``import'', depending the view we have as the origin language is the target language.}, \verb|AST.program fundef type| is formed with a lot of constructors. To illustrate this with a simple example, assume we have defined the following type, inspired from the sources of \ccert~:
 \begin{coq}
 Inductive floatsize : Type :=
   | F32: floatsize
@@ -650,13 +662,23 @@ Because natural numbers are also frequently used, it can be more readable to pri
 
 With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expansing the offending term (appendix \ref{s:appendix_eta}).
 
-\subsection{Application to \gccSL}
-Before starting a termination proof of a \C code, it is useful to check further if this code can actually be compiled by CompCert to an assembler source. This check can clearly be omitted in the case we just want to translate the not sure well-typed\footnote{We roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} \C AST into another deep embedded AST.
-However, we have mentioned at the beginning that one of the motivation of choosing \C, as type for our work in Coq, is precisely the CompCert certification proof leading to assembler. Thus, we are attentive at the result of the compilation of \gccSL with CompCert.
-\subsubsection{The context of compilation : 32 vs 64 bits}
-By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four tests, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target.
+\subsection{The creation of \aSL}
+We have mentioned at the beginning that one motivation of choosing \C, as type for our work in Coq, is precisely the \ccert certification proof leading to assembler.
 
-Like GCC, CompCert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is unspecified, this choice becomes mandatory in CompCert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by CompCert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
+Thus, we are attentive at the result of every compilation steps of \gccSL with \ccert, this includes the success to obtain a \C code as well as, at the end, an assembly file.
+
+\begin{note}
+For the following, let us introduce
+\begin{itemize}
+\item \aC for programs for which a generated assembly file can be successfully dumped (tested at least one time), in general at the end of the compilation. For a demonstration with \compcert, see the option \verb|-dasm|.
+\end{itemize}
+\end{note}
+
+\subsubsection{The context of compilation : 32 vs 64 bits}
+\label{s:ctx_compil}
+By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target.
+
+Like GCC, \ccert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is unspecified, this choice becomes mandatory in \ccert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by \ccert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
 \begin{humC}
 #include <inttypes.h>
 
@@ -664,107 +686,152 @@ void main() \{
   int64_t x = 0;
 \}
 \end{humC}
-is rejected by CompCert (if we still target the \verb|ia32-linux| processor), because 64 bits data-structures are not fully supported yet, and this behavior does not depend on the 32 or 64 bits machine CompCert is running.
+is rejected by \ccert (if we still target the \verb|ia32-linux| processor), because 64 bits data-structures are not fully supported yet\footnote{with the current \compcert}, and this behavior does not depend on the 32 or 64 bits machine \ccert is running.
 
-Hence, a new problem is coming : we realize that the ARM manual uses frequently 64 bits data-structures (as shown in the {\tt A4.1.81 SMLSLD} instruction). Then so does the whole \gccSL, which is, precisely at this moment, rejected by CompCert.
+Hence, a new problem is coming : we realize that the ARM manual uses frequently 64 bits data-structures (as shown in the {\tt A4.1.81 SMLSLD} instruction). Then so does the whole \gccSL, which is, precisely at this moment, rejected by \ccert.
 
 \subsubsection{Is \gccSL well-typed ?}
-\paragraph{Going to \C}
+\paragraph{Going to \C to obtain \cSL}
 We remarked curiously that the previous \gccC program is well accepted when the processor target is fixed to \verb|arm-linux|, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a \gccC code, the heuristic performed to retrieve a \C code includes an external call to a preprocessor, namely ``\verb|gcc -E|''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most \hC to a \C program. Like the GCC compiler, the behavior of \verb|gcc -E| depends on the options \verb|-m32| and \verb|-m64|, which targets the processor for the executable. If absent, \verb|gcc -E| considers by default the processor currently settled. In fact, in the case of \verb|ia32-linux|, the extra option \verb|-m32| is present everytime.
 Note that for \verb|arm-linux|, no options are specified, hence the previously success exhibited earlier on 64 bits is now explained.
 
-\paragraph{Going to assembler}
-Once a \C value is obtained, it is sure that the compiling process leading to assembler terminates (this part being from Coq). However, to use the main CompCert theorem stating that the behavior of the assembly \emph{obtained} looks like the initial \C value, we need to be sure that among others the assembly can really, constructively, be \emph{obtained}. In particular, the chain leading to assembler is writen in monadic style, where some type and consistency checking are done on the fly. 
+\paragraph{Going to \aC to obtain \aSL}
+Once a \C value is obtained, it is sure that the compiling process leading to assembler will terminate (this part being from Coq). However in this case, termination is not always a good result. In particular, the chain leading to assembler is writen in monadic style. Types checking\footnote{We can roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} are done on the fly during the conversion. When the checks fail, an exception is then returned (as terminating value).
 
-Finally, in case of errors, we are clearly informed, i.e. events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq value pretty-printed from it, and \gccSL needs to be changed.
+Hopefully, in case of errors, we are clearly informed, i.e. events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq value pretty-printed from it, and \gccSL needs to be corrected.
 \paragraph{Conclusion}
 \subparagraph{Type-checking}
-To force the compilation of \gccSL by CompCert to have a deterministic behavior, one which is independent of the machine used and to obtain an assembly file, which is here a synonym of well consistency checking, we present two possible solutions.
+To force the compilation of \gccSL by \ccert to have a deterministic behavior, one which is independent of the machine used and to obtain an assembly file, which is here a synonym of well consistency checking, we present two possible solutions.
 \begin{itemize}
-\item ``Keep the program \gccSL, Modify the environment CompCert''\\
+\item ``Keep the program \gccSL, Modify the environment \ccert''\\
 For the \verb|ia32-linux| target, inspired from \verb|arm-linux|, we tried randomly to change the heuristic from \verb|-m32| to the explicit \verb|-m64| in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file.
 
-\item ``Modify the program \gccSL, Keep the environment CompCert''\\
+\item ``Modify the program \gccSL, Keep the environment \ccert''\\
 Here we replace, in the generated ARM manual as well as the whole \gccSL, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
 
 Because 32 bits data-structures are supported, the compilation process terminates. 
-However, contrarly to the previous solution, it requires here to activate in CompCert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|). 
+However, contrarly to the previous solution, it requires here to activate in \ccert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|) \footnote{Because the activation of this option affects the \ccert heuristic, we can finally wonder if the environment has really been kept !}.
 \end{itemize}
 
 Remark that on both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
 
+Note that \gccSL includes initially the generated ARM manual. Because now it compiles correctly with \ccert, it also means that the generated ARM manual is in fact a \aC source.
+
 \subparagraph{Validation tests}
-Even if the problem of 64 bits data-structures are resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
-More precisely, at this moment, it is useful to compare validation tests of our two solutions, not only with themselves, but also with the \gccSL compiled from GCC.
-The behavior of our two CompCert solutions are the same. However, they differ when compared with a GCC executable. In fact, there exist ARM validation tests which are rejected by the CompCert simulator and accepted by GCC.
-By examinating closely the situation, we remarked for instance that this \hC program~:
+\label{s:valid_test}
+After the modification performed above, we now have a single program, called \gccSL or \aSL (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think \gccSL as a more close synonym for \aSL, we need at least to study their behavior at runtime. 
+
+We observed unfortunately that unlike \ref{s:ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
+More precisely, by examinating closely the situation, we remarked for instance that this \hC program~:
 \begin{humC}
 #include <stdio.h>
 
 void main() \{
   int i = 32;
-  printf("line1 \%lx\textbackslash{}n", 1lu << i);
-  printf("line2 \%lx\textbackslash{}n", 1lu << 32);
+  printf("line 1 \%lx\textbackslash{}n", 1lu <<  i);
+  printf("line 2 \%lx\textbackslash{}n", 1lu << 32);
 \}
 \end{humC}
-which can be qualified at the same time as a \gccC and a \C program, has two surprising different behavior at runtime by considering the executable respectively produced. Indeed, we have with GCC$^{64~bits}$ a number which exceeds 32 bits :
-\begin{bash}
-line1 100000000
-line2 100000000
-\end{bash}
-and, with GCC$^{32~bits}$ and CompCert two different numbers~:
-\begin{bash}
-line1 1
-line2 0
-\end{bash}
+which in fact belongs to the \gccC and \aC class of programs, has two surprising different behaviors by considering the executables respectively produced by GCC and \ccert. Indeed, we have the following results, depending on the compiler used~:\\
+\begin{tabular}{l|l|l|l}
+& \verb|gcc -m64| & \verb|gcc -m32 -O0|, & \verb|gcc -m32 -O|$n$ ($n\in[$\verb|1|$; $\verb|2|$; $\verb|3|$]$) \\
+&& \ccert & \\
+\hline
+\verb|line 1| & \verb|100000000| & \verb|1| & \verb|0| \\
+\verb|line 2| & \verb|100000000| & \verb|0| & \verb|0| \\
+\end{tabular} \\
 (note that the OCaml value \verb|Int32.shift_left 1_l 32| evaluates to \verb|1_l|).
 
-Remark that if we take the predecessor with this \gccC and \C program~:
+Remark that initially, starting from this \hC code included in \simsoc and \SScert~:
 \begin{humC}
 #include <stdio.h>
 
 void main() \{
   int i = 32;
-  printf("line1 \%lx\textbackslash{}n", (1lu << i) - 1);
-  printf("line2 \%lx\textbackslash{}n", (1lu << 32) - 1);
+  printf("line 1 \%lx\textbackslash{}n", (1lu <<  i) - 1);
+  printf("line 2 \%lx\textbackslash{}n", (1lu << 32) - 1);
 \}
 \end{humC}
-the differences are still present, we have with GCC$^{64 bits}$~:
-\begin{bash}
-line1 ffffffff
-line2 ffffffff
-\end{bash}
-and, GCC$^{32~bits}$ and CompCert~:
-\begin{bash}
-line1 0
-line2 ffffffff
-\end{bash}
-Finally, these problems using 32 bit data-structures can be avoided by using explicitly operations on 64 bits data-structures instead.
+we wanted to obtain \verb|ffffffff| everywhere (this was the previous behavior we had in \ref{s:ctx_compil} leading to success on validation tests) and is clearly not the results expected~:\\
+\begin{tabular}{l|l|l}
+& \verb|gcc -m64|, & \verb|gcc -m32 -O0|, \\
+& \verb|gcc -m32 -O|$n$ ($n\in[$\verb|1|$; $\verb|2|$; $\verb|3|$]$)& \ccert \\
+\hline
+\verb|line 1| & \verb|ffffffff| & \verb|0| \\
+\verb|line 2| & \verb|ffffffff| & \verb|ffffffff| \\
+\end{tabular} \\
 
-%\item Except this 64 bits data-structures not supported in CompCert, we have not encountered others difficult problems during the compilation.
+Finally, we have fixed this error to get \verb|ffffffff| everywhere : this problem using 32 bits data-structures can be easily avoided by using explicitly the deterministic aforementioned operations on 64 bits data-structures, instead of 32.
 
-\subsubsection{Does \gccSL terminate ?}
-We are now one step closer to invocate the main CompCert theorem, which predicts completely the behavior of the assembly file produced from \gccSL. Besides the proof of the good types and consistency checking during the compilation, the theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \gccSL has, and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, CompCert will answer us that the assembly executable has surely the behavior $b$.
+Now, validation tests succeed on both \gccSL and \aSL.
+%\item Except this 64 bits data-structures not supported in \ccert, we have not encountered others difficult problems during the compilation.
 
-\subsection{Future work : the equivalence proof}
-\paragraph{Coq $\Longrightarrow$ \C~?}
-Initially, before the creation of any simulator in \simsoc, remark that to get at the end at least one \C simulator, we could initially take another approach, that is to start with a complete simulator in Coq (a similar one to \simsoc, not only \gccSL), then to modify and equip Coq with a constructive extraction procedure into \C (like ML, Haskell or Scheme). This solution is feasible, because \C has a formal semantic, and rather general as the extraction process can be applied to any Coq program. However, as the project \simsoc has historically been established before \SScert, the organization of the \gccC code behind \simsoc is currently rather detailed and complex now, compared to the existing one at Coq side. Moreover, in term of efficiency, it seems not trivial how to perform in Coq the optimization necessary for setting good performances in SimSoC. Hence, the extraction from Coq is interesting, but we are also interested to know which large part of this \gccC simulator can automatically be translated in Coq and which can not.
+\begin{fact}
+However their possible different behavior at runtime, \gccSL, \cSL, and \aSL come from an initial same source.
+\end{fact}
 
-\paragraph{Coq $\Longleftarrow$ \C~?}
-The problem we are focusing are more open than only oriented from Coq to \C. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \C side to Coq. 
+\subsection{The behavior of \aSL, towards \lSL}
+\subsubsection{Does \aSL terminate ?}
+We are now one step closer to invocate the main \ccert theorem, which predicts completely the behavior of the assembly file produced from \aSL. Because it has in fact been existencially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main \ccert theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``\verb|vm_compute|''. Besides that hypothesis, the main \ccert theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \aSL has (at \C AST production time), and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, \ccert will answer us that the assembly executable has surely the behavior $b$.
+\begin{note}
+We will use the abbreviation :
+\begin{itemize}
+\item \lC for programs which can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (preserving at least from the \C big-step semantic). Moreover, the behavior of the initial source is required to be proved \emph{not wrong}.
+\end{itemize}
+\end{note}
 
-More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \C manual is only formed with recursive functions. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \C code. Given a \C, \gccC or even a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+\begin{ex}
+This \aC code is not a \lC program :
+\begin{humC}
+int main(int i) \{
+  return i;
+\}
+\end{humC}
+because the type of the main function (called from \outworld) is not of the form $unit\rightarrow int$. Thus it initially goes wrong by definition.
+\end{ex}
 
-\paragraph{ML $\Longrightarrow$ (Coq $\Longleftrightarrow$ \C) ?}
+Due to the supposed Turing-completeness of the ARM programming language, we think that \aSL does not \emph{terminate} and precisely that it is characterized by the \emph{reactive divergence} behavior (which at the same time does not belong to the \emph{going wrong} behavior, as specified in \ccert).
 
-In~\ref{s:simgendef} and the SH part, we have explained the automatic importation of the ARM/SH manual by \simgen into \gccC. By following our reasoning of translating \gccC into some form of Coq code, it is legitimate to ask if we can also translate the \gccC manual in Coq directly. However, the generation of the \gccC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \gccC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is less astonishing. 
+\paragraph{The behaving proof on a simple program}
+Because \aSL contains a lot of lines, we tried first to prove the termination of this simple \aC program~:
+\begin{humC}
+main() \{
+  int x = 2;
+  int y = 3;
+  return x + y;
+\}
+\end{humC}
+in particular by using mainly the \verb|eapply| trying. However, as long as the proof grows up, this tactic takes abnormally a too long time to succeed, in particular in front of a huge term. During that time, we were thinking instead to an other way to solve the behaving problem. This leads to the part explaining the shortcut found.
+\paragraph{\lSL obtained with a meta consideration on Coq}
+The example above shows us that proving the behavior, of an apparently simple program, is susceptible to take a long time. We also remark that this task is finally maybe not a priority, especially in the case we can easier prove first there is some kind of equivalence between this program and a Coq program.
 
-For this particular case, the generation of \gccC being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the \simgen AST. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the \gccC source into the \C AST, 
+Finally, we can wonder if we can begin first with the equivalence between \aSL and \SL (at the \C value reached time), than trying to obtain a \lSL by betting on a behavior $b$. In fact, with the former proceeding, we would have an equivalence between the deep AST and functions in Coq. It means we will have implicitely the proof of the non wrong-behavior of this deep AST, due to the supposed non wrong-behavior of the Coq system.
+Then we will know at the meta level that \aSL can not have a \emph{wrong} behavior, even if a particular $b$ has not yet been exhibited in Coq at that time, a condition needed for the creation of \lSL. 
+
+In conclusion, if we choose first to prove a kind of equivalence between \aSL and \SL, and succeed, we will have meta proved the non wrong behavior for \aSL. 
+ By extending the reasoning further, we would be sure that the semantic of the initial source has been preserved to assembler. Moreover, we conjecture all this reasoning can yet be formally proved in a type system not different than at Coq level, by starting to exhibit a particular behavior $b$ from one side of the equivalence, from the \aSL, or maybe the \SL side...
+
+%On both cases, during the establisment of the two proofs, we are informed if we encounter some not well-formed part in \aSL (part that need to be changed).
+
+\subsubsection{Future work : the equivalence proof}
+\paragraph{Coq $\Longrightarrow$ \lC~?}
+Initially, before the creation of any simulator in \simsoc, remark that to get at the end at least one \lC simulator, we could initially take another approach, that is to start with a complete simulator in Coq (a similar one to \simsoc, not only \aSL), then to modify and equip Coq with a constructive extraction procedure into \lC (like ML, Haskell or Scheme). This solution is feasible, because \lC has a formal semantic (since the \C AST), and rather general as the extraction process can be applied to any Coq program. However, as the project \simsoc has historically been established before \SScert, the organization of the \gccC code behind \simsoc is currently rather detailed and complex now, compared to the existing one at Coq side. Moreover, in term of efficiency, it seems not trivial how to perform in Coq the optimization necessary for setting good performances in SimSoC. Hence, the extraction from Coq is interesting, but we are also interested to know which large part of this \gccC simulator can automatically be translated in Coq and which can not.
+
+\paragraph{Coq $\Longleftarrow$ \lC~?}
+The problem we are focusing are more open than only oriented from Coq to \lC. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL and \aSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \lC side to Coq. 
+
+More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \aC manual is only formed with recursive functions. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \lC code. Given a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+
+\paragraph{ML $\Longrightarrow$ (Coq $\Longleftrightarrow$ \lC) ?}
+
+In~\ref{s:simgendef} and the SH part, we have explained the automatic importation of the ARM/SH manual by \simgen into \gccC, and later \aC. By following our reasoning of translating \lC into some form of Coq code, it is legitimate to ask if we can also translate the \aC manual in Coq directly. However, the generation of the \aC manual being an automatic process, we had found convenient to use the existing code to produce the Coq manual in the same OCaml environment. Then, \simgen generates both the \aC manual and the Coq manual. By catching the reasoning in this context, the intention to prove the equivalence between these \emph{two} outputs of a \emph{single} program (here \simgen) from a \emph{single} input is less astonishing. 
+
+For this particular case, the generation of \aC being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the \simgen AST. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the \aC source into the \C AST, 
 \begin{itemize}
 \item on one hand we have an ML function translating from \simgen AST to Coq AST,
 \item on the other hand, we have another ML function from \simgen AST to \C AST.
 \end{itemize} 
-As we think they can easily be translated in Coq, the problem of good equivalence between the Coq manual and the \gccC manual can be simplified to the problem of building a couple given a particular \simgen AST, i.e writing a Coq function of type : \\
+As we think they can easily be translated in Coq, the problem of good equivalence between the Coq manual and the \aC manual can be simplified to the problem of building a couple given a particular \simgen AST, i.e writing a Coq function of type : \\
 \verb!simgen_AST -> { (man_coq, man_C) | man_coq <~> man_C }!. Of course, the equivalence function ``\verb|<~>|'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -773,9 +840,9 @@ As we think they can easily be translated in Coq, the problem of good equivalenc
 
 We have obtained a SH4 formal model using the same algorithm as was employed for the ARMv6, by automatic extraction of pseudo-formal descriptions and automatic conversion to Coq syntax. The merge into \SScert was performed modularly with functors in order to facilitate the integration of future processors.
 
-The importation of a \C value via our Coq pretty-printer being ready, the next step is to prove the equivalence between the existing Coq model and the \gccC model. After this, we will extend our proof to the complete part of the processor and system simulator : code specialization, dynamic recompilation on the host machine...
+The importation of a \C value via our Coq pretty-printer being ready, the next step is to prove the equivalence between the existing Coq model and the \aC model. After this, we will extend our proof to the complete part of the processor and system simulator : code specialization, dynamic recompilation on the host machine...
 
-Finally, we hope to plug our certified simulator after the CompCert chain leading to assembler source. In contrast with the bootstrapping process which aim to create a higher language than existing, this would terminate the certifying chain preserving the semantics of high-level software to safe execution on hardware.
+Finally, we hope to plug our certified simulator after the \ccert chain leading to assembler source. In contrast with the bootstrapping process which aim to create a higher language than existing, this would terminate the certifying chain preserving the semantics of high-level software to safe execution on hardware.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \bibliographystyle{alpha}
@@ -790,6 +857,7 @@ For the following, starting from a well-typed Coq program, the extraction gives 
 %we are going to submit a bug report after further tests if needed, in particular with the current ``trunk'' development version.
 \subsubsection{The optimized $\eta$-simplification}
 \label{s:appendix_eta}
+\verb|http://www.lix.polytechnique.fr/coq/bugs/show_bug.cgi?id=2570|\\
 This extracted implementation from a Coq code~:
 \begin{ml}
 open Datatypes
@@ -824,7 +892,7 @@ Require Import Vector.
 Require Import List.
 
 Definition to_list0 : forall A n,
-  Vector.t A n -> { _ : list A | True } :=
+  Vector.t A n -> \{ _ : list A | True \} :=
   fun A _ v => @exist (list A) (fun _ => True) 
     match v with 
     | Vector.cons x _ _ => List.cons x List.nil
@@ -833,7 +901,7 @@ Definition to_list0 : forall A n,
 
 Definition u1 : forall M N L n
   (to_list1 : forall A n,
-  Vector.t A n -> { _ : list A | True })
+  Vector.t A n -> \{ _ : list A | True \})
   (sep : Vector.t M n)
   (xs : list L)
   (surr : Vector.t N n),
