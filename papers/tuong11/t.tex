@@ -49,7 +49,7 @@
 \newenvironment{ml}
   {%\selectlanguage{english} 
    \begin{alltt}
-   \footnotesize} %% 3.12.0
+   \footnotesize} %% 3.12.1
   {\end{alltt} %\selectlanguage{francais}
   }
 
@@ -71,9 +71,9 @@
 \newcommand{\COQ}[1]{#1 Coq}
 
 \newcommand{\gcc}{GCC 4.5.2\xspace}
-\newcommand{\compcert}{CompCert 1.8.2\xspace}
+\newcommand{\compcert}{CompCert 1.9\xspace}
 \newcommand{\ccert}{CompCert\xspace}
-\newcommand{\ocaml}{OCaml 3.12\xspace}
+\newcommand{\ocaml}{OCaml 3.12.1\xspace}
 \newcommand{\coqc}{Coq 8.3pl2\xspace}
 \newcommand{\coqv}{14161}
 \newcommand{\newrelease}{A first public release will be soon available}
@@ -81,7 +81,8 @@
 \newcommand{\gccSL}{$_{\tt gcc}{\tt simlight}$\xspace}
 \newcommand{\cSL}{$_{\tt compcert}{\tt simlight}$\xspace}
 \newcommand{\aSL}{$_{\tt asm}{\tt simlight}$\xspace} %\overset{\checkmark}{\leadsto}
-\newcommand{\lSL}{$_{\tt preserved}{\tt simlight}$\xspace}
+%\newcommand{\lSL}{$_{\tt preserved}{\tt simlight}$\xspace}
+\newcommand{\lSL}{$_{\lambda^\leadsto}{\tt simlight}$\xspace}
 \newcommand{\SL}{{\tt coq$\relbar$simlight}\xspace}
 \newcommand{\simgen}{{\tt simgen}\xspace}
 \newcommand{\CCasm}{$_{\tt compcert}{\tt ASM}$\xspace}
@@ -89,12 +90,14 @@
 \newcommand{\gccC}{$_{\tt gcc}{\tt C}$\xspace}
 \newcommand{\hC}{$_{\tt human}{\tt C}$\xspace}
 \newcommand{\aC}{$_{\tt asm}{\tt C}$\xspace}
-\newcommand{\lC}{$_{\tt preserved}{\tt C}$\xspace}
+%\newcommand{\lC}{$_{\tt preserved}{\tt C}$\xspace}
+\newcommand{\lC}{$_{\lambda^\leadsto}{\tt C}$\xspace}
 \newcommand{\ps}{{\tt pseudocode}\xspace}
 \newcommand{\dec}{{\tt decoder}\xspace}
 \newcommand{\outworld}{the outside world\xspace}
 \newcommand{\simsoc}{SimSoC\xspace}
 \newcommand{\SScert}{SimSoC-Cert\xspace}
+\newcommand{\coqkernel}{"The kernel does not recognize yet that a parameter can be instantiated by an inductive type."}
 
 \newtheorem{ex}{Example}[subsection]
 \newtheorem*{note}{Notation}
@@ -102,7 +105,7 @@
 
 \author{Frédéric Tuong}
 \title{Fast certified simulation with the SH4 model}
-\date{November 2010 - July 2011}
+\date{November 2010 - October 2011}
 
 \begin{document}
 
@@ -118,7 +121,7 @@
 %% Plus particulièrement, \SScert contient un simulateur du processeur ARMv6 écrit en Coq. Pour le modéliser et l'intégrer au sein de Coq, il a été nécessaire de construire un modèle formel du processeur, ce modèle nous informe précisément sur la sémantique de chaque instruction. 
 %% Notre travail s'intéresse à l'importation d'un autre type de processeur au projet \SScert : il s'agit du processeur SH4. Comme pour l'ARM, nous montrons à la section [?] comment obtenir un modèle mathématique du SH4 à partir de son manuel de référence.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
-Stability of embedded systems depends on the good behavior of their components. Before reaching the construction of the final material in factory, performing exhaustive test are thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the \simsoc project~\cite{ossc09} is to permit engineers to develop systems with such a tool, it contains a simulator split modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economical impact. On the other side, the time execution of an algorithm depends on the processor's optimizations. To get a safe system, the need to work with simulators are then going increasingly. However, how can we guarantee the \emph{exact} behavior between simulator and embedded systems ? 
+Stability of embedded systems depends on the good behavior of their components. Before reaching the construction of the final material in factory, exhaustive testing is thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the \simsoc project~\cite{ossc09} is to permit engineers to develop systems with such a tool, it contains a simulator split modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economical impact. On the other side, the time execution of an algorithm depends on the processor's optimizations. To get a safe system, the need to work with simulators are then going increasingly. However, how can we guarantee the \emph{exact} behavior between simulator and embedded systems ? 
 The goal of \SScert is precisely to answer this question, we propose to certify each part of \simsoc. Being an ambitious project, we plan to begin with the correction of the processor, this targets directly the heart of the simulator.
 
 In particular, \SScert contains a simulator of the ARMv6 written in Coq~\cite{arm6refman, arm}. The language Coq is a system which builds a constructive proof from a specification by looking at the programmer's hints~\cite{Coq:manual}. One common application is the extraction procedure which translates the proof, considered as a $\lambda$-term, to another functional language like OCaml~\cite{OCaml}. To model and integrate the simulator within Coq, it was necessary to build a formal model of the processor, this model informs us precisely on the semantics of each instruction.
@@ -126,8 +129,12 @@ Our work focuses on the importation of another type of processor into the \SScer
 
 As for ARM, we show at section~\ref{s:simu_sh4} how to get a mathematical model of SH from his reference manual. Section~\ref{s:fast_certi} presents our first step into the certification problem. Our work begins now with some general definitions in section~\ref{s:certi_sim}.
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Certified simulation}
+\label{s:certi_sim}
+
+This section introduces the concept of software simulation by explaining how simulations work and what informations we need to import from the constructor manual. For the following, we restrict our attention to the simulation of the processor as it is the first and existing component studied in \SScert. We also present the current state of \simsoc and \SScert, and explain at the end the principle and goal of the \ccert compiler.
+
 \begin{note}
 For the following, we will use the symbols
 \begin{itemize}
@@ -136,12 +143,6 @@ For the following, we will use the symbols
 \item \C for programs for which a generated \ccert C file~\cite{Leroy-Compcert-CACM} can be successfully dumped (tested at least one time), in general before the end of the compilation. For a demonstration with \compcert, see the option \verb|-dc|.
 \end{itemize}
 \end{note}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Certified simulation}
-\label{s:certi_sim}
-
-This section introduces the concept of software simulation by explaining how simulations work and what informations we need to import from the constructor manual. For the following, we restrict our attention to the simulation of the processor as it is the first and existing component studied in \SScert. We also present the current state of \simsoc and \SScert, and explain at the end the principle and goal of the \ccert compiler.
 
 \subsection{Principle of a processor simulator}
 %% %%%%%%%%%%%%%%%%%%%%%%%% french
@@ -478,7 +479,7 @@ The parameter \verb|st| having been moved to the end, we observe a certain symme
 \subsubsection{Discussions}
 
 \paragraph{Limit of the Coq generation}
-The packing system of module as a first-class value in \ocaml encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record\footnote{We frequently encounter the message : "The kernel does not recognize yet that a parameter can be instantiated by an inductive type."}. Finally, we sometimes have erroneous OCaml extracted files with some Coq type containing a singleton constructor (more details in the appendix \ref{s:appendix_singl}).
+The packing system of module as a first-class value in \ocaml encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record\footnote{We frequently encounter the message : \coqkernel}. Finally, we sometimes have erroneous OCaml extracted files with some Coq type containing a singleton constructor (more details in the appendix \ref{s:appendix_singl}).
 
 \hspace{1ex}
 
@@ -676,9 +677,9 @@ For the following, let us introduce
 
 \subsubsection{The context of compilation : 32 vs 64 bits}
 \label{s:ctx_compil}
-By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target.
+By definition \gccSL is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of \gccSL on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target\footnote{Among the bits processor, there are of course others important characteristics describing a computer, for example, are we compiling on/for a PowerPC, IA32 or ARM machine~? Without giving complex details, we just precise that the success of these four attempts has been found on a particular same processor.}.
 
-Like GCC, \ccert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is unspecified, this choice becomes mandatory in \ccert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by \ccert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
+Like GCC, \ccert also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is manually not specified, this choice becomes mandatory in \ccert. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by \ccert, we opt to set \verb|ia32-linux| first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this \gccC program~:
 \begin{humC}
 #include <inttypes.h>
 
@@ -692,11 +693,11 @@ Hence, a new problem is coming : we realize that the ARM manual uses frequently 
 
 \subsubsection{Is \gccSL well-typed ?}
 \paragraph{Going to \C to obtain \cSL}
-We remarked curiously that the previous \gccC program is well accepted when the processor target is fixed to \verb|arm-linux|, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a \gccC code, the heuristic performed to retrieve a \C code includes an external call to a preprocessor, namely ``\verb|gcc -E|''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most \hC to a \C program. Like the GCC compiler, the behavior of \verb|gcc -E| depends on the options \verb|-m32| and \verb|-m64|, which targets the processor for the executable. If absent, \verb|gcc -E| considers by default the processor currently settled. In fact, in the case of \verb|ia32-linux|, the extra option \verb|-m32| is present everytime.
+We remarked curiously that the previous \gccC program is \ccert well accepted when the processor target is fixed to \verb|arm-linux|, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a \gccC code, the heuristic performed to retrieve a \C code includes an external call to a preprocessor, namely ``\verb|gcc -E|''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most \hC to a \C program. Like the GCC compiler, the behavior of \verb|gcc -E| depends on the options \verb|-m32| and \verb|-m64|, which targets the processor for the executable. If absent, \verb|gcc -E| considers by default the processor currently settled. In fact, in the case of \verb|ia32-linux|, the extra option \verb|-m32| is present everytime.
 Note that for \verb|arm-linux|, no options are specified, hence the previously success exhibited earlier on 64 bits is now explained.
 
 \paragraph{Going to \aC to obtain \aSL}
-Once a \C value is obtained, it is sure that the compiling process leading to assembler will terminate (this part being from Coq). However in this case, termination is not always a good result. In particular, the chain leading to assembler is writen in monadic style. Types checking\footnote{We can roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} are done on the fly during the conversion. When the checks fail, an exception is then returned (as terminating value).
+Once a \C value is obtained, it is sure that the compiling process leading to assembler will terminate (this part being from Coq). However in this case, termination is not always a good result. In particular, the chain leading to assembler is written in monadic style. Types checking\footnote{We can roughly approximate the Coq conversion from \C AST to the assembler as a typing process. In particular, it may seem feasible to embed this translation in a dependent type.} are done on the fly during the conversion. When the checks fail, an exception is then returned (as terminating value).
 
 Hopefully, in case of errors, we are clearly informed, i.e. events occur sequentially in this order : a monadic error is returned, no assembly outputs are produced, the \C value is not useful (if existing and dumped) as well as the Coq value pretty-printed from it, and \gccSL needs to be corrected.
 \paragraph{Conclusion}
@@ -715,11 +716,11 @@ However, contrarly to the previous solution, it requires here to activate in \cc
 
 Remark that on both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
 
-Note that \gccSL includes initially the generated ARM manual. Because now it compiles correctly with \ccert, it also means that the generated ARM manual is in fact a \aC source.
+Recall that \gccSL includes initially the generated ARM manual. Because now it compiles correctly with \ccert, it also means that the generated ARM manual is in fact a \aC source.
 
 \subparagraph{Validation tests}
 \label{s:valid_test}
-After the modification performed above, we now have a single program, called \gccSL or \aSL (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think \gccSL as a more close synonym for \aSL, we need at least to study their behavior at runtime. 
+After the modification performed above, we now have a single program, called \gccSL or \aSL (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think about \gccSL as a more close synonym for \aSL, we need at least to study their behavior at runtime. 
 
 We observed unfortunately that unlike \ref{s:ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
 More precisely, by examinating closely the situation, we remarked for instance that this \hC program~:
@@ -732,7 +733,7 @@ void main() \{
   printf("line 2 \%lx\textbackslash{}n", 1lu << 32);
 \}
 \end{humC}
-which in fact belongs to the \gccC and \aC class of programs, has two surprising different behaviors by considering the executables respectively produced by GCC and \ccert. Indeed, we have the following results, depending on the compiler used~:\\
+which in fact belongs to the \gccC and \aC class of programs, has two surprising different behaviors by considering the executables respectively produced by GCC and \ccert (both compiling on/for \verb|ia32-linux|). Indeed, we have the following results, depending on the compiler used~:\\
 \begin{tabular}{l|l|l|l}
 & \verb|gcc -m64| & \verb|gcc -m32 -O0|, & \verb|gcc -m32 -O|$n$ ($n\in[$\verb|1|$; $\verb|2|$; $\verb|3|$]$) \\
 && \ccert & \\
@@ -740,7 +741,7 @@ which in fact belongs to the \gccC and \aC class of programs, has two surprising
 \verb|line 1| & \verb|100000000| & \verb|1| & \verb|0| \\
 \verb|line 2| & \verb|100000000| & \verb|0| & \verb|0| \\
 \end{tabular} \\
-(note that the OCaml value \verb|Int32.shift_left 1_l 32| evaluates to \verb|1_l|).
+(in OCaml, \verb|Int32.shift_left 1_l 32| evaluates to \verb|1_l|).
 
 Remark that initially, starting from this \hC code included in \simsoc and \SScert~:
 \begin{humC}
@@ -772,19 +773,26 @@ However their possible different behavior at runtime, \gccSL, \cSL, and \aSL com
 
 \subsection{The behavior of \aSL, towards \lSL}
 \subsubsection{Does \aSL terminate ?}
-We are now one step closer to invocate the main \ccert theorem, which predicts completely the behavior of the assembly file produced from \aSL. Because it has in fact been existencially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main \ccert theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``\verb|vm_compute|''. Besides that hypothesis, the main \ccert theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \aSL has (at \C AST production time), and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, \ccert will answer us that the assembly executable has surely the behavior $b$.
+We are now one step closer to invocate the main \ccert theorem, which predicts completely the behavior of the assembly file produced from \aSL. 
+\begin{itemize}
+\item Because \aSL has in fact been existencially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main \ccert theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``\verb|vm_compute|''. 
+\item Besides that hypothesis, the main \ccert theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \aSL has (at \C AST production time), and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, \ccert will answer us that the assembly executable has surely the behavior $b$.
+\end{itemize}
+
+Remark that some reorganizations have been done in the last version of \ccert. Before \compcert, the main theorem of correction needs to take exactly these two hypothesis before proceeding further. In \compcert, the idea remains the same but more lemmas are provided to help proving that the \C program will \emph{progress safely} at each steps. In particular, if we suppose the evaluation being deterministic, analyzing the \C program within the big-step semantic suffices to deduce the behavior of the assembly. To simply outline our reasonning, we will approximate in the following the ``\emph{progress safety}'' notion by ``\emph{not wrong}'' and will not emphasize too much on the evaluation strategy.
+
 \begin{note}
 We will use the abbreviation :
 \begin{itemize}
-\item \lC for programs which can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (preserving at least from the \C big-step semantic). Moreover, the behavior of the initial source is required to be proved \emph{not wrong}.
+\item \lC for programs which can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (and preserving at least from the \C big-step semantic). Moreover, the behavior of the initial source is required to be proved \emph{not wrong}.
 \end{itemize}
 \end{note}
 
 \begin{ex}
 This \aC code is not a \lC program :
 \begin{humC}
-int main(int i) \{
-  return i;
+int main(int _) \{
+  return 0;
 \}
 \end{humC}
 because the type of the main function (called from \outworld) is not of the form $unit\rightarrow int$. Thus it initially goes wrong by definition.
@@ -801,7 +809,7 @@ main() \{
   return x + y;
 \}
 \end{humC}
-in particular by using mainly the \verb|eapply| trying. However, as long as the proof grows up, this tactic takes abnormally a too long time to succeed, in particular in front of a huge term. During that time, we were thinking instead to an other way to solve the behaving problem. This leads to the part explaining the shortcut found.
+in particular by using mainly the \verb|eapply| tactic. However, as long as the proof grows up, this tactic takes abnormally a too long time to succeed, in particular in front of a huge term. During that time, we were thinking instead to an other way to solve the behaving problem. This leads to the part explaining the shortcut found.
 \paragraph{\lSL obtained with a meta consideration on Coq}
 The example above shows us that proving the behavior, of an apparently simple program, is susceptible to take a long time. We also remark that this task is finally maybe not a priority, especially in the case we can easier prove first there is some kind of equivalence between this program and a Coq program.
 
@@ -853,7 +861,7 @@ Finally, we hope to plug our certified simulator after the \ccert chain leading 
 \appendix
 \section{Appendix}
 \subsection{Errors in the OCaml extracted code}
-For the following, starting from a well-typed Coq program, the extraction gives wrong \ocaml files. This behaviour has been seen with at least the version trunk \coqv~and the \coqc (in the examples, we will show the version \coqv).
+For the following, starting from a well-typed Coq program, the extraction gives wrong \ocaml files. This behaviour has been seen with at least the version trunk \coqv~and the \coqc (in the examples, we will present code written in style \coqv).
 %we are going to submit a bug report after further tests if needed, in particular with the current ``trunk'' development version.
 \subsubsection{The optimized $\eta$-simplification}
 \label{s:appendix_eta}
@@ -943,7 +951,13 @@ In {\tt coq\_svn\_\coqv[...]mlutil.ml}, the $\eta$-reduction performed in the fu
 Remark also, even if it has not been tested, that we may factorize the part under the case \verb|MLletin| in \verb|kill_dummy| with the \verb|MLletin| part in \verb|kill_dummy_hd| by abstracting what is necessary.
 \subsubsection{The default inlining on singleton type definition}
 \label{s:appendix_singl}
-There is a simplification on this code~:
+During some code writing, when we encounter this message : \coqkernel, we renamed the inductive with a new name. However, this leads to an error when compiling the extracted code.
+For instance, even with :
+\begin{coq}
+Set Extraction Flag 0.
+Unset Extraction AutoInline.
+\end{coq}
+there is an implicit simplification during extraction time on this code~:
 \begin{coq}
 Module Type SINGLE.
   Parameter single : Type.
@@ -959,5 +973,5 @@ End Make.
 
 Module M := Make S.
 \end{coq}
-in the extraction which gives an OCaml code waiting for the field \verb|single|, required but not provided.
+which gives an OCaml code waiting for the field \verb|single|, as OCaml responded to us : ``required but not provided''.
 \end{document}
