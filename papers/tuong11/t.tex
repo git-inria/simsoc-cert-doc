@@ -352,13 +352,11 @@ Besides the target fixed at this advanced AST, we show at the next part how the 
 %% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
 The SH manual totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
-Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the FrontC \frontcv package as type representing the \gccC in OCaml.
+Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the FrontC package as type representing the \gccC in OCaml.
 \begin{note}
 Let us name
 \begin{itemize}
 \item \frontC for programs parsed successfully with the OCaml package {\tt FrontC} \frontcv (tested at least one time). For a demonstration, check if the result of the function \verb|Frontc.parse_file| is ``\verb|PARSING_OK _|''. 
-%with the \verb|FrontC| library.
-%compiled successfully with \frontc~\cite{gcc} (tested at least one time),
 \end{itemize}
 \end{note}
 Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed \frontC AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
@@ -375,12 +373,12 @@ For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the u
 
     \paragraph{More confidence by type-checking}
 Besides the obtaining of the \frontC AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with \ccert.
-In fact, the program behind the \ccert parsing step is taken from the CIL library (with some minor modifications)~\cite{necula}. The CIL library includes itself a modified version of the \frontC files. Because it was mainly designed as a tool for analyzing the safety of program, it is then interesting to observe its parsing result.
+In fact, the program behind the \ccert parsing step is taken from the CIL library (with some minor modifications)~\cite{necula}. The CIL library includes itself a modified version of the \frontC files. Because it was mainly designed as a tool for analyzing the safety of programs, it is then interesting to observe its parsing result.
 \begin{note}
 We introduce
 \begin{itemize}
 \item \cilC for programs parsed successfully with the OCaml package {\tt cil} \cilv (tested at least one time). For a demonstration, check if the result of the function \verb|Frontc.parse| returns a value of type \verb|file| without raising an exception. 
-\item \cparserC for programs parsed successfully with the \compcert parsing step (tested at least one time). For a demonstration, check if the result of the function \verb|Cparser.Parser.file| returns a value of type \verb|definition list| without raising an exception. 
+%\item \cparserC for programs parsed successfully with the \compcert parsing step (tested at least one time). For a demonstration, check if the result of the function \verb|Cparser.Parser.file| returns a value of type \verb|definition list| without raising an exception. 
 \end{itemize}
 \end{note}
 
@@ -515,7 +513,7 @@ The parameter \verb|st| having been moved to the end, we observe a certain symme
 \paragraph{Limit of the Coq generation}
 The packing system of module as a first-class value in \ocaml encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. 
 
-The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record, especially when \coqkernel. Remark that writing annotations in Coq is more complex than writing annotations in OCaml. For example, we present here a warning where some explicit type annotations need to be manipulated carefully. The datatype modelizing the exception in the ARMv6 processor has been defined as follows :
+The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record, especially when \coqkernel. Remark that writing annotations in Coq is more complex than writing annotations in OCaml. For example, we present here a warning where some explicit type annotations need to be manipulated carefully. The datatype modeling the exception in the ARMv6 processor has been defined as follows :
 \begin{coq}
 (* ARM *)
 Inductive exception : Type :=
@@ -527,7 +525,7 @@ At the SH4 part, we began to copy this definition (with the hope to extend with 
 Inductive exception : Type :=
   UndIns.
 \end{coq}
-However, contrarly as the ARMv6, the OCaml compilation of the extracted SH4 code fails. This is mainly due to a subtlety in the Coq type-checking :
+However, contrarily as the ARMv6, the OCaml compilation of the extracted SH4 code fails. This is mainly due to a subtlety in the Coq type-checking :
 \begin{itemize}
 \item \verb|exception| has type \verb|Prop| in the SH case, whereas it has type \verb|Set| in the ARM case. More details about the minimality solution of typing rules of inductive declarations are given in the Coq manual \cite{Coq:manual}. In both cases, ``\verb|Check exception : Type.|'' succeeds because of the $\leq_{\beta\delta\iota\zeta}$ convertibility rule.
 \item In Coq, it exists modules in which the extraction must completely keep the proofs (like our SH4 problem). In the current \coqc, the extraction wrongly removes the maximum of propositions in modules. This leads to wrong OCaml files and there is no options at extraction time to avoid this.
@@ -554,7 +552,7 @@ something similar to \verb| zeq_ { 1 } { true }|.
 Because the final goal of the manual is also the proof, we can now wonder if it is finally convenient to perform some proof with notations rather than concrete definitions.
 
 \paragraph{Performance}
-Currently, the generation of the SH4 manual is complete except for floating and MMU instructions. The Coq ARMv6 manual contains 148 instruction cases (without THUMB) and 204 for the SH4 (by considering also the expansing of the \verb|R|$n$\verb|_BANK|) but the SH {\tt pseudocode.v} file size occupies only 2/3 of the one of ARM. The SH output for instructions is very simple because it does not contain precomputation for addressing mode. Consequently, the correspondence between type and definition is completely symmetric, for example we can easily delete the type and replace them by their equivalent ``\verb|..._step|'' function.
+Currently, the generation of the SH4 manual is complete except for floating and MMU instructions. The Coq ARMv6 manual contains 148 instruction cases (without THUMB) and 204 for the SH4 (by considering also the expanding of the \verb|R|$n$\verb|_BANK|) but the SH {\tt pseudocode.v} file size occupies only 2/3 of the one of ARM. The SH output for instructions is very simple because it does not contain precomputation for addressing mode. Consequently, the correspondence between type and definition is completely symmetric, for example we can easily delete the type and replace them by their equivalent ``\verb|..._step|'' function.
 
 The compilation of SH {\tt decoder.v} is long~: about 30s on a recent computer while for the ARM we get only 4s with the same machine. Its time is spent mostly on the pattern-matching for retrieving an instruction given a word, the non redundancy detection may be a possible cause of the long analysis. In particular, by performing some sorting on the clause, we get a better compilation time.
 
@@ -572,7 +570,6 @@ About the correction of our simplification process of the accumulator \verb|st|,
 \item If we add less \verb|_get_loc| or \verb|_get_st| at any positions (requiring at least one), the semantics can wrongly changed. Because the new manual type-checks correctly for ARM and SH, if for example we add less \verb|_get_loc| at a certain position, then it means necessarily that the \verb|loc| used refers wrongly to an external \verb|_get_loc|.
 \end{itemize}
 Hence, in any case, we hope the test validation of the Coq manual will conclude the discussion. However, by seeing the success of the current validation tests for the ARMv6 (by comparing the output of \gccSL and \SL) before the simplification and after, we have a good confidence about its accuracy. We are now going to develop the problem of certification of the simulator, the Coq manual, and its validation.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Towards a ``fast'' certified simulator}
 \label{s:fast_certi}
@@ -715,7 +712,7 @@ Before this optimization, the ARM {\tt slv6\_iss.v} file\footnote{It contains th
 
 Because natural numbers are also frequently used, it can be more readable to print them using 0-9 digits, instead of their raw inductive constructor definition. Remark that if the number we print is too big, like some position of memory location, OCaml raises a \verb|Stack_overflow| with byte-code or \verb|Segmentation fault| in native version\footnote{In the same spirit, when we try to display a large number with the \coqc pretty-printer, like {\tt Check 5001.}, if it can print the number, it prints with a warning before.}, because we are in fact calling a not tail recursive function at a too nested level (and it is not specially related to natural numbers). This problem can hopefully be solved by abstracting the printing process for every failing type with a tail recursive function, the whole being instantiated with the extracted code at OCaml side.
 
-With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expansing the offending term or using a more recent version of Coq where this problem has been fixed (appendix \ref{s:appendix_eta}).
+With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expanding the offending term or using a more recent version of Coq where this problem has just been fixed (appendix \ref{s:appendix_eta}).
 
 \subsection{The creation of \aSL}
 We have mentioned at the beginning that one motivation of choosing \C, as type for our work in Coq, is precisely the \ccert certification proof leading to assembler.
@@ -770,7 +767,7 @@ For the \verb|ia32-linux| target, inspired from \verb|arm-linux|, we tried rando
 Here we replace, in the generated ARM manual as well as the whole \gccSL, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
 
 Because 32 bits data-structures are supported, the compilation process terminates. 
-However, contrarly to the previous solution, it requires here to activate in \ccert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|) \footnote{Because the activation of this option affects the \ccert heuristic, we can finally wonder if the environment has really been kept !}.
+However, contrarily to the previous solution, it requires here to activate in \ccert the emulation of assignment between structs or unions (see the option \verb|-fstruct-assign|) \footnote{Because the activation of this option affects the \ccert heuristic, we can finally wonder if the environment has really been kept !}.
 \end{itemize}
 
 Remark that on both solutions, the option \verb|-fno-longlong| can be set because ``\verb|long long|'' types are not used.
@@ -782,7 +779,7 @@ Recall that \gccSL includes initially the generated ARM manual. Because now it c
 After the modification performed above, we now have a single program, called \gccSL or \aSL (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think about \gccSL as a more close synonym for \aSL, we need at least to study their behavior at runtime. 
 
 We observed unfortunately that unlike \ref{s:ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
-More precisely, by examinating closely the situation, we remarked for instance that this \hC program~:
+More precisely, by examining closely the situation, we remarked for instance that this \hC program~:
 {\newline\tiny
 \begin{tabular}{rc|c|c|c|cl}
 \multirow{2}{*}{{\footnotesize{\tt /*}}} & \hC  & \gccC  & \C & \aC & \ldots & \multirow{2}{*}{{\footnotesize{\tt */}}} \\
@@ -849,11 +846,11 @@ However their possible different behavior at runtime, \gccSL, \cSL, and \aSL com
 \subsubsection{Does \aSL terminate ?}
 We are now one step closer to invocate the main \ccert theorem, which predicts completely the behavior of the assembly file produced from \aSL. 
 \begin{itemize}
-\item Because \aSL has in fact been existencially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main \ccert theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``\verb|vm_compute|''. 
+\item Because \aSL has in fact been existentially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main \ccert theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``\verb|vm_compute|''. 
 \item Besides that hypothesis, the main \ccert theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial \aSL has (at \C AST production time), and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a \emph{wrong} behavior, \ccert will answer us that the assembly executable has surely the behavior $b$.
 \end{itemize}
 
-Remark that some reorganizations have been done in the last version of \ccert. Before \compcert, the main theorem of correction needs to take exactly these two hypothesis before proceeding further. In \compcert, the idea remains the same but more lemmas are provided to help proving that the \C program will \emph{progress safely} at each steps. In particular, if we suppose the evaluation being deterministic, analyzing the \C program within the big-step semantic suffices to deduce the behavior of the assembly. To simply outline our reasonning, we will approximate in the following the ``\emph{progress safety}'' notion by ``\emph{not wrong}'' and will not emphasize too much on the evaluation strategy.
+Remark that some reorganizations have been done in the last version of \ccert. Before \compcert, the main theorem of correction needs to take exactly these two hypothesis before proceeding further. In \compcert, the idea remains the same but more lemmas are provided to help proving that the \C program will \emph{progress safely} at each steps. In particular, if we suppose the evaluation being deterministic, analyzing the \C program within the big-step semantic suffices to deduce the behavior of the assembly. To simply outline our reasoning, we will approximate in the following the ``\emph{progress safety}'' notion by ``\emph{not wrong}'' and will not emphasize too much on the evaluation strategy.
 
 \begin{note}
 We will use the abbreviation :
@@ -897,7 +894,7 @@ in particular by using mainly the \verb|eapply| tactic. However, as long as the 
 \paragraph{\lSL obtained with a meta consideration on Coq}
 The example above shows us that proving the behavior, of an apparently simple program, is susceptible to take a long time. We also remark that this task is finally maybe not a priority, especially in the case we can easier prove first there is some kind of equivalence between this program and a Coq program.
 
-Finally, we can wonder if we can begin first with the equivalence between \aSL and \SL (at the \C value reached time), than trying to obtain a \lSL by betting on a behavior $b$. In fact, with the former proceeding, we would have an equivalence between the deep AST and functions in Coq. It means we will have implicitely the proof of the non wrong-behavior of this deep AST, due to the supposed non wrong-behavior of the Coq system.
+Finally, we can wonder if we can begin first with the equivalence between \aSL and \SL (at the \C value reached time), than trying to obtain a \lSL by betting on a behavior $b$. In fact, with the former proceeding, we would have an equivalence between the deep AST and functions in Coq. It means we will have implicitly the proof of the non wrong-behavior of this deep AST, due to the supposed non wrong-behavior of the Coq system.
 Then we will know at the meta level that \aSL can not have a \emph{wrong} behavior, even if a particular $b$ has not yet been exhibited in Coq at that time, a condition needed for the creation of \lSL. 
 
 In conclusion, if we choose first to prove a kind of equivalence between \aSL and \SL, and succeed, we will have meta proved the non wrong behavior for \aSL. 
@@ -912,7 +909,7 @@ Initially, before the creation of any simulator in \simsoc, remark that to get a
 \paragraph{Coq $\Longleftarrow$ \lC~?}
 The problem we are focusing is more open than only oriented from Coq to \lC. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL and \aSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \lC side to Coq. 
 
-More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \aC manual is only formed with recursive functions. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \lC code. Given a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \aC manual is only formed with recursive functions. If we omit this semantical preservative requirement, the question remains important for proving the correction of an arbitrary \lC code. Given a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
 
 \paragraph{ML $\Longrightarrow$ (Coq $\Longleftrightarrow$ \lC) ?}
 
