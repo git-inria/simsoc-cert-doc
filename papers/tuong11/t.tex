@@ -84,6 +84,8 @@
 \newcommand{\ocaml}{OCaml 3.12.1\xspace}
 \newcommand{\coqc}{Coq 8.3pl2\xspace}
 \newcommand{\coqv}{14161}
+\newcommand{\frontcv}{3.1\#3\xspace}
+\newcommand{\cilv}{1.3.6\#3\xspace}
 \newcommand{\newrelease}{A first public release will be soon available}
 
 \newcommand{\yes}{\ding{51}}
@@ -104,6 +106,9 @@
 %\newcommand{\lC}{$_{\tt preserved}{\tt C}$\xspace}
 \newcommand{\lC}{$_{\lambda^\leadsto}{\tt C}$\xspace}
 \newcommand{\mC}{$_{\maybe}{\tt C}$\xspace}
+\newcommand{\frontC}{$_{\tt frontc}{\tt [C]}$\xspace}
+\newcommand{\cilC}{$_{\tt cil}{\tt [C]}$\xspace}
+\newcommand{\cparserC}{$_{\tt cparser}{\tt [C]}$\xspace}
 \newcommand{\ps}{{\tt pseudocode}\xspace}
 \newcommand{\dec}{{\tt decoder}\xspace}
 \newcommand{\outworld}{the outside world\xspace}
@@ -346,8 +351,17 @@ Besides the target fixed at this advanced AST, we show at the next part how the 
 %% %%%%%%%%%%%%%%%%%%%%%%%% french
 %% Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme.
 %% %%%%%%%%%%%%%%%%%%%%%%%%
-The SH manual totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of the file. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
-Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the CIL library~\cite{necula} as type representing the \gccC in OCaml (as \ccert did for the parsing step). Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed CIL AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
+The SH manual totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
+Furthermore, while reading it briefly, we have been having a strong conjecture that the \hC code specified in the instructions can be easily translated to \gccC. To experiment our intuition, we have planned to use the FrontC \frontcv package as type representing the \gccC in OCaml.
+\begin{note}
+Let us name
+\begin{itemize}
+\item \frontC for programs parsed successfully with the OCaml package {\tt FrontC} \frontcv (tested at least one time). For a demonstration, check if the result of the function \verb|Frontc.parse_file| is ``\verb|PARSING_OK _|''. 
+%with the \verb|FrontC| library.
+%compiled successfully with \frontc~\cite{gcc} (tested at least one time),
+\end{itemize}
+\end{note}
+Then, starting from the manual considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed \frontC AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
 
 The parsing of the decoder informations was merely fast because for each instructions, they are clearly specified in an array. We explains now the process done for the instructions.
 
@@ -360,7 +374,15 @@ Corrections needed to bring to the manual are essentially composed of missing sy
 For example, the function \verb|LDCRn_BANK| in the part ``9.50, LDC'' uses the unbound variable \verb|Rn_BANK|.  After a search, we finally found that it is a meta abbreviation for \verb|R|$n$\verb|_BANK|, with $n \in [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser.
 
     \paragraph{More confidence by type-checking}
-Besides the obtaining of the CIL AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with \ccert.
+Besides the obtaining of the \frontC AST, we think that all the \hC code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with \ccert.
+In fact, the program behind the \ccert parsing step is taken from the CIL library (with some minor modifications)~\cite{necula}. The CIL library includes itself a modified version of the \frontC files. Because it was mainly designed as a tool for analyzing the safety of program, it is then interesting to observe its parsing result.
+\begin{note}
+We introduce
+\begin{itemize}
+\item \cilC for programs parsed successfully with the OCaml package {\tt cil} \cilv (tested at least one time). For a demonstration, check if the result of the function \verb|Frontc.parse| returns a value of type \verb|file| without raising an exception. 
+\item \cparserC for programs parsed successfully with the \compcert parsing step (tested at least one time). For a demonstration, check if the result of the function \verb|Cparser.Parser.file| returns a value of type \verb|definition list| without raising an exception. 
+\end{itemize}
+\end{note}
 
 The typing process from the CIL AST to \C has actually permitted us to correct new errors.
 \begin{itemize}
@@ -493,7 +515,7 @@ The parameter \verb|st| having been moved to the end, we observe a certain symme
 \paragraph{Limit of the Coq generation}
 The packing system of module as a first-class value in \ocaml encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. 
 
-The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record, especially when \coqkernel. Remark that writing annotations in Coq is more complex than writing annotations in Ocaml. For example, we present here a warning where some explicit type annotations need to be manipulated carefully. The datatype modelizing the exception in the ARMv6 processor has been defined as follows :
+The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record, especially when \coqkernel. Remark that writing annotations in Coq is more complex than writing annotations in OCaml. For example, we present here a warning where some explicit type annotations need to be manipulated carefully. The datatype modelizing the exception in the ARMv6 processor has been defined as follows :
 \begin{coq}
 (* ARM *)
 Inductive exception : Type :=
@@ -550,6 +572,7 @@ About the correction of our simplification process of the accumulator \verb|st|,
 \item If we add less \verb|_get_loc| or \verb|_get_st| at any positions (requiring at least one), the semantics can wrongly changed. Because the new manual type-checks correctly for ARM and SH, if for example we add less \verb|_get_loc| at a certain position, then it means necessarily that the \verb|loc| used refers wrongly to an external \verb|_get_loc|.
 \end{itemize}
 Hence, in any case, we hope the test validation of the Coq manual will conclude the discussion. However, by seeing the success of the current validation tests for the ARMv6 (by comparing the output of \gccSL and \SL) before the simplification and after, we have a good confidence about its accuracy. We are now going to develop the problem of certification of the simulator, the Coq manual, and its validation.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Towards a ``fast'' certified simulator}
 \label{s:fast_certi}
@@ -692,7 +715,7 @@ Before this optimization, the ARM {\tt slv6\_iss.v} file\footnote{It contains th
 
 Because natural numbers are also frequently used, it can be more readable to print them using 0-9 digits, instead of their raw inductive constructor definition. Remark that if the number we print is too big, like some position of memory location, OCaml raises a \verb|Stack_overflow| with byte-code or \verb|Segmentation fault| in native version\footnote{In the same spirit, when we try to display a large number with the \coqc pretty-printer, like {\tt Check 5001.}, if it can print the number, it prints with a warning before.}, because we are in fact calling a not tail recursive function at a too nested level (and it is not specially related to natural numbers). This problem can hopefully be solved by abstracting the printing process for every failing type with a tail recursive function, the whole being instantiated with the extracted code at OCaml side.
 
-With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expansing the offending term (appendix \ref{s:appendix_eta}).
+With the extraction procedure, we have also encountered an extra $\eta$-reduction automatically performed, which gives a not well-typed OCaml code. This is resolved by manually $\eta$-expansing the offending term or using a more recent version of Coq where this problem has been fixed (appendix \ref{s:appendix_eta}).
 
 \subsection{The creation of \aSL}
 We have mentioned at the beginning that one motivation of choosing \C, as type for our work in Coq, is precisely the \ccert certification proof leading to assembler.
@@ -887,7 +910,7 @@ In conclusion, if we choose first to prove a kind of equivalence between \aSL an
 Initially, before the creation of any simulator in \simsoc, remark that to get at the end at least one \lC simulator, we could initially take another approach, that is to start with a complete simulator in Coq (a similar one to \simsoc, not only \aSL), then to modify and equip Coq with a constructive extraction procedure into \lC (like ML, Haskell or Scheme). This solution is feasible, because \lC has a formal semantic (since the \C AST), and rather general as the extraction process can be applied to any Coq program. However, as the project \simsoc has historically been established before \SScert, the organization of the \gccC code behind \simsoc is currently rather detailed and complex now, compared to the existing one at Coq side. Moreover, in term of efficiency, it seems not trivial how to perform in Coq the optimization necessary for setting good performances in SimSoC. Hence, the extraction from Coq is interesting, but we are also interested to know which large part of this \gccC simulator can automatically be translated in Coq and which can not.
 
 \paragraph{Coq $\Longleftarrow$ \lC~?}
-The problem we are focusing are more open than only oriented from Coq to \lC. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL and \aSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \lC side to Coq. 
+The problem we are focusing is more open than only oriented from Coq to \lC. For example, even if the Coq manual is usually considered as the model of reference, for validation, tests are usually performed in \gccSL and \aSL due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from \lC side to Coq. 
 
 More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the \aC manual is only formed with recursive functions. If we omit this semantical preservation requirement, the question remains important for proving the correction of an arbitrary \lC code. Given a \hC code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
 
