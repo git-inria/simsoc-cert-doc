@@ -56,25 +56,28 @@ YEAR = {2010}  }
   author =       {The Coq development team},
   note =         {Version 8.3},
   year =         {2010},
-  howpublished={\url{http://coq.inria.fr/doc}},
+  howpublished={\href{http://coq.inria.fr/doc}{\nolinkurl{coq.inria.fr/doc}}},
 }
 
 @misc{OCaml,
   key = {Caml},
-  title = {The {C}aml language.},
-  howpublished={\url{http://caml.inria.fr}},
+  title = {The {OC}aml system release 3.12, documentation and user's manual.},
+  day          = {29},
+  month        = jul,
+  year         = "2011",
+  howpublished={\href{http://caml.inria.fr/pub/docs/manual-ocaml}{\nolinkurl{caml.inria.fr/pub/docs/manual-ocaml}}},
 }
 
 @misc{gcc,
   key = {Gcc},
   title = {the {GNU} {C}ompiler {C}ollection},
-  howpublished={\url{http://gcc.gnu.org}},
+  howpublished={\href{http://gcc.gnu.org/onlinedocs/gcc-4.5.2/gcc}{\nolinkurl{gcc.gnu.org/onlinedocs/gcc-4.5.2/gcc}}},
 }
 
 @misc{urlsscert,
   key = {wwwssc},
   title = {{FORMES} {P}roject, {S}im{S}o{C}-{C}ert},
-  howpublished={\url{http://formes.asia/cms/software/simsoc-cert}},
+  howpublished={\href{http://formes.asia/cms/software/simsoc-cert}{\nolinkurl{formes.asia/cms/software/simsoc-cert}}},
 }
 
 @misc{arm,
@@ -146,3 +149,21 @@ YEAR = {2010}  }
  publisher = {Springer-Verlag},
  address = {London, UK},
 } 
+
+%% inria-00624833, version 1
+%% http://hal.inria.fr/inria-00624833
+@inproceedings{shi2011,
+    hal_id = {inria-00624833},
+    url = {http://hal.inria.fr/inria-00624833},
+    title = {{First {S}teps {T}owards the {C}ertification of an {ARM S}imulator {U}sing Compcert}},
+    author = {Shi, Xiaomu and Monin, Jean-Fran{\c c}ois and Tuong, Fr{\'e}d{\'e}ric and Blanqui, Fr{\'e}d{\'e}ric},
+    abstract = {{The simulation of Systems-on-Chip (SoC) is nowadays a hot topic because, beyond providing many debugging facilities, it allows the development of dedicated software before the hardware is available. Low-consumption CPUs such as ARM play a central role in SoC. However, the effectiveness of simulation depends on the faithfulness of the simulator. To this effect, we propose here to prove significant parts of such a simulator, SimSoC. Basically, on one hand, we develop a Coq formal model of the ARM architecture while on the other hand, we consider a version of the simulator including components written in Compcert-C. Then we prove that the simulation of ARM operations, according to Compcert-C formal semantics, conforms to the expected formal model of ARM. Size issues are partly dealt with using automatic generation of significant parts of the Coq model and of SimSoC from the official textual definition of ARM. However, this is still a long-term project. We report here the current stage of our efforts and discuss in particular the use of Compcert-C in this framework.}},
+    keywords = {Coq;formalization;proof;C;program;simulation;processor;ARM},
+    language = {Anglais},
+    affiliation = {FORMES - LIAMA , Universit{\'e} Joseph Fourier - UJF},
+    booktitle = {{First International Conference on Certified Programs and Proofs}},
+    address = {Hengchun, township in Taiwan},
+    audience = {internationale },
+    year = {2011},
+    month = Dec,
+}
