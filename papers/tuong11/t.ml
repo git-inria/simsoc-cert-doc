@@ -293,6 +293,8 @@ struct
   let overset x y = \"overset\" @ ([x ; y], A)
   let rightsquigarrow = \"rightsquigarrow\" @ ([], A)
   let rightarrowtriangle = \"rightarrowtriangle\" @ ([], A)
+
+  let description l = itemize (BatList.map (fun (i, msg) -> textbf i ^^ newline ^^ msg) l)
 end
 open L
 
@@ -357,7 +359,7 @@ let main prelude l =
 
 type ppp = PPP
 
-type 'a humanc = Comment of 'a list * 'a option
+type 'a humanc = Comment of 'a list
 
 module P = 
 struct
@@ -491,19 +493,21 @@ module Comment_sz (SZ_s : SIZE_DYN) (SZ_comment : SIZE_DYN) =
 struct
   module S = S_sz (SZ_s)
   
-  let comment m_beg m_end f_tabular f_col f_vert l o_last =
+  let comment m_beg m_end f_tabular f_col f_vert l =
     let f x = [ multirow2 (SZ_comment.footnote (texttt x)) ] in
-    let row = BatList.map f_col [ S.C.human ; S.C.gcc ; S.C.compcert ; S.C.asm ; if o_last = None then ldots else S.C.lambda_l ] in
+    let row = 
+      BatList.take (List.length l)
+        (BatList.map f_col [ S.C.human ; S.C.gcc ; S.C.compcert ; S.C.asm ; S.C.lambda_l ]) in
     f_tabular
       SZ_comment.tiny
 
       (BatList.flatten [ [ `R ] ; interl_ f_vert (List.length row) `C ; [ `L ] ])
       
-      (BatList.map (fun l -> 
-        Data (BatList.flatten l))
+      (BatList.map 
+         (fun l -> Data (BatList.flatten l))
          [ [ f (f_col m_beg) ; row ; f (f_col m_end) ]
          ; BatList.map (BatList.map (fun x -> f_col x)) 
-           [ [ "" ] ; l ; [ match o_last with None -> "" | Some last -> last ] ] ])
+           [ [ "" ] ; l ; [ "" ] ] ])
 end
 
 module Comment = 
@@ -829,17 +833,20 @@ struct
                                                             ; Str.regexp \"<.+>\", v Color.string
                                                             ; v_ty \"int \"
                                                             ; v_ty \"void \"
+                                                            ; v_ty \"unsigned long\"
+                                                            ; v_ty \"S\"
                                                             ; v_c 'x'
                                                             ; v_c 'y'
                                                             ; v_c 'i'
                                                             ; Str.regexp_string \"_\", v Color.yellow
+                                                            ; Str.regexp_string \"struct\", v Color.violet
                                                             ; Str.regexp_string \"return\", v Color.violet
                                                             ; Str.regexp_string \"#include\", v Color.violet
                                                             ; Str.regexp \"\034.+\034\", v Color.string ] (LV.verbatim) s)) in
       function
-        | [ `V \"\" ; `C (Comment (l, o)) ; `V x ] -> 
-          let l_head, l_body = Comment.comment "/*" "*/" (fun _ x y -> x, y) (fun x -> Color.textcolor_ Color.comment x) (fun _ -> `Raw (Color.color_ Color.comment ^^ vrule)) l o in
-          let dim_col = 3 + List.length l in
+        | [ `V \"\" ; `C (Comment l) ; `V x ] -> 
+          let l_head, l_body = Comment.comment "/*" "*/" (fun _ x y -> x, y) (fun x -> Color.textcolor_ Color.comment x) (fun _ -> `Raw (Color.color_ Color.comment ^^ vrule)) l in
+          let dim_col = 2 + List.length l in
           longtable (`Vert :: `C (*`P (`Pt 0.01)*) (*; `Vert*) :: l_head)
             (BatList.flatten
                [ [ Cline (1, 1) ]
@@ -891,6 +898,18 @@ end
 
 
 let _ = 
+  let th_same_source l = 
+    let l, last = 
+      let last :: l = List.rev l in
+      List.rev l, last in
+    Th.env Label.fact "
+However their possible different behavior at runtime, {concat (BatList.map (fun x -> x ^^ ", ") l)}and {last} come from an initial same source. This source belongs to :
+{ let module Comment = Comment_sz
+        (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
+        (struct let normal = normalsize let footnote = large3 let tiny = small end) in
+  let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
+" in
+
   let l = 
 [ tableofcontents 
 
@@ -964,7 +983,7 @@ We are interested to automatically generate a Coq model, which aim to be as unde
 ; subsubsection ~label:Label.simgendef "The simulator {S.SL.coq} and the toolkit {S.simgen}"
 ; "
 Now, before considering the SH, let us look at what we already have in {P.simsoc} and {P.simcert}. On one side, there is {S.SL.C.gcc}. On the other side, a mathematical model in Coq had automatically been built for the ARM~{cite ["arm"]} and thus a special simulator has especially been created to integrate as well as to test the model : {S.SL.coq}.
-The behavior of {S.SL.C.gcc} and {S.SL.coq}, which have both been manually designed, is intentionally the same : for compiling, these two simulators respectively need the {S.Manual.Arm.C.gcc} and {S.Manual.Arm.coq} specification{let module S = Sfoot in footnote () "As the ``{texttt ("...-" ^^ P.simlight)}'' notation, we will indifferently write ``{S.Manual.ArmSh.C.gcc}'' or ``{S.Manual.ArmSh.coq}'' when the processor we implicitly think can be ARMv6 or SH4. Note that before~{ref_ Label.simu_sh4}, the processor we think is only ARMv6."}.
+The behavior of {S.SL.C.gcc} and {S.SL.coq}, which have both been manually designed, is intentionally the same : for compiling, these two simulators respectively need the {S.Manual.Arm.C.gcc} and {S.Manual.Arm.coq} specification{let module S = Sfoot in footnote () "As for {S.SL.C.gcc} and {S.SL.coq}, we will indifferently write ``{S.Manual.ArmSh.C.gcc}'' and ``{S.Manual.ArmSh.coq}'' when the processor we implicitly think can be ARMv6 or SH4. Note that before~{ref_ Label.simu_sh4}, the processor we think is only ARMv6."}.
 
 Therefore, {S.simgen}, which is also part of {P.simcert}, has especially been created for the importation of the {S.Manual.Arm.C.human}.
 To illustrate this, we present here {S.Manual.Arm.coq}, which contains {S.Pseudocode.Arm.coq} and {S.Decoder.Arm.coq}, both automatically generated by the toolkit.
@@ -973,7 +992,7 @@ To illustrate this, we present here {S.Manual.Arm.coq}, which contains {S.Pseudo
 
 ; "
 This file contains the semantics of all the instructions written in the Coq language. Each instruction from the {S.Manual.Arm.C.human} of reference is translated in a similar Coq function, called ``<!..._step!>'' function. 
-Furthermore, as for modularity the generation of the {S.Decoder.Arm.coq} is currently done in a separate way than the {S.Pseudocode.Arm.coq}, we create an inductive type $inst$ containing exactly a constructor for each ``<!..._step!>'' function. $inst$ will be useful for interoperability between {S.Pseudocode.Arm.coq} and {S.Decoder.Arm.coq}. At the end of {S.Pseudocode.Arm.coq}, there is a main function $step$ which role is, given a value of type $inst$, to retrieve the corresponding ``<!..._step!>'' function to run it.
+Furthermore, as for modularity the generation of the {S.Decoder.Arm.coq} is currently done in a separate way than the {S.Pseudocode.Arm.coq}, we create an inductive type <!inst!> containing exactly a constructor for each ``<!..._step!>'' function. <!inst!> will be useful for interoperability between {S.Pseudocode.Arm.coq} and {S.Decoder.Arm.coq}. At the end of {S.Pseudocode.Arm.coq}, there is a main function <!step!> which role is, given a value of type <!inst!>, to retrieve the corresponding ``<!..._step!>'' function to run it.
 
 Instructions from the ARMv6 are a bit special. Given a fixed sized word, we usually think about the instruction corresponding to this word, in particular during the decoding phase. But in ARMv6, we need to parameterized our thought one step higher. Indeed, some instructions take as argument a special parameter. This parameter is intended to be specially treated and a preliminary function need to be applied before the real execution of the instruction. This typical case is the {emph "addressing mode"}.
 
@@ -1026,7 +1045,7 @@ Definition mode4_step (s0 : state) (m : mode4) :=
   end.
 Definition mode5_step (s0 : state) (m : mode5) := #{PPP}#.
 #>
-Note that along the pattern matching, the state $s0$ is always present at the right hand side. Even if semantically we understand this as a monadic construction~{cite ["peyton-jones-wadler-93" ; "peyton-jones-tackling-09"]}, we will see in the SH part how to rewrite the whole to explicitly hide $s0$.
+Note that along the pattern matching, the state <!s0!> is always present at the right hand side. Even if semantically we understand this as a monadic construction~{cite ["peyton-jones-wadler-93" ; "peyton-jones-tackling-09"]}, we will see in the SH part how to rewrite the whole to explicitly hide <!s0!>.
 "
 ; paragraph "The instruction case"
 ; "
@@ -1123,7 +1142,7 @@ About the generation of a formal model, one could also agree that a manual forma
 
 ; section ~label:Label.simu_sh4 "Simulation of the SH4"
 ; "
-The integration of SH4 in {P.simcert} follows the same algorithm as ARMv6. The first step is to transform the raw $string$ of the {S.Manual.Sh.C.human} into a more structured type. For the ARM, the transformation from the {S.Manual.Arm.C.human} to Coq has precisely crossed a quite structured abstract syntax tree, named ``{S.simgen_ast}''{let module S = Sfoot in footnote () "The {S.simgen_ast} is approximatively formed with 400 OCaml words."}. Because the ARM generation to Coq is done from {S.simgen_ast}, we plan to fix it as our target for SH. Consequently, we hope the algorithm generating to Coq can be reused rapidly for the SH.
+The integration of SH4 in {P.simcert} follows the same algorithm as ARMv6. The first step is to transform the raw {S.Manual.Sh.C.human} into a more structured type. For the ARM, the transformation from the {S.Manual.Arm.C.human} to Coq has precisely crossed a quite structured abstract syntax tree, named ``{S.simgen_ast}''{let module S = Sfoot in footnote () "The {S.simgen_ast} is approximatively formed with 400 OCaml words."}. Because the ARM generation to Coq is done from {S.simgen_ast}, we plan to fix it as our target for SH. Consequently, we hope the algorithm generating to Coq can be reused rapidly for the SH.
 
 {hspace (`Ex 1.)}
 
@@ -1134,8 +1153,8 @@ Besides the target fixed at this advanced {S.simgen_ast}, we show at the next pa
 (* ************************ french *)
 (* Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme. *)
 (* ************************ *)
-The {S.Manual.Sh.C.human} totals about 450 pages, informations corresponding to the pseudocode and decoder occupies an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
-Furthermore, while reading it briefly, we have been having a strong conjecture that the {S.C.human} code specified in the instructions can be easily translated to {S.C.gcc}. To experiment our intuition, we have planned to use the FrontC package as type representing the {S.C.gcc} in OCaml.
+The {S.Manual.Sh.C.human} totals about 450 pages, informations corresponding to the pseudocode and decoder occupy an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
+Furthermore, while reading it briefly, we have been having a strong conjecture that the {S.C.human} code specified in the instructions can be easily translated to {S.C.gcc}. To experiment our intuition, we have planned to use the FrontC package as type representing our futur {S.C.gcc} program in OCaml.
 {Th.env Label.note "
 Let us name
 {itemize
@@ -1143,18 +1162,14 @@ Let us name
 "}
 Then, starting from the {S.Manual.Sh.C.human} considered as a string, the first step was to write the smallest patch possible in order to get a first well-typed {S.CP.frontc} AST in OCaml (surrounded by the other extra informations, such as for the decoder...).
 
-The parsing of the decoder informations was merely fast because for each instructions, they are clearly specified in an array. We explains now the process done for the instructions.
+The parsing of the decoder informations was merely fast, except for the <!9.33 FLDI1!> instruction : it was needed to introduce a new <!PR!> column as what is done for the most of floating instructions. Besides this case, bits to decode are clearly presented in an array. We explains now the process done for the instructions.
 
 "
 ; paragraph "Patching phase"
 ; "
-
-Interesting informations in the {S.Manual.Sh.C.human} are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions specific to floating instructions, followed by a sequence of description of the instructions. 
+Interesting informations in the {S.Manual.Sh.C.human} are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions only specific to floating instructions, followed by a sequence of description of the instructions. 
 
 Corrections needed to bring to the {S.Manual.Sh.C.human} are essentially composed of missing symbol ``;'', missing type informations before some parameters and unbounded value encountered. 
-
-For example, the function {texttt "LDCRn_BANK"} in the part ``9.50, LDC'' uses the unbound variable {texttt "Rn_BANK"}.  After a search, we finally found that it is a meta abbreviation for {texttt "R"}$n${texttt "_BANK"}, with $n {in_} [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser.
-
     "
 ; paragraph "More confidence by type-checking"
 ; "
@@ -1167,17 +1182,43 @@ We introduce
 (*; "{S.cparserC} for programs parsed successfully with the {Version.compcert} parsing step (tested at least one time). For a demonstration, check if the result of the function <!Cparser.Parser.file!> returns a value of type <!definition list!> without raising an exception."*) ]
 }
 "}
-
-The typing process from the CIL AST to {S.C.compcert} has actually permitted us to correct new errors.
-{itemize
-[ "We have discovered some new misleading types (for instance we introduce manually <!bool_of_word!> and <!nat_of_word!> in the definition of <!FPSCR_PR!> and <!FPSCR_FR!>)."
-; "It becomes mandatory to specify the type annotation of undefined functions (e.g. the 9.91 SLEEP instruction use the unbound <!Sleep_standby!> function name)."
-; "The order of function declarations has an importance : like OCaml, permutations are not allowed for functions not specified as recursive. This problem has been resolved by rearranging the order at top-level of SH functions, in general a simple reversing suffices." ]
-(*paragraph "existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?"*)
-}
-
-
 "
+; paragraph "Summary"
+; "
+For clarity, results can now be classified in two parts, we present first modifications needed to bring in order to obtain a {S.CP.frontc} and {S.CP.cil} AST, and secondly modifications performed to get a successful compilation with {P.compcert}.
+"
+; subparagraph "Corrections needed to be accepted in {S.CP.frontc}, {S.CP.cil}"
+; description
+  (let ppp = texttt (Code.latex_of_ppp PPP) in
+   [ "Wrapping comments", "Some {S.C.human} code includes sentences commonly found from the english language. Everytime the situation occurs, we use our intuition to place <!/* !{PPP}! */!> around the appropriate part."
+   ; "Character repetition", "For example, some parenthesis are opened twice, some are closed twice, and some are swapped or missed. In general, the cost performed is just one single addition or one single deletion."
+   ; "Character mapping", "We replaced for example some wrong ``,'' by <!;!>. Note that the variable ``H'00000100'' contains an illegal character for a variable, in contrast to this accepted form : <!H_00000100!>."
+   ; "Reduced syntax", "For a function taking more than one argument, it is frequent to encounter this reduced declaration : ``f (int x, y) \{{ppp}\}''. So, we expand the type at every argument position : <!f (int x, int y) {!{PPP}!}!>. 
+
+Every pattern matching " ^^ newline ^^ 
+"``case($value$) \{ $pattern_1$ : {ppp} $pattern_n$ : {ppp} \}'' have been replaced by " ^^ newline ^^ 
+"<!switch(!>$value$<!) { case !>$pattern_1$<! : !{PPP}! case !>$pattern_n$<! : !{PPP}! }!>."
+   ; "Wrong overloading form", "A call to <!data_type_of!> is performed in <!9.28 FCNVDS!>, which seems to refer to the <!data_type_of!> defined at the beginning of section 9. However the called function takes one more argument than the defined. This situation has been handled by renaming the called <!data_type_of!> into a new function, which goal is to call the defined <!data_type_of!> with the right arguments. In the same spirit, we renamed <!FSUB!> to <!FSUB_!> in its pseudocode part because <!FSUB!> is in fact a directive already defined : <!#define FSUB !{PPP}!!>"
+; "PDF translation errors", "The extracted text from a PDF document introduces some repetitive background side effects : every encoded string ``–='' (representing the OCaml string <!"\xE2\x80\x93="!>) needs to be replaced by a simple <!-=!>. Space separated words ``normal_ fcnvds'' are merged to form a single word <!normal_fcnvds!>..."
+; "Arithmetical notations", "The mathematical expression ``4j'' is understood as <!4 * j!>."
+ ])
+; subparagraph "Corrections needed to be accepted by {P.compcert}"
+; "
+The typing process from the CIL AST to {S.C.compcert} has actually permitted us to correct new errors."
+; description
+  [ "Unbound value", "This case occurs frequently. For example, the function {texttt "LDCRn_BANK"} in the part <!9.50 LDC!> uses the unbound variable {texttt "Rn_BANK"}.  After a search, we finally found that it is a meta abbreviation for {texttt "R"}$n${texttt "_BANK"}, with $n {in_} [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser."
+  ; "Type error", "We have discovered some new misleading types (for instance we introduce manually <!bool_of_word!> and <!nat_of_word!> in the definition of <!FPSCR_PR!> and <!FPSCR_FR!>)."
+  ; "Typing of bit fields", "From {P.compcert}, ``{texttt "the type of a bit field must be an integer type no bigger than 'int'"}''. In particular, the {S.Manual.Sh.C.human} contains a part behaving like this rejected program :
+<@@{let open English in Comment [ yes ; yes ; no ] }@
+struct S { unsigned long i:1 }
+main () {}
+@> To correct that, it suffices to rename every wrong <!unsigned long!> to <!int!> for example."
+  ; "Explicit prototype declaration", "It becomes mandatory to specify the type annotation of undefined functions (e.g. the <!9.91 SLEEP!> instruction use the unbound <!Sleep_standby!> function name)."
+  ; "Mutual recursive function disabled", "The order of function declarations has an importance : like OCaml, permutations are not allowed for functions not specified as recursive. This problem has been resolved by automatically rearranging the order at top-level of SH functions. {itemize [ "For instructions, every list of declarations in every instructions has been generated in reversed form." ; "For the beginning of section 9, the structure is not as linear as for the instructions. In this case, we give a topological sequence describing the order to respect. Then it suffices to write a general sorting algorithm following this indication." ]}"
+ ]
+(*paragraph "existe-t-il des modifications pour ce cas : pas de 'return' dans le cas de type fonction renvoyant 'void' ? spécifique à simlight ?"*)
+; th_same_source [ S.Manual.Sh.C.gcc ; S.Manual.Sh.C.compcert ]
+
 ; subsection "Grouping SH4 and ARMv6 into a common pseudocode generator"
 ; "
 The next step after the obtaining of an OCaml value representing the {S.Manual.Sh.C.human} is its integration in {P.simcert}. To this end, we have performed two modifications : 
@@ -1194,8 +1235,11 @@ Generating the Coq code was rather long but easy, because a lot of factorization
 [ "Unlike the ARM, parameters of each SH instruction are clearly specified in the pseudocode. We then modified {S.simgen_ast} to support these argument informations."
 ; "In term of semantics, there is a specific constructor, namely <!return!>, presents in the SH pseudocode. It has been represented in the semantic of the Coq code using monadic form."
 ; "The default case for the <!switch!> option is also present in several SH instructions, then the necessary changes in {S.simgen_ast} has been done." ]
-}
-    "
+}"
+(* Replace_all ("&&", "&"), p [ 1065 ] (* Sh4_Inst.v is not Coq well typed otherwise *) *)
+; Th.env Label.fact "
+Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}."
+
 ; subsubsection "{lambda}-optimization of the {S.Manual.ArmSh.coq}"
 ; "
 In section~{ref_ Label.oldarm}, we have seen that the body of the function <!LDM2_step!> and <!SMLSLD_step!> are explicitly informative. Indeed, the words <!fun loc b st!> are for example repeated a lot. However, the purpose of the variable <!st!> is to carry the transformation on the state, acting like an accumulator. <!b!> and <!loc!> are also accumulators but we remark that <!b!> is just used at a higher function call level, not inside each instruction. So we want to abstract all of them now. Initially, the code present for the ARM was designed and really thought using monadic specifications, but the current shape is currently not entirely satisfactory. Then we think instead, to simplify these accumulators by hiding them at the cost of rearranging the arguments of several functions, in particular by putting all the accumulators at the end.
@@ -1558,7 +1602,7 @@ Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 By definition {S.SL.C.gcc} is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of {S.SL.C.gcc} on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target{let module S = Sfoot in footnote () "Among the bits processor, there are of course others important characteristics describing a computer, for example, are we compiling on/for a PowerPC, IA32 or ARM machine~? Without giving complex details, we just precise that the success of these four attempts has been found on a particular same processor."}.
 
 Like GCC, {P.compcert} also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is manually not specified, this choice becomes mandatory in {P.compcert}. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by {P.compcert}, we opt to set <!ia32-linux!> first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this {S.C.gcc} program~:
-<@@{let open English in Comment ([ yes ; yes ; no ; no ], None)}@
+<@@{let open English in Comment [ yes ; yes ; no ; no ]}@
 #include <inttypes.h>
 
 void main() {
@@ -1611,7 +1655,7 @@ After the modification performed above, we now have a single program, called {S.
 
 We observed unfortunately that unlike {ref_ Label.ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
 More precisely, by examining closely the situation, we remarked for instance that this {S.C.human} program~:
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes), None)}@
+<@@{let open English in Comment (BatList.init 4 (fun _ -> yes))}@
 #include <stdio.h>
 
 void main() {
@@ -1632,7 +1676,7 @@ texttt (tabular (interl 4 `L)
 (in OCaml, <!Int32.shift_left 1_l 32!> evaluates to <!1_l!>).
 
 Remark that initially, starting from this {S.C.human} code included in {P.simsoc} and {P.simcert}~:
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes), None)}@
+<@@{let open English in Comment (BatList.init 4 (fun _ -> yes))}@
 #include <stdio.h>
 
 void main() {
@@ -1653,16 +1697,8 @@ texttt (tabular (interl 3 `L)
 Finally, we have fixed this error to get <!ffffffff!> everywhere : this problem using 32 bits data-structures can be easily avoided by using explicitly the deterministic aforementioned operations on 64 bits data-structures, instead of 32.
 
 Now, validation tests succeed on both {S.SL.C.gcc} and {S.SL.C.asm}." (* Except this 64 bits data-structures not supported in {P.compcert}, we have not encountered others difficult problems during the compilation.*)
-; "
-{Th.env Label.fact "
-However their possible different behavior at runtime, {S.SL.C.gcc}, {S.SL.C.compcert}, and {S.SL.C.asm} come from an initial same source. This source belongs to :
-{ let module Comment = Comment_sz
-        (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
-        (struct let normal = normalsize let footnote = large3 let tiny = small end) in
-  let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init 4 (fun _ -> yes)) None}
-"}
+; th_same_source [ S.SL.C.gcc ; S.SL.C.compcert ; S.SL.C.asm ]
 
-"
 ; subsection "The behavior of {S.SL.C.asm}, towards {S.SL.C.infty}"
 ; "
 "
@@ -1692,7 +1728,7 @@ Now enriched by this definition, can we apply the main CompCert theorem to {S.SL
 
 {Th.env Label.ex "
 This {S.C.asm} code is not a {S.C.lambda_l} program :
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes), Some no)}@
+<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
 int main(int _) {
   return 0;
 }
@@ -1756,7 +1792,7 @@ enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
 ; paragraph "Is {S.C.infty} empty ?"
 ; "
 Because the membership of {S.SL.C.asm} to {S.C.infty} depends at least on the shape of {S.C.lambda_l}, it is interesting to check if we can first exhibit an element from {S.C.lambda_l}, as this element will belong to {S.C.infty}. So, we tried to prove that it contains at least this simple {S.C.asm} program, called {S.P.C.asm}~:
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes), Some maybe)}@
+<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
 int main() {
   return 0;
 }
