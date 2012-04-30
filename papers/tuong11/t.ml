@@ -26,6 +26,7 @@ struct
     val definecolor_reset : unit -> unit (* empties the cache, behaves as if [textcolor_] has never been called *)
     val textcolor_ : color -> Latex.t -> Latex.t (* store color used, [definecolor_used] will fold it *)
 (*    val textcolor : color -> Latex.t -> Latex.t (* nothing is stored *)*)
+    val cellcolor_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
     val color_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
     val color_name_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
 (*    val color_compare : color -> color -> int*)
@@ -36,11 +37,13 @@ struct
     val string : color
     val construct : color
     val black : color
+    val green_light : color
     val green : color
     val grey : color
     val blue : color
     val yellow : color
     val violet : color
+    val red_light : color
     val red : color
   end
 
@@ -88,6 +91,7 @@ struct
     struct
       let definecolor name rgb x = \"definecolor\" @ ([ name ; rgb ; x ], A)
       let textcolor n x = \"textcolor\" @ ([ n ; x ], A)
+      let cellcolor x = \"cellcolor\" @ ([x], A)
       let color x =  \"color\" @ ([x], A)
     end
     let color_of_name x = text (Printf.sprintf \"color%d\" x)
@@ -100,10 +104,11 @@ struct
       L.definecolor (color_of_name id) msg colo
 
     let textcolor (id, _) = L.textcolor (color_of_name id)
+    let cellcolor (id, _) = L.cellcolor (color_of_name id)
     let color (id, _) = L.color (color_of_name id)
     let color_name (id, _) = color_of_name id
 
-    let definecolor_used, definecolor_reset, textcolor_, color_, color_name_ =
+    let definecolor_used, definecolor_reset, textcolor_, cellcolor_, color_, color_name_ =
       let col_map = ref ColorMap.empty in
       (fun f -> ColorMap.fold (fun k _ -> f k) !col_map), 
       (fun _ -> col_map := ColorMap.empty),
@@ -112,17 +117,22 @@ struct
         textcolor c),
       (fun c -> 
         let _ = col_map := ColorMap.add c () !col_map in
+        cellcolor c),
+      (fun c -> 
+        let _ = col_map := ColorMap.add c () !col_map in
         color c),
       (fun c -> 
         let _ = col_map := ColorMap.add c () !col_map in
         color_name c)
 
     let black = of_int_255 (let i = 0 in i, i, i)
+    let green_light = of_int_255 (216, 255, 241)
     let green = of_int_255 (60, 179, 113)
     let grey = of_int_255 (*(0x24, 0xD3, 0xD5)*) (*(0, 139, 141)*) (*(0, 118, 39)*) (let i = 156 in i, i, i)
     let blue = of_int_255 (0, 5, 105)
     let yellow = of_int_255 (178, 121, 53)
     let violet = of_int_255 (206, 100, 255)
+    let red_light = of_int_255 (255, 216, 224)
     let red = of_int_255 (200, 72, 0)
     module C = 
     struct
@@ -188,10 +198,12 @@ struct
   type 'a mail = 
     | Mail of 'a
     | Http of 'a
+    | Https of 'a
 
-  let href x1 x2 = \"href\" @ ([text (match x1 with Mail x -> \"mailto:\" ^ x | Http x -> \"http://\" ^ x) ; nolinkurl x2], A)
+  let href x1 x2 = \"href\" @ ([text (match x1 with Mail x -> \"mailto:\" ^ x | Http x -> \"http://\" ^ x | Https x -> \"https://\" ^ x) ; nolinkurl x2], A)
 
   let http s = href (Http s) s
+  let https s = href (Https s) s
   let mail s = href (Mail s) s
 
   let multirow2 x = \"multirow\" @ ([ "2" ; "*" ; x ], A)
@@ -210,6 +222,29 @@ struct
     | Data of 'a
     | Hline
     | Cline of int * int
+
+  let title f_sz l_no o_lg (* should be greater than -> *) l_yes = 
+    match
+      List.fold_left
+        (fun (acc, nb_blank, pos) x -> 
+          List.fold_left 
+            (fun acc x -> 
+              let x = f_sz x in
+              Data (BatList.flatten
+                      [ BatList.init nb_blank (fun _ -> multicolumn 1 "l|" "") 
+                      ; [ if pos = 1 then x else multicolumn pos "l" x ] ]) :: acc) acc x,
+          Pervasives.succ nb_blank,
+          pred pos)
+        ([], 0, match o_lg with None -> List.length l_yes | Some nb -> nb)
+        l_yes
+    with
+      | Data l :: xs, _, _ -> 
+        List.rev
+          (Data (BatList.flatten [ l_no ; l ])
+           ::
+           BatList.map (let l_no = BatList.map (fun _ -> "") l_no in
+                        fun (Data l) -> Data (BatList.flatten [ l_no ; l ])) xs)
+      | [], _, _ -> []
 
   let hline = \"hline\" @ ([], A)
 
@@ -306,7 +341,8 @@ let main prelude l =
          BatList.flatten 
            [ [ (* "babel", [ "english"; "francais" ] *)
                "inputenc", "utf8" 
-             ; "fontenc", "T1" ]
+             ; "fontenc", "T1"
+             ; "xcolor", "table" ]
            ; BatList.map (fun x -> x, "")
              [ "lmodern"
                
@@ -314,7 +350,6 @@ let main prelude l =
              ; "url"
              
              ; "tikz"
-             ; "xcolor"
 
              (* "xltxtra" *)
              ; "xspace"
@@ -368,6 +403,7 @@ struct
   let coq = "Coq"
   let gcc = "GCC"
   let simlight = "simlight"
+  let simlight2 = "simlight-opt"
   let simsoc = "SimSoC"
   let simcert = "SimSoC-Cert"
 
@@ -474,6 +510,7 @@ struct
   end
 
   module SL = SL_gen (struct let sl = P.simlight end)
+  module SL2 = SL_gen (struct let sl = P.simlight2 end)
   module Manual = SL_gen (struct let sl = P.manual end)
   module Pseudocode = SL_gen (struct let sl = P.pseudocode end)
   module Decoder = SL_gen (struct let sl = P.decoder end)
@@ -872,17 +909,37 @@ module Version =
 struct
   let gcc = P.gcc ^^ " 4.5.2"
   let compcert = P.compcert ^^ " 1.9"
+  let compcert_arch = "ia32-linux"
   let ocaml = P.ocaml ^^ " 3.12.1"
   let coq = P.coq ^^ " 8.3pl2"
   let coqsvn = "14161"
   let frontc = "3.1#3"
   let cil = "1.3.6#3"
+
+  module Cpp11 = struct
+    let simsoc = "0.7.1"
+    let simcert = "1660" (* in svn *)
+    let compcert = P.compcert ^^ " 1.8.2"
+    module Filename = struct (* it regroups filename used in the report *)    
+      (*let stat_arm1 = \"stat_arm1_1660\"*)
+    end
+  end
+
+  module Cpp11_bis = struct
+    let simcert = "1789" (* in svn *)
+    let compcert = compcert
+    module Filename = struct (* it regroups filename used in the report *)
+      let stat_arm1 = \"stat_arm1_1789\"
+      let stat_arm2 = \"stat_arm2_1789\"
+    end
+  end
+
 end
 
 
 module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
-
 module Sfoot = S_sz (struct let normal = footnotesize let footnote = scriptsize let tiny _ = assert false end)
+module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let tiny _ = assert false end)
 
 module Label = 
 struct
@@ -896,6 +953,208 @@ struct
   let remark, newth_remark = Th.newtheorem' "Remark"
 end
 
+
+module Performance =
+struct
+
+  type simlight = 
+    | Simlight__short
+    | Simlight2
+
+  type file = 
+    | No_thumb of simlight
+    | With_thumb (* we assume [With_optim] *)
+
+  type 'a extremum = int (* index of the element in the list *) * 'a
+
+  type 'a perf = { file : file ; nb_iter : int ; time : 'a list ; t_min : 'a extremum ; t_max : 'a extremum }
+
+  let fold_double f =
+    let rec aux acc = function
+      | x1 :: x2 :: xs -> aux (f acc (x1, x2)) xs
+      | [] -> acc
+      | _ -> failwith \"fold_double\" in
+    aux
+
+  let str_of_float = Printf.sprintf \"%.2f\"
+  let str_of_float_percent = Printf.sprintf \"%.1f\"
+       
+  open BatMap
+
+  let only_one_elt = function [] -> assert false | [_] -> true | _ -> false
+
+  let to_latex map =
+    let map = StringMap.fold (fun k (l, v_min, v_max, i) -> IntMap.add i (k, v_min, v_max, l)) map IntMap.empty in
+    List.rev
+      (IntMap.fold
+         (fun _ (name, row_min_pos, row_max_pos, v_perf) l ->
+           
+           fst 
+           (List.fold_left
+             (fun (l, row_pos) (name, v) -> 
+               let opt, thumb =
+                 let open English in
+                 let is_sl2, thumb_enabled = 
+                   match v.file with 
+                     | No_thumb Simlight__short -> false, false
+                     | No_thumb Simlight2 -> true, false
+                     | With_thumb -> true, true in
+                 let mk_color = function true -> fun f -> f yes | false -> fun f -> Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) (f no) in
+                 mk_color is_sl2 (fun x -> x ^^ ""), mk_color thumb_enabled (fun x -> x ^^ "") in
+           Data 
+             (texttt (Latex.Verbatim.verbatim name)
+              :: 
+              opt
+              ::
+              thumb
+              ::
+              latex_of_int v.nb_iter
+              ::
+              let l_tps = v.time in
+              let (mi_pos, mi), (ma_pos, ma) = v.t_min, v.t_max in
+              let () = 
+                if mi_pos <> ma_pos then () else assert false (* all values are equal *) in
+              BatList.flatten 
+                [    BatList.mapi (fun pos d -> 
+                       "{
+                         match 
+                           if pos = mi_pos then Some Color.green_light else if pos = ma_pos then Some Color.red_light else None
+                         with
+                          | None -> ""
+                          | Some color -> Color.cellcolor_ color
+                        } {
+                           let t = text (str_of_float (d /. float_of_int v.nb_iter *. 1000.)) in
+                           if not (only_one_elt v_perf) && pos = mi_pos && row_pos = row_min_pos then 
+                             Color.textcolor_ (Color.blue) t
+                           else if not (only_one_elt v_perf) && pos = ma_pos && row_pos = row_max_pos then
+                             Color.textcolor_ (Color.red) t
+                           else
+                             t
+                          }") l_tps 
+                ; [ Latex.Verbatim.verbatim (Printf.sprintf \"+%s %%\" (str_of_float_percent (100. -. mi *. 100. /. ma)) ^ \"\") ] ])
+           ::
+           l,
+           Pervasives.succ row_pos)
+             (Hline :: l, 0) 
+             (match List.map (fun v -> \"\", v) v_perf with
+               | [] -> [] 
+               | (_, x) :: xs -> (name, x) :: xs))) 
+         map
+         [])
+
+  let performance_of_file f_simlight file map =
+      fold_double 
+        (fun (map, dim_map) (name, s) -> 
+          let nb_iter :: l_tps = BatList.filter_map (function \"\" -> None | s -> Some s) (BatString.nsplit s \" \") in
+          let l_tps = 
+            BatList.map float_of_string l_tps in
+          let t_min, t_max = 
+            let t_min, t_max, _ =
+              List.fold_left
+                (fun (o_min, o_max, pos) d -> 
+                  let f_extr f_min o_min = 
+                    match o_min with
+                      | None -> Some (pos, d)
+                      | Some (mi_pos, mi) -> 
+                        let mi2 = f_min mi d in                    
+                        Some ((if d = mi2 then pos else mi_pos), mi2) in
+                  f_extr min o_min,
+                  f_extr max o_max,
+                  Pervasives.succ pos)
+                (None, None, 0)
+                l_tps in
+            let f = function None -> assert false | Some (i, v) -> i, v in
+            f t_min, f t_max in
+          let name, file = 
+            let und = \"_\" in
+            let l, file = 
+              match List.rev (BatString.nsplit name und) with
+                | \"a\" :: l -> l, No_thumb f_simlight 
+                | \"t\" :: l -> l, With_thumb
+                | _ -> Printf.kprintf failwith \"%s\" name in
+            BatString.join und (List.rev l), file in
+
+          let dim_map, index = 
+            match StringMap.Exceptionless.find name map with
+              | Some (_, index) -> dim_map, index
+              | None -> let d = Pervasives.succ dim_map in d, d in 
+
+          StringMap.modify_def
+            ([], index)
+            name
+            (fun (l, index) -> { file ; nb_iter = int_of_string nb_iter ; time = l_tps ; t_min ; t_max } :: l, index) 
+            map, 
+          dim_map)
+        map
+        (BatList.filter
+           (function \"\" -> false | _ -> true) 
+           (BatString.nsplit 
+              (BatFile.with_file_in file BatIO.read_all) \"\n\"))
+      
+  let draw_performance f_tabular = 
+    newpage ^^ f_tabular (BatList.flatten [ `L :: `C :: `C :: `Vert :: interl 7 `R ])
+      (List.flatten
+         [ (let module S = Ssmall in 
+            let f n = [ "{texttt "gcc -m32 -O{latex_of_int n}"}" ] in
+            title
+             (fun x -> x)
+             [ ] 
+             None
+             [ [ "ARMv6 Executable and Linkable Format (ELF)" ]
+             ; [ "Do we execute with the optimized version of the simulator," 
+               ; "supporting the Thumb instruction set ?" ]
+             ; [ "Was the ELF code specially generated for the Thumb ?" ]
+             ; [ "Number of iterations needed to have a significant duration" ; "in seconds for a human (currently, beyond 4 seconds)" ]
+             ; [ "Time in milliseconds of 1 iteration" ; "(i.e. the total time divided by the number of iterations)" ; "with {S.SL.C.asm}, compiled by" ; "{P.compcert} {texttt Version.compcert_arch}" ]
+             ; "with {S.SL.C.gcc}, compiled by" :: f 0
+             ; f 1
+             ; f 2
+             ; f 3
+             ; [ "Relative" ; "gain" ; "between" ; "max" ; "and" ; "min" ] ])
+         ; to_latex 
+           (let map, _ = 
+              List.fold_left
+                (fun map (sl, file) -> performance_of_file sl file map)
+                (StringMap.empty, 0)
+                [ Simlight__short, Version.Cpp11_bis.Filename.stat_arm1
+                ; Simlight2, Version.Cpp11_bis.Filename.stat_arm2 ] in
+            StringMap.map 
+              (fun (l, i) -> 
+
+                let l = 
+                  List.fast_sort
+                    (fun v1 v2 -> 
+                      let f = function
+                        | { file = No_thumb Simlight__short ; _ } -> 0
+                        | { file = No_thumb Simlight2 ; _ } -> 1
+                        | { file = With_thumb ; _ } -> 2 in
+                      compare (f v1) (f v2))
+                    l in
+
+                let fold get_min f_min =
+                  let get_min v = snd (get_min v) /. float_of_int v.nb_iter in
+                  match 
+                    List.fold_left 
+                      (fun (o, pos) v ->
+                        let v_min = get_min v in
+                        (match o with
+                          | None -> Some (pos, v_min)
+                          | Some (pos1, min1) -> 
+                            let min2 = f_min min1 v_min in
+                            Some ((if min2 = v_min then pos else pos1), min2)), 
+                        Pervasives.succ pos)
+                      (None, 0)
+                      l 
+                  with
+                    | None, _ -> assert false
+                    | Some (p, _), _ -> p in
+
+                l,
+                fold (fun v -> v.t_min) min,
+                fold (fun v -> v.t_max) max,
+                i)
+              map) ])
+end
 
 let _ = 
   let th_same_source l = 
@@ -1601,7 +1860,7 @@ Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 ; "
 By definition {S.SL.C.gcc} is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of {S.SL.C.gcc} on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target{let module S = Sfoot in footnote () "Among the bits processor, there are of course others important characteristics describing a computer, for example, are we compiling on/for a PowerPC, IA32 or ARM machine~? Without giving complex details, we just precise that the success of these four attempts has been found on a particular same processor."}.
 
-Like GCC, {P.compcert} also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is manually not specified, this choice becomes mandatory in {P.compcert}. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by {P.compcert}, we opt to set <!ia32-linux!> first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this {S.C.gcc} program~:
+Like GCC, {P.compcert} also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is manually not specified, this choice becomes mandatory in {P.compcert}. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by {P.compcert}, we opt to set {texttt Version.compcert_arch} first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this {S.C.gcc} program~:
 <@@{let open English in Comment [ yes ; yes ; no ; no ]}@
 #include <inttypes.h>
 
@@ -1609,7 +1868,7 @@ void main() {
   int64_t x = 0;
 }
 @>
-is rejected by {P.compcert} (if we still target the <!ia32-linux!> processor), because 64 bits data-structures are not fully supported yet{let module S = Sfoot in footnote () "with the current {Version.compcert}"}, and this behavior does not depend on the 32 or 64 bits machine {P.compcert} is running.
+is rejected by {P.compcert} (if we still target the {texttt Version.compcert_arch} processor), because 64 bits data-structures are not fully supported yet{let module S = Sfoot in footnote () "with the current {Version.compcert}"}, and this behavior does not depend on the 32 or 64 bits machine {P.compcert} is running.
 
 Hence, a new problem is coming : we realize that the {S.Manual.Arm.C.gcc} uses frequently 64 bits data-structures (as shown in the {texttt "A4.1.81 SMLSLD"} instruction). Then so does the whole {S.SL.C.gcc}, which is, precisely at this moment, rejected by {P.compcert}.
 
@@ -1618,7 +1877,7 @@ Hence, a new problem is coming : we realize that the {S.Manual.Arm.C.gcc} uses f
 
 ; paragraph "Going to {S.C.compcert} to obtain {S.SL.C.compcert}"
 ; "
-We remarked curiously that the previous {S.C.gcc} program is {P.compcert} well accepted when the processor target is fixed to <!arm-linux!>, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a {S.C.gcc} code, the heuristic performed to retrieve a {S.C.compcert} code includes an external call to a preprocessor, namely ``<!gcc -E!>''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most {S.C.human} to a {S.C.compcert} program. Like the GCC compiler, the behavior of <!gcc -E!> depends on the options <!-m32!> and <!-m64!>, which targets the processor for the executable. If absent, <!gcc -E!> considers by default the processor currently settled. In fact, in the case of <!ia32-linux!>, the extra option <!-m32!> is present everytime.
+We remarked curiously that the previous {S.C.gcc} program is {P.compcert} well accepted when the processor target is fixed to <!arm-linux!>, and such, on a 64 bits computer only, not on a 32 bits. It means that the good support for 64 bits data-structures depends on the computer used and the processor target fixed. However, it may be surprising because the big part of the compiler is issued from Coq, a deterministic environment. Where is the error~? In fact, there is not : starting from a {S.C.gcc} code, the heuristic performed to retrieve a {S.C.compcert} code includes an external call to a preprocessor, namely ``<!gcc -E!>''. As long as it terminates, this call is correct because by definition, the heuristic uses its proper algorithm to transform the most {S.C.human} to a {S.C.compcert} program. Like the GCC compiler, the behavior of <!gcc -E!> depends on the options <!-m32!> and <!-m64!>, which targets the processor for the executable. If absent, <!gcc -E!> considers by default the processor currently settled. In fact, in the case of {texttt Version.compcert_arch}, the extra option <!-m32!> is present everytime.
 Note that for <!arm-linux!>, no options are specified, hence the previously success exhibited earlier on 64 bits is now explained.
 
 "
@@ -1636,7 +1895,7 @@ Hopefully, in case of errors, we are clearly informed, i.e. events occur sequent
 To force the compilation of {S.SL.C.gcc} by {P.compcert} to have a deterministic behavior, one which is independent of the machine used and to obtain an assembly file, which is here a synonym of well consistency checking, we present two possible solutions.
 {itemize
 [ "``Keep the program {S.SL.C.gcc}, Modify the environment {P.compcert}''{newline}
-For the <!ia32-linux!> target, inspired from <!arm-linux!>, we tried randomly to change the heuristic from <!-m32!> to the explicit <!-m64!> in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file.
+For the {texttt Version.compcert_arch} target, inspired from <!arm-linux!>, we tried randomly to change the heuristic from <!-m32!> to the explicit <!-m64!> in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file.
 "
 ; "``Modify the program {S.SL.C.gcc}, Keep the environment {P.compcert}''{newline}
 Here we replace, in the generated {S.Manual.Arm.C.gcc} as well as the whole {S.SL.C.gcc}, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
@@ -1664,7 +1923,7 @@ void main() {
   printf("line 2 %lx\n", 1lu << 32);
 }
 @>
-which in fact belongs to the {S.C.gcc} and {S.C.asm} class of programs, has two surprising different behaviors by considering the executables respectively produced by GCC and {P.compcert} (both compiling on/for <!ia32-linux!>). Indeed, we have the following results, depending on the compiler used~:{ newline ^^
+which in fact belongs to the {S.C.gcc} and {S.C.asm} class of programs, has two surprising different behaviors by considering the executables respectively produced by GCC and {P.compcert} (both compiling on/for {texttt Version.compcert_arch}). Indeed, we have the following results, depending on the compiler used~:{ newline ^^
 
 texttt (tabular (interl 4 `L)
     [ Data [ "" ; "gcc -m64" ; "gcc -m32 -O0{textrm ","}" ; "gcc -m32 -O{textrm "$n$ ($n {in_} [ {texttt "1"} ; {texttt "2"} ; {texttt "3"} ]$)"}" ]
@@ -1884,8 +2143,8 @@ For this particular case, the generation of {S.C.asm} being automatic, instead o
 } 
 As we think they can easily be translated in Coq, the problem of good equivalence between the {S.Manual.ArmSh.coq} and the {S.Manual.C.asm} can be simplified to the problem of building a couple given a particular {S.simgen_ast}, i.e writing a Coq function of type : {newline}
 <!  (!>{S.Simgen.coq}<!, !>{S.Simgen.coq_deep_ocaml}<!) -> 
-    { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq_deep.infty}<!) 
-    | !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq_deep.infty}<! }!>{newline}
+    { (!>{S.Manual.ArmSh.coq}<!  ,  !>{S.Manual.Coq_deep.infty}<!) 
+    |  !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq_deep.infty}<!  }!>{newline}
 (*or this one (which seems harder) : {newline}
 <!  !>{S.Simgen.coq_deep_ocaml} <!-> 
     { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq_deep.infty}<!) 
@@ -1919,7 +2178,7 @@ For the following, starting from a well-typed Coq program, the extraction gives 
 " (* we are going to submit a bug report after further tests if needed, in particular with the current ``trunk'' development version. *)
 ; subsubsection ~label:Label.appendix_eta "The optimized {eta}-simplification"
 ; "
-{http \"coq.inria.fr/bugs/show_bug.cgi?id=2570\" ^^ newline}
+{https \"coq.inria.fr/bugs/show_bug.cgi?id=2570\" ^^ newline}
 This extracted implementation from a Coq code~:
 <~
 open Datatypes
@@ -2010,7 +2269,7 @@ Remark also, even if it has not been tested, that we may factorize the part unde
 "
 ; subsubsection ~label:Label.appendix_singl "The optimized simplification of proofs on modules"
 ; "
-{http \"coq.inria.fr/bugs/show_bug.cgi?id=843\" ^^ newline}
+{https \"coq.inria.fr/bugs/show_bug.cgi?id=843\" ^^ newline}
 According to the {index le (English.bdiz)} convertibility rule, an object of type <!Prop!> can be identified as an object of type <!Set!> or <!Type!>. In particular, this is a program well-compiled by Coq :
 <#
 Inductive F := .
@@ -2047,7 +2306,7 @@ However, the extracted OCaml program is not well-typed because the extracted mod
 "
 ; paragraph "Notes"
 ; "
-The proposed solution is enough to get a correct extracted OCaml files for our SH4 project, but is not completely a general form for an arbitrary Coq program. For example, we would have the same problem for a module where the typing of its contents is later than its definition :
+The proposed solution is enough to get a correct extracted OCaml files for our SH4 project, but is not completely a general form for an arbitrary Coq program. For example, we would have the same problem for a module where the typing of its contents is consulted several times after its definition~:
 <#
 Module M.
   Definition t := F.
@@ -2058,7 +2317,15 @@ End Make.
 
 Module MM := Make M.
 #>
-"]
+"
+; subsection "Simulation speed of {S.SL.C.gcc} and {S.SL.C.asm}"
+; "The {P.simsoc} team has released an archive including a simulator of ARMv6 instructions and also a cross-compiler targeting the ARMv6 : {https \"gforge.inria.fr/projects/simsoc\"}. In fact, the simulator present in {P.simsoc} version {Version.Cpp11.simsoc} {let module S = Sfoot in footnote () (https \"gforge.inria.fr/frs/download.php/28048/simsoc-0.7.1.tar.gz\")} (namely, under the folder {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/libsimsoc/processors/arm_v6/simlight"}) is an optimized form of {S.SL.C.gcc} : for example, as new feature, it simulates the Thumb instruction set~{cite ["arm"]}. The not-optimized version can be found here~: {http \"formes.asia/media/simsoc-cert/simsoc-cert.tar.gz\"}{let module S = Sfoot in footnote () "However, this archive does not include the support of the SH4 processor, only ARMv6..."}, under the folder {texttt "arm6/simlight"}.
+
+We now summarize all the results in a table. Remark that most of the following {S.C.gcc} examples could be found in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/examples/Demo/soft"}."
+
+; Performance.draw_performance (fun x y -> small (longtable x y)) 
+
+]
   in
 
   let l_hypersetup =

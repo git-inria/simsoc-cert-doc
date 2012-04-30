@@ -1,2 +1,2 @@
-<*.{byte,native}>: package(melt),package(batteries),package(caml2html)
-<*.ml>: package(melt),package(batteries),package(caml2html)
+<*.{byte,native}>: package(mlpost_dot), package(melt), package(batteries), package(caml2html)
+<*.ml>: package(mlpost_dot), package(melt), package(batteries), package(caml2html)

@@ -8,8 +8,11 @@ cp ../t.ml t.mlt
 cp ../t.bib .
 cp ../Makefile .
 cp ../coq_lex.mll .
+cp ../stat_arm1_1789 .
+cp ../stat_arm2_1789 .
 
 meltpp t.mlt -o t.ml -open Latex -open Melt
+mlpost -cairo -pdf -ocamlbuild -ccopt "-use-ocamlfind" t.ml
 ocamlbuild -use-ocamlfind -no-links t.d.byte --
 make 2>&1 > /dev/null
 
