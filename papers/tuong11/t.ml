@@ -489,17 +489,25 @@ struct
   struct
     module M (P_ : sig val sl : Latex.t end) = 
     struct
-      module C = MK (struct let make x =  mk_ "C" x ^^ texttt ("-" ^^ P_.sl) end)
+      module Make (M : sig val coq : Latex.t val equiv_prefix : Latex.t end) = struct
+        let sl x = texttt ("{M.coq}-" ^^ Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) x ^^ P_.sl)
 
-      let sl x = texttt ("Coq-" ^^ Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) x ^^ P_.sl)
-
-      module Coq_deep = MK (struct let make x = sl (mk_ "C" x) end)
-      module Coq_deep_ocaml = MK (struct let make x = sl (mk_ "OCaml" x) end)
-      module Coq_shallow = MK (struct let make = sl end)
+        module Deep = MK (struct let make x = sl (mk_ "C" x) end)
+        module Deep_ocaml = MK (struct let make x = sl (mk_ P.ocaml x) end)
+        module Shallow = MK (struct let make = sl end)
 
       (*let circlearrowleft = \"circlearrowleft\" @ ([], A)*)
-      let coq = Coq_shallow.make (*"${circlearrowleft}$"*) "${equiv}$"
-      let coq_deep_ocaml = Coq_deep_ocaml.make ""
+        let coq = Shallow.make (*"${circlearrowleft}$"*) M.equiv_prefix
+        let coq_deep_ocaml = Deep_ocaml.make ""
+      end
+
+      module Coq = Make (struct let coq = P.coq let equiv_prefix = "${equiv}$" end)
+      module Ocaml = Make (struct let coq = P.ocaml let equiv_prefix = "{P.coq}${equiv}$" end)
+      module Ocaml_deep = Make (struct let coq = P.ocaml let equiv_prefix = "{P.coq}{C.compcert}" end)
+      module C = MK (struct let make x =  mk_ "C" x ^^ texttt ("-" ^^ P_.sl) end)
+
+      let coq = Coq.coq
+      let coq_deep_ocaml = Coq.coq_deep_ocaml
     end
 
     module Arm = M (struct let sl = exponent P_.sl (Sz.footnote "arm") end)
@@ -516,7 +524,7 @@ struct
   module Decoder = SL_gen (struct let sl = P.decoder end)
   module Simgen = SL_gen (struct let sl = P.simgen_ast end)
 
-  let mk_ml x = texttt ("OCaml-" ^^ x)
+  let mk_ml x = texttt ("{P.ocaml}-" ^^ x)
   let simgen = mk_ml P.simgen
   let simgen_ast = mk_ml P.simgen_ast
 
@@ -931,6 +939,7 @@ struct
     module Filename = struct (* it regroups filename used in the report *)
       let stat_arm1 = \"stat_arm1_1789\"
       let stat_arm2 = \"stat_arm2_1789\"
+      let stat_armo = \"stat_armocaml_1789\"
     end
   end
 
@@ -943,8 +952,8 @@ module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let 
 
 module Label = 
 struct
-  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, concl, appendix_eta, appendix_singl = 
-    label (), label (), label (), label (), label (), label (), label (), label (), label (), label ()
+  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, th_init_state, concl, appendix_speed, appendix_eta, appendix_singl = 
+    label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label ()
 
   let ex, newth_ex = Th.newtheorem "Example" ~opt:"subsection"
   let note, newth_note = Th.newtheorem' "Notation"
@@ -958,6 +967,7 @@ module Performance =
 struct
 
   type simlight = 
+    | No_simlight
     | Simlight__short
     | Simlight2
 
@@ -967,7 +977,11 @@ struct
 
   type 'a extremum = int (* index of the element in the list *) * 'a
 
-  type 'a perf = { file : file ; nb_iter : int ; time : 'a list ; t_min : 'a extremum ; t_max : 'a extremum }
+  type 'a bipole = { t_min : 'a extremum ; t_max : 'a extremum }
+
+  type 'a stat = { file : file ; nb_iter : int ; time : 'a list }
+
+  type ('a, 'b) perf = { data : 'b ; t_mima : 'a bipole option }
 
   let fold_double f =
     let rec aux acc = function
@@ -984,18 +998,20 @@ struct
   let only_one_elt = function [] -> assert false | [_] -> true | _ -> false
 
   let to_latex map =
-    let map = StringMap.fold (fun k (l, v_min, v_max, i) -> IntMap.add i (k, v_min, v_max, l)) map IntMap.empty in
+    let map = StringMap.fold (fun k { data = (l, i) ; t_mima } -> IntMap.add i { data = (l, k) ; t_mima }) map IntMap.empty in
     List.rev
       (IntMap.fold
-         (fun _ (name, row_min_pos, row_max_pos, v_perf) l ->
-           
+         (fun _ { data = (v_perf, name) ; t_mima } l ->
+           let row_min_pos, row_max_pos = 
+             match t_mima with Some { t_min = (row_min_pos, _) ; t_max = (row_max_pos, _) } -> Some row_min_pos, Some row_max_pos | _ -> None, None in
            fst 
            (List.fold_left
              (fun (l, row_pos) (name, v) -> 
                let opt, thumb =
                  let open English in
                  let is_sl2, thumb_enabled = 
-                   match v.file with 
+                   match v.data.file with 
+                     | No_thumb No_simlight
                      | No_thumb Simlight__short -> false, false
                      | No_thumb Simlight2 -> true, false
                      | With_thumb -> true, true in
@@ -1008,10 +1024,11 @@ struct
               ::
               thumb
               ::
-              latex_of_int v.nb_iter
+              latex_of_int v.data.nb_iter
               ::
-              let l_tps = v.time in
-              let (mi_pos, mi), (ma_pos, ma) = v.t_min, v.t_max in
+              let l_tps = v.data.time in
+              let (mi_pos, mi), (ma_pos, ma) = 
+                match v.t_mima with None -> assert false | Some v -> v.t_min, v.t_max in
               let () = 
                 if mi_pos <> ma_pos then () else assert false (* all values are equal *) in
               BatList.flatten 
@@ -1023,10 +1040,10 @@ struct
                           | None -> ""
                           | Some color -> Color.cellcolor_ color
                         } {
-                           let t = text (str_of_float (d /. float_of_int v.nb_iter *. 1000.)) in
-                           if not (only_one_elt v_perf) && pos = mi_pos && row_pos = row_min_pos then 
+                           let t = text (str_of_float (d /. float_of_int v.data.nb_iter *. 1000.)) in
+                           if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then 
                              Color.textcolor_ (Color.blue) t
-                           else if not (only_one_elt v_perf) && pos = ma_pos && row_pos = row_max_pos then
+                           else if not (only_one_elt v_perf) && pos = ma_pos && Some row_pos = row_max_pos then
                              Color.textcolor_ (Color.red) t
                            else
                              t
@@ -1042,36 +1059,98 @@ struct
          map
          [])
 
-  let performance_of_file f_simlight file map =
+  let compute_mima_column l_tps =
+    let t_min, t_max, _ =
+      List.fold_left
+        (fun (o_min, o_max, pos) d -> 
+          let f_extr f_min o_min = 
+            match o_min with
+              | None -> Some (pos, d)
+              | Some (mi_pos, mi) -> 
+                let mi2 = f_min mi d in                    
+                Some ((if d = mi2 then pos else mi_pos), mi2) in
+          f_extr min o_min,
+          f_extr max o_max,
+          Pervasives.succ pos)
+        (None, None, 0)
+        l_tps in
+    let f = function None -> assert false | Some (i, v) -> i, v in
+    Some { t_min = f t_min ; t_max = f t_max }
+
+  let to_latex2 map =
+    let map = StringMap.fold (fun k { data = (l, i) ; t_mima } -> IntMap.add i { data = (l, k) ; t_mima }) map IntMap.empty in
+    List.rev
+      (IntMap.fold
+         (fun _ { data = (lll, name) ; _ } l ->
+           match lll with
+             | [{data = {file = No_thumb No_simlight} as x_ocaml} ; {data = {file = No_thumb Simlight__short} as x_sl} ; {data = {file = No_thumb Simlight2} as x_sl2}]
+             | [{data = {file = No_thumb No_simlight} as x_ocaml} ; {data = {file = No_thumb Simlight__short} as x_sl} ; {data = {file = No_thumb Simlight2} as x_sl2} ; _ ] ->
+
+           let row_min_pos, row_max_pos = None, None in
+           let l = Hline :: l in
+           fst 
+           (
+             (  
+               let row_pos = 0 in
+               let opt, thumb =
+                 let open English in
+                 let is_sl2, thumb_enabled = false, false in                   
+                 let mk_color = function true -> fun f -> f yes | false -> fun f -> Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) (f no) in
+                 mk_color is_sl2 (fun x -> x ^^ ""), mk_color thumb_enabled (fun x -> x ^^ "") in
+           Data 
+             (texttt (Latex.Verbatim.verbatim name)
+              ::
+              let l_tps = List.map (fun (v, n) -> List.nth v.time n, v.nb_iter) [ x_ocaml, 0 ; x_sl, 0 ; x_sl2, 0 ; x_sl, 4 ; x_sl2, 4 ] in
+              let (mi_pos, mi), (ma_pos, ma) = 
+                match compute_mima_column (BatList.map (fun (f, nb) -> f /. float_of_int nb) l_tps) with None -> assert false | Some v -> v.t_min, v.t_max in
+              let () = 
+                if mi_pos <> ma_pos then () else assert false (* all values are equal *) in
+              BatList.flatten 
+                [    BatList.mapi (fun pos (d, nb_iter) -> 
+                       "{
+                         match 
+                           if pos = mi_pos then Some Color.green_light else if pos = ma_pos then Some Color.red_light else None
+                         with
+                          | None -> ""
+                          | Some color -> Color.cellcolor_ color
+                        } {
+                           let t = text (str_of_float (d /. float_of_int nb_iter *. 1000.)) in
+                           (*if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then 
+                             Color.textcolor_ (Color.blue) t
+                           else if not (only_one_elt v_perf) && pos = ma_pos && Some row_pos = row_max_pos then
+                             Color.textcolor_ (Color.red) t
+                           else*)
+                             t
+                          }") l_tps 
+                ; [ Latex.Verbatim.verbatim (Printf.sprintf \"+%s %%\" (str_of_float_percent (100. -. mi *. 100. /. ma)) ^ \"\") ] ])
+           ::
+           l,
+           Pervasives.succ row_pos)
+             )
+             | _ -> 
+               if List.exists (function {data = {file = No_thumb No_simlight}} -> true  | _ -> false ) lll then 
+                 Printf.kprintf failwith \"%s %d\" name (List.length lll)
+               else
+                 l
+         ) 
+         map
+         [])
+
+  let performance_of_file f_mima (f_simlight, file) map =
       fold_double 
         (fun (map, dim_map) (name, s) -> 
+          let name = BatString.trim name in
           let nb_iter :: l_tps = BatList.filter_map (function \"\" -> None | s -> Some s) (BatString.nsplit s \" \") in
           let l_tps = 
             BatList.map float_of_string l_tps in
-          let t_min, t_max = 
-            let t_min, t_max, _ =
-              List.fold_left
-                (fun (o_min, o_max, pos) d -> 
-                  let f_extr f_min o_min = 
-                    match o_min with
-                      | None -> Some (pos, d)
-                      | Some (mi_pos, mi) -> 
-                        let mi2 = f_min mi d in                    
-                        Some ((if d = mi2 then pos else mi_pos), mi2) in
-                  f_extr min o_min,
-                  f_extr max o_max,
-                  Pervasives.succ pos)
-                (None, None, 0)
-                l_tps in
-            let f = function None -> assert false | Some (i, v) -> i, v in
-            f t_min, f t_max in
+          let t_mima = f_mima l_tps in
           let name, file = 
             let und = \"_\" in
             let l, file = 
               match List.rev (BatString.nsplit name und) with
                 | \"a\" :: l -> l, No_thumb f_simlight 
                 | \"t\" :: l -> l, With_thumb
-                | _ -> Printf.kprintf failwith \"%s\" name in
+                | _ -> Printf.kprintf failwith \"file %S does not end with a recognized extension\" name in
             BatString.join und (List.rev l), file in
 
           let dim_map, index = 
@@ -1082,7 +1161,7 @@ struct
           StringMap.modify_def
             ([], index)
             name
-            (fun (l, index) -> { file ; nb_iter = int_of_string nb_iter ; time = l_tps ; t_min ; t_max } :: l, index) 
+            (fun (l, index) -> { data = { file ; nb_iter = int_of_string nb_iter ; time = l_tps } ; t_mima } :: l, index) 
             map, 
           dim_map)
         map
@@ -1090,10 +1169,41 @@ struct
            (function \"\" -> false | _ -> true) 
            (BatString.nsplit 
               (BatFile.with_file_in file BatIO.read_all) \"\n\"))
-      
-  let draw_performance f_tabular = 
-    newpage ^^ f_tabular (BatList.flatten [ `L :: `C :: `C :: `Vert :: interl 7 `R ])
-      (List.flatten
+
+  let compute_mima_row f_extr = 
+    StringMap.map 
+      (fun (l, i) -> 
+
+        let l = 
+          List.fast_sort
+            (fun v1 v2 -> 
+              let f v = match v.data.file with
+                | No_thumb No_simlight -> -1
+                | No_thumb Simlight__short -> 0
+                | No_thumb Simlight2 -> 1
+                | With_thumb -> 2 in
+              compare (f v1) (f v2))
+            l in
+
+        { data = l, i 
+        ; t_mima = f_extr l })
+
+  let stat_file1 = 
+    [ Simlight__short, Version.Cpp11_bis.Filename.stat_arm1
+    ; Simlight2, Version.Cpp11_bis.Filename.stat_arm2 ]
+
+  let stat_file2 = 
+    (No_simlight, Version.Cpp11_bis.Filename.stat_armo)
+
+  let map_perf f_compute_mima_column = 
+    List.fold_left
+      (fun map sl_file -> performance_of_file f_compute_mima_column sl_file map)
+      (StringMap.empty, 0)
+      stat_file1
+
+  let draw_performance1 f_tabular = 
+    f_tabular (BatList.flatten [ `L :: `C :: `C :: `Vert :: interl 7 `R ])
+      (BatList.flatten
          [ (let module S = Ssmall in 
             let f n = [ "{texttt "gcc -m32 -O{latex_of_int n}"}" ] in
             title
@@ -1101,8 +1211,7 @@ struct
              [ ] 
              None
              [ [ "ARMv6 Executable and Linkable Format (ELF)" ]
-             ; [ "Do we execute with the optimized version of the simulator," 
-               ; "supporting the Thumb instruction set ?" ]
+             ; [ "Do we execute with the optimized version of the simulator ?" ]
              ; [ "Was the ELF code specially generated for the Thumb ?" ]
              ; [ "Number of iterations needed to have a significant duration" ; "in seconds for a human (currently, beyond 4 seconds)" ]
              ; [ "Time in milliseconds of 1 iteration" ; "(i.e. the total time divided by the number of iterations)" ; "with {S.SL.C.asm}, compiled by" ; "{P.compcert} {texttt Version.compcert_arch}" ]
@@ -1111,28 +1220,11 @@ struct
              ; f 2
              ; f 3
              ; [ "Relative" ; "gain" ; "between" ; "max" ; "and" ; "min" ] ])
-         ; to_latex 
-           (let map, _ = 
-              List.fold_left
-                (fun map (sl, file) -> performance_of_file sl file map)
-                (StringMap.empty, 0)
-                [ Simlight__short, Version.Cpp11_bis.Filename.stat_arm1
-                ; Simlight2, Version.Cpp11_bis.Filename.stat_arm2 ] in
-            StringMap.map 
-              (fun (l, i) -> 
-
-                let l = 
-                  List.fast_sort
-                    (fun v1 v2 -> 
-                      let f = function
-                        | { file = No_thumb Simlight__short ; _ } -> 0
-                        | { file = No_thumb Simlight2 ; _ } -> 1
-                        | { file = With_thumb ; _ } -> 2 in
-                      compare (f v1) (f v2))
-                    l in
-
+         ; to_latex
+           (compute_mima_row
+              (fun l -> 
                 let fold get_min f_min =
-                  let get_min v = snd (get_min v) /. float_of_int v.nb_iter in
+                  let get_min v = snd (get_min v) /. float_of_int v.data.nb_iter in
                   match 
                     List.fold_left 
                       (fun (o, pos) v ->
@@ -1147,13 +1239,39 @@ struct
                       l 
                   with
                     | None, _ -> assert false
-                    | Some (p, _), _ -> p in
+                    | Some p, _ -> p in
+                
+                Some { t_min = fold (fun v -> match v.t_mima with None -> assert false | Some v -> v.t_min) min
+                     ; t_max = fold (fun v -> match v.t_mima with None -> assert false | Some v -> v.t_max) max })
+              (fst (map_perf compute_mima_column))) ])
 
-                l,
-                fold (fun v -> v.t_min) min,
-                fold (fun v -> v.t_max) max,
-                i)
-              map) ])
+  let draw_performance2 f_tabular = 
+    f_tabular (BatList.flatten [ `L :: `Vert :: interl 6 `R ])
+      (BatList.flatten
+         [ (let module S = Ssmall in 
+            let f optim _ = 
+              let l_of_bool b = if b then English.yes else English.no in
+              "({l_of_bool optim} opt)" in
+            title
+             (fun x -> x)
+             [ ] 
+             None
+             [ [ "ARMv6 Executable and Linkable Format ({English.no} Thumb generation)" ]
+             ; [ "Time in milliseconds of 1 iteration" 
+               ; "with {S.SL.Ocaml.coq} {f false false}," ; "compiled by {texttt "ocamlopt"}" ]
+             ; [ "with {S.SL.C.asm} {f false false}," ; "compiled by {P.compcert} {texttt Version.compcert_arch}" ]
+             ; [ "with {S.SL.C.asm} {f true false}," ; "compiled by {P.compcert} {texttt Version.compcert_arch}" ]
+             ; [ "with {S.SL.C.gcc} {f false false}," ; "compiled by {texttt "gcc -m32 -O3"}" ]
+             ; [ "with {S.SL.C.gcc} {f true false}," ; "compiled by {texttt "gcc -m32 -O3"}" ]
+             ; [ "Relative gain" ; "between max and min" ] ])
+         ; to_latex2
+           ((*StringMap.map
+              (fun v -> 
+                { v with data = 
+                    match v.data with
+                      | { data = [ sl_ocaml ; sl1 ; sl2 ] ; t_mima = None } as v, i -> { v with t_mima = Some () }, i
+                      | _ -> assert false }) *)
+              (compute_mima_row (fun _ -> None) (fst (performance_of_file (fun _ -> None) stat_file2 (map_perf (fun _ -> None)))))) ])
 end
 
 let _ = 
@@ -1808,7 +1926,7 @@ All the informations present until now are sufficient for the type-checker to au
 "
 ; (let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
 Th.env Label.fact "
-The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} to a Coq representation. For the rest, this associated deep embedded Coq program will be named as : {SL_p.Coq_deep.compcert}.
+The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} to a Coq representation. For the rest, this associated deep embedded Coq program will be named as : {SL_p.Coq.Deep.compcert}.
 ")
 ; subsubsection "Programming discussions"
 ; "
@@ -1831,7 +1949,7 @@ Note that as a first consequence, because <!_INDUCTIVE!> is the pretty-printing 
 The process of creating a raw printing function given a type may be automated and integrated in the Coq sources. However, in the case the value we wish to import is defined with the help of the Gallina language, there may be some difficulty to print exactly the tactics used, as well as the Coq comments <!(* ... *)!>. Hopefully, for our task of importing a {S.C.gcc} data, this is not a problem because the value is rawly taken from {English.outworld}.
 
 The {S.C.compcert} AST contains a lot of type information at each node (for example, every constructor of <!Csyntax.expr!> carries a field of type <!Csyntax.type!>), so the representation of the value printed is rather expressive. Our actual pretty-printer includes a sharing algorithm where types are first collected and declared separately with the Coq ``<!Definition!>''.
-Before this optimization, the {S.Manual.Arm.Coq_deep.compcert} size were about 52Mo. Now, it is approximatively 2Mo, and the type-checking time is thus clearly improved.
+Before this optimization, the {S.Manual.Arm.Coq.Deep.compcert} size were about 52Mo. Now, it is approximatively 2Mo, and the type-checking time is thus clearly improved.
 
 Because natural numbers are also frequently used, it can be more readable to print them using 0-9 digits, instead of their raw inductive constructor definition. Remark that if the number we print is too big, like some position of memory location, OCaml raises a <!Stack_overflow!> with byte-code or <!Segmentation fault!> in native version{let module S = Sfoot in footnote () "see ``{emph "11.5 Compatibility with the bytecode compiler"}'' in {cite ["OCaml"]}. In the same spirit, when we try to display a large number with the {Version.coq} pretty-printer, like {texttt "Check 5001."}, if it can print the number, it prints with a warning before."}. This problem can hopefully be solved by abstracting the printing process for every failing type with a tail recursive function, the whole being instantiated with the extracted code at OCaml side.
 
@@ -1851,7 +1969,7 @@ For the following, let us introduce
 }
 "}
 {let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq_deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq_deep.compcert} associated to an initial {S.C.asm}. 
+Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}. 
 
 Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 "}
@@ -1961,7 +2079,7 @@ Now, validation tests succeed on both {S.SL.C.gcc} and {S.SL.C.asm}." (* Except 
 ; subsection "The behavior of {S.SL.C.asm}, towards {S.SL.C.infty}"
 ; "
 "
-; subsubsection "Does {S.SL.C.asm} terminate ?"
+; subsubsection ~label:Label.th_init_state "Does {S.SL.C.asm} terminate ?"
 ; "
 We are now one step closer to invocate the main {P.compcert} theorem, which predicts completely the behavior of the assembly file produced from {S.SL.C.asm}. 
 {itemize
@@ -1977,10 +2095,10 @@ Th.env Label.def "
 We define :
 {itemize
 [ "{S.C.lambda_l} for {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:" ^^
-  enumerate [ "the associated {SL_p.Coq_deep.asm} has been obtained successfully," 
-          ; "the behavior of the {SL_p.Coq_deep.compcert} is {emph "not wrong"}." ]
+  enumerate [ "the associated {SL_p.Coq.Deep.asm} has been obtained successfully," 
+          ; "the behavior of the {SL_p.Coq.Deep.compcert} is {emph "not wrong"}." ]
 (*" can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (and preserving at least from the {S.C.compcert} big-step semantic). Moreover, the behavior of the initial source is required to be proved {emph "not wrong"}."*)
-; "{SL_p.Coq_deep.lambda_l} will naturally stand for the {SL_p.Coq_deep.asm} (if {SL_p.C.asm} {in_} {S.C.lambda_l})." ]
+; "{SL_p.Coq.Deep.lambda_l} will naturally stand for the {SL_p.Coq.Deep.asm} (if {SL_p.C.asm} {in_} {S.C.lambda_l})." ]
 }
 "}
 Now enriched by this definition, can we apply the main CompCert theorem to {S.SL.C.asm} ? Is the {S.SL.C.asm} a {S.C.lambda_l} program ? After careful considerations, we think to answer negatively here. Indeed, a {S.C.lambda_l} program is in particular close with regard to its initial environment : it can not receive arguments from the outside world.
@@ -2026,7 +2144,7 @@ This result appears unsatisfactory. In particular, the classification made by th
 let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in 
 let module SL_a = S.SL_gen (struct let sl = "ASM" end) in 
 let i_sqcup x = index sqcup (tiny x) in
-"Assume the pretty-printer <!parse!> (just defined in {ref_ Label.pretty_print}) being a morphism preserving the applicative operator ``${sqcup}$'' : {align_ "$({SL_p.C.asm}, {i_sqcup "apply"}) {overset "<!parse!>" longrightarrow} ({SL_p.Coq_deep.asm}, {i_sqcup "APPLY"})$"}
+"Assume the pretty-printer <!parse!> (just defined in {ref_ Label.pretty_print}) being a morphism preserving the applicative operator ``${sqcup}$'' : {align_ "$({SL_p.C.asm}, {i_sqcup "apply"}) {overset "<!parse!>" longrightarrow} ({SL_p.Coq.Deep.asm}, {i_sqcup "APPLY"})$"}
 Then, instead of searching if {S.SL.C.asm} {in_} {S.C.lambda_l}, one could determine if 
 {align_ "{forall} {SL_a.C.asm}, ({S.SL.C.asm} {i_sqcup "apply"} {SL_a.C.asm}) {in_} {S.C.lambda_l} "}"
 }
@@ -2043,7 +2161,7 @@ enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
                {longrightarrow_ }
                {SL_a.C.asm} {in_} {S.C.infty}"
            ]
-; "{S.P.Coq_deep.infty} is introduced as a synonym of {S.P.Coq_deep.asm} (if {S.P.C.asm} {in_} {S.C.infty})." ]
+; "{S.P.Coq.Deep.infty} is introduced as a synonym of {S.P.Coq.Deep.asm} (if {S.P.C.asm} {in_} {S.C.infty})." ]
 }
 "}
 
@@ -2107,12 +2225,12 @@ in particular by using mainly a sequence of <!eapply!> tactics. However, as long
 ; (let module SL_p = S.SL_gen (struct let sl = "P" end) in "
 The example above shows us that (*proving the behavior, of an apparently simple program {SL_p.C.asm}*)computing rawly in Coq is susceptible to take a long time. We also remark that this task is finally not a priority, especially in case it is easier to prove first if we have some kind of equivalent behavior between {S.SL.C.asm} and a Coq program.
 
-Finally, we wonder if we can begin first with the equivalence between {S.SL.Coq_deep.compcert} and {S.SL.coq}, than trying to obtain a {SL_p.C.lambda_l} by running extensive computations(*betting on a behavior $b$*). In fact, with the former proceeding, we will have implicitly the proof of the non wrong-behavior of {S.SL.Coq_deep.compcert}, due to the supposed non wrong-behavior of the real Coq system.
+Finally, we wonder if we can begin first with the equivalence between {S.SL.Coq.Deep.compcert} and {S.SL.coq}, than trying to obtain a {SL_p.C.lambda_l} by running extensive computations(*betting on a behavior $b$*). In fact, with the former proceeding, we will have implicitly the proof of the non wrong-behavior of {S.SL.Coq.Deep.compcert}, due to the supposed non wrong-behavior of the real Coq system.
 (*
 Then we will know at the meta level that {S.SL.C.asm} can not have a {emph "wrong"} behavior, even if a constructive $b$ has not yet been exhibited in Coq at that time (a condition needed for the creation of {S.SL.C.lambda_l}).
 
-In conclusion, if we choose first to prove a kind of equivalence between {S.SL.Coq_deep.compcert} and {S.SL.coq}, and succeed, we will have meta proved the non wrong behavior for {S.SL.C.asm}. 
- By extending the reasoning further, we would be sure that the semantic of the initial source has been preserved to assembler. Moreover, we conjecture all this reasoning can yet be formally proved in a type system not different than at Coq level, by starting to exhibit a particular behavior $b$ from one side of the equivalence~: from the {S.SL.Coq_deep.compcert}, or maybe the {S.SL.coq} side...*)
+In conclusion, if we choose first to prove a kind of equivalence between {S.SL.Coq.Deep.compcert} and {S.SL.coq}, and succeed, we will have meta proved the non wrong behavior for {S.SL.C.asm}. 
+ By extending the reasoning further, we would be sure that the semantic of the initial source has been preserved to assembler. Moreover, we conjecture all this reasoning can yet be formally proved in a type system not different than at Coq level, by starting to exhibit a particular behavior $b$ from one side of the equivalence~: from the {S.SL.Coq.Deep.compcert}, or maybe the {S.SL.coq} side...*)
 
 This solution has been explored and is further detailed in {cite ["shi2011"]}.
 " (* On both cases, during the establisment of the two proofs, we are informed if we encounter some not well-formed part in {S.SL.C.asm} (part that need to be changed).*)
@@ -2126,7 +2244,7 @@ Initially, before the creation of any simulator in {P.simsoc}, remark that to ge
 "
 ; paragraph "Coq {longleftarrow_} {S.C.infty}~?"
 ; "
-The problem we are focusing is more open than only oriented from Coq to {S.C.infty}. For example, even if the {S.Manual.ArmSh.coq} is usually considered as the model of reference, for validation, tests are usually performed in {S.SL.C.asm} due to performance issue. Indeed, we are interested in a semantical preservative way to report back modifications from {S.C.infty} side to Coq. 
+The problem we are focusing is more open than only oriented from Coq to {S.C.infty}. For example, even if the {S.Manual.ArmSh.coq} is usually considered as the model of reference, for validation, tests are usually performed in {S.SL.C.asm} due to performance issue (appendix {ref_ Label.appendix_speed}). Indeed, we are interested in a semantical preservative way to report back modifications from {S.C.infty} side to Coq. 
 
 More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the {S.Manual.ArmSh.C.asm} is only formed with recursive functions. If we omit this semantical preservative requirement, the question remains important for proving the correction of an arbitrary {S.C.infty} code. Given a {S.C.human} code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
 
@@ -2143,12 +2261,12 @@ For this particular case, the generation of {S.C.asm} being automatic, instead o
 } 
 As we think they can easily be translated in Coq, the problem of good equivalence between the {S.Manual.ArmSh.coq} and the {S.Manual.C.asm} can be simplified to the problem of building a couple given a particular {S.simgen_ast}, i.e writing a Coq function of type : {newline}
 <!  (!>{S.Simgen.coq}<!, !>{S.Simgen.coq_deep_ocaml}<!) -> 
-    { (!>{S.Manual.ArmSh.coq}<!  ,  !>{S.Manual.Coq_deep.infty}<!) 
-    |  !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq_deep.infty}<!  }!>{newline}
+    { (!>{S.Manual.ArmSh.coq}<!  ,  !>{S.Manual.Coq.Deep.infty}<!) 
+    |  !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq.Deep.infty}<!  }!>{newline}
 (*or this one (which seems harder) : {newline}
 <!  !>{S.Simgen.coq_deep_ocaml} <!-> 
-    { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq_deep.infty}<!) 
-    | !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq_deep.infty}<! }!>{newline}*)
+    { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq.Deep.infty}<!) 
+    | !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq.Deep.infty}<! }!>{newline}*)
 Of course, the equivalence function ``<!<~>!>'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
 
 (*****************************************************************************)
@@ -2171,6 +2289,19 @@ Finally, we hope to plug our certified simulator after the {P.compcert} chain le
 ; appendix
 
 ; section "Appendix"
+
+; subsection ~label:Label.appendix_speed "Simulation speed"
+; subsubsection "Between {S.SL.C.asm} and {S.SL.C.gcc}"
+; "The {P.simsoc} team has released an archive including a simulator of ARMv6 instructions and also a cross-compiler targeting the ARMv6 : {https \"gforge.inria.fr/projects/simsoc\"}. In fact, the simulator present in {P.simsoc} version {Version.Cpp11.simsoc} {let module S = Sfoot in footnote () (https \"gforge.inria.fr/frs/download.php/28048/simsoc-0.7.1.tar.gz\")} (in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/libsimsoc/processors/arm_v6/simlight"}) is an optimized form of {S.SL.C.gcc} : for example, as new feature, it simulates the Thumb instruction set~{cite ["arm"]}. The not-optimized version can be found here~: {http \"formes.asia/media/simsoc-cert/simsoc-cert.tar.gz\"} (in {texttt "arm6/simlight"}){let module S = Sfoot in footnote () "Note that the support of the SH4 processor is not present in this archive..."}.
+
+We now summarize all the results in a table. Remark that most of the following {S.C.gcc} examples could be found in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/examples/Demo/soft"}."
+; Performance.draw_performance1 (fun x y -> small (longtable x y)) 
+
+; newpage
+; subsubsection "Comparison with {S.SL.coq}"
+; "The {S.SL.coq} code can successfully be extracted to OCaml, we will call it {S.SL.Ocaml.coq}. However, at the time of writing, it does not support the Thumb instructions. Here are the results."
+; Performance.draw_performance2 (fun x y -> small (longtable x y)) 
+; "Remark that {S.SL.Coq.Deep.compcert} can also be extracted to OCaml. However, this deep embedded program can not be rawly tested without the use of the {let i_sqcup x = index sqcup (tiny x) in i_sqcup "APPLY"} operator : since {Version.compcert}, even if the option <!-interp!> permits to interpret an arbitrary {S.C.compcert} code, this code also needs to be in {S.C.lambda_l}. But we have proved in {ref_ Label.th_init_state} that {S.SL.C.asm} does not belong to {S.C.lambda_l} (moreover, we have at runtime : ``{texttt "ERROR: Initial state undefined"}'')."
 
 ; subsection "Errors in the OCaml extracted code"
 ; "
@@ -2318,13 +2449,6 @@ End Make.
 Module MM := Make M.
 #>
 "
-; subsection "Simulation speed of {S.SL.C.gcc} and {S.SL.C.asm}"
-; "The {P.simsoc} team has released an archive including a simulator of ARMv6 instructions and also a cross-compiler targeting the ARMv6 : {https \"gforge.inria.fr/projects/simsoc\"}. In fact, the simulator present in {P.simsoc} version {Version.Cpp11.simsoc} {let module S = Sfoot in footnote () (https \"gforge.inria.fr/frs/download.php/28048/simsoc-0.7.1.tar.gz\")} (namely, under the folder {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/libsimsoc/processors/arm_v6/simlight"}) is an optimized form of {S.SL.C.gcc} : for example, as new feature, it simulates the Thumb instruction set~{cite ["arm"]}. The not-optimized version can be found here~: {http \"formes.asia/media/simsoc-cert/simsoc-cert.tar.gz\"}{let module S = Sfoot in footnote () "However, this archive does not include the support of the SH4 processor, only ARMv6..."}, under the folder {texttt "arm6/simlight"}.
-
-We now summarize all the results in a table. Remark that most of the following {S.C.gcc} examples could be found in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/examples/Demo/soft"}."
-
-; Performance.draw_performance (fun x y -> small (longtable x y)) 
-
 ]
   in
 

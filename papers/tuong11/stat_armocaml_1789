@@ -1,0 +1,80 @@
+sum_iterative_a
+31 4.05096
+sum_recursive_a
+11 4.28495
+sum_direct_a   
+488 4.00361
+endian_a       
+78 4.05017
+multiply_a     
+66 4.05074
+test_mem_a     
+26 4.08729
+arm_blx2_a     
+307 4.00458
+arm_cflag_a    
+78 4.04678
+arm_dpi_a      
+9 4.32822
+arm_edsp_a     
+13 4.32663
+arm_ldmstm_a   
+65 4.03624
+arm_ldrd_strd_a
+42 4.03884
+arm_ldrstr_a   
+17 4.12366
+arm_mrs_a      
+12 4.26932
+arm_msr_a      
+13 4.13952
+arm_multiple_a 
+35 4.00230
+arm_swi_a      
+173 4.01927
+arm_v6_SADD_a  
+11 4.26927
+arm_v6_QADD_a  
+14 4.22860
+arm_v6_QSUB_a  
+9 4.19048
+arm_v6_REV_a   
+56 4.06234
+arm_v6_a       
+15 4.18775
+arm_v6_SSAT_a  
+16 4.26134
+arm_v6_SSUB_a  
+13 4.30146
+arm_v6_SXTA_a  
+19 4.08708
+arm_v6_SXTB_a  
+17 4.10956
+arm_v6_SHADD_a 
+34 4.03776
+arm_v6_SHSUB_a 
+34 4.03825
+arm_v6_SML_a   
+27 4.13616
+arm_v6_SMM_a   
+43 4.06843
+arm_v6_SMU_a   
+9 4.27478
+arm_v6_UA_a    
+11 4.35173
+arm_v6_UQADD_a 
+14 4.00287
+arm_v6_USUB_a  
+13 4.30153
+arm_v6_UXTA_a  
+19 4.08627
+arm_v6_UXTB_a  
+17 4.10765
+arm_v6_UMAAL_a 
+39 4.01430
+arm_v6_UH_a    
+12 4.10351
+arm_v6_UQSUB_a 
+9 4.12676
+arm_v6_USAD_a  
+32 4.11916
