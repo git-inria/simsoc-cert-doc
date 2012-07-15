@@ -1,1 +1,6 @@
 - merge the copy-pasted Makefile
+- speak about this :
+  value = (I64_ucompare(to_i64(R), to_i64(1)) == 0? I64_add(I64_mul(to_i64(old_Rm), to_i64(old_Rs)), to_i64(0x80000000)): I64_mul(to_i64(old_Rm), to_i64(old_Rs)));
+
+  take from "gencxx smmul"
+  which has not been supported by compcert (for at least some previous version of compcert)
