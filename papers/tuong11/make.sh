@@ -6,6 +6,7 @@ mkdir -p _melt
 cd _melt
 
 cp ../_tags .
+cp ../l.ml l.mlt
 cp ../t.ml t.mlt
 cp ../t.bib .
 cp ../Makefile .
@@ -15,6 +16,7 @@ cp ../stat_arm2_1789 .
 cp ../stat_armocaml_1789 .
 
 meltpp t.mlt -o t.ml -open Latex -open Melt
+meltpp l.mlt -o l.ml -open Latex -open Melt
 mlpost -cairo -pdf -ocamlbuild -ccopt "-use-ocamlfind" t.ml
 ocamlbuild -use-ocamlfind -no-links t.native --
 make 2>&1 > /dev/null
