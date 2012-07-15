@@ -1,0 +1,54 @@
+## explanations on how to test the execution time
+
+./configure /home/inria/tmp/build/compcert-1.8.2
+
+wget https://gforge.inria.fr/frs/download.php/28048/simsoc-0.7.1.tar.gz
+tar xzvf simsoc-0.7.1.tar.gz
+cd simsoc-0.7.1/utils/build
+
+wget http://ftp.gnu.org/gnu/binutils/binutils-2.20.1.tar.bz2
+tar xjvf binutils-2.20.1.tar.bz2
+sed -i '7s/2.20/2.20.1/' make_cross_compiler.sh
+
+wget http://ftp.gnu.org/gnu/gdb/gdb-7.0.1a.tar.gz
+tar xzvf gdb-7.0.1a.tar.gz
+
+./make_cross_compiler.sh arm build arm
+
+export PATH=$(pwd)/arm/bin:$PATH # in case 'arm-elf-gcc' is not in $PATH
+
+
+cd arm6/simlight
+
+sed -i '18s/.*/CC := $(CC) -O0 -m32/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO0
+
+make clean
+
+sed -i '18s/(CC) -O0/(CC) -O1/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO1
+
+make clean
+
+sed -i '18s/(CC) -O1/(CC) -O2/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO2
+
+make clean
+
+sed -i '18s/(CC) -O2/(CC) -O3/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO3
+
+make clean
+
+sed -i '18s/.*//' Makefile # delete the CC definition
+sed -i '17s/#//' Makefile # change the default C compiler to CompCert
+sed -i '17s/ccomp/..\/..\/compcert\/ccomp/' Makefile # in case 'ccomp' is not in $PATH
+make && mv -i simlight simlight_comp
+
+cd ../test
+make
+../../devel/tuong/arm6/test/check-sl_time 2>&1 | tee log
+
+
+#../../compcert/ccomp sorting.c -o sorting_comp
+#gcc -m32 -O0 sorting.c -o sorting_gccO0
