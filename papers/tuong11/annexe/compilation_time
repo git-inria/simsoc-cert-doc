@@ -1,0 +1,25 @@
+# tests performed the 26 sept 2011 (on FIT computer)
+
+ocamlbuild arm6/simlight2/extraction/all.cmo
+Finished, 0 targets (0 cached) in 00:00:00.
+Finished, 68 targets (64 cached) in 00:02:15.
+00:02:15 69   (64  ) arm6/simlight2/extraction/all                   o-b---i- \
+real    62m16.900s
+user    29m52.980s
+sys     1m27.850s
+
+
+arm6/simlight2$ du -sh all.* extraction
+3,0M    all.c
+72M     all.glob
+6,5M    all.v
+37M     all.vo
+27M     extraction
+
+
+arm6/simlight$ du -sh all.* extraction
+424K    all.c
+7,2M    all.glob
+748K    all.v
+4,2M    all.vo
+2,9M    extraction
