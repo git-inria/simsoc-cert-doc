@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+set -x
+
+cd arm6/simlight2
+
+sed -i '20s/.*/CC := $(CC) -O0 -m32/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO0
+
+make clean
+
+sed -i '16s/-Werror -g #/-g # -Werror/' Makefile # disable the -Werror for the following
+
+sed -i '20s/(CC) -O0/(CC) -O1/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO1
+
+make clean
+
+sed -i '20s/(CC) -O1/(CC) -O2/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO2
+
+make clean
+
+sed -i '20s/(CC) -O2/(CC) -O3/' Makefile # add the option -O to gcc
+make && mv -i simlight simlight_gccO3
+
+make clean
+
+sed -i '20s/.*//' Makefile # delete the CC definition
+sed -i '17s/#//' Makefile # change the default C compiler to CompCert
+sed -i '17s/ccomp/..\/..\/compcert\/ccomp/' Makefile # in case 'ccomp' is not in $PATH
+sed -i '16s/CFLAGS/#CFLAGS/' Makefile # disable extra options to CompCert
+make && mv -i simlight simlight_comp
