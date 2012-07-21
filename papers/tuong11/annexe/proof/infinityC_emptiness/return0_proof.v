@@ -148,6 +148,193 @@ Theorem production_successful :
   { asm : _ | transf_c_program c_program = OK asm }.
 
   Proof.
+(*
+  (* unsuccessful draft *)
+    unfold transf_c_program.
+    simpl.
+    unfold transf_clight_program.
+    simpl.
+    unfold Cshmgen.transl_program.
+    simpl.
+
+    unfold transform_partial_program2. simpl.
+
+      generalize typ_eq; intro. 
+    remember (Cshmgen.list_typ_eq (Tfloat :: nil) (Tfloat :: nil) &&
+            opt_typ_eq (Some Tfloat) (Some Tfloat)) as b.
+    assert (b = true).
+    destruct (Cshmgen.list_typ_eq (Tfloat :: nil) (Tfloat :: nil)). simpl in *.
+    destruct (opt_typ_eq (Some Tfloat) (Some Tfloat)). simpl in *.
+    trivial.
+
+    auto.
+    auto.
+    rewrite H0.
+    assert (forall x y, Cshmgen.list_typ_eq x x && opt_typ_eq y y = true).
+    clear.
+    intuition.
+    destruct (Cshmgen.list_typ_eq x x).
+    ring_simplify. destruct (opt_typ_eq y y).
+    trivial.
+    auto.
+    auto.
+    repeat rewrite H1; simpl.
+    clear.
+
+    unfold transf_cminor_program. simpl.
+    unfold transform_partial_program.
+    unfold Selection.sel_program.
+    match goal with | |- context [ Selection.sel_fundef ?a ] => remember (Selection.sel_fundef a) as b end.
+    simpl in b.
+    unfold Selection.sel_fundef in b.
+    compute in b. rename b into f.
+    unfold print. 
+    unfold transform_program.
+    unfold prog_funct.
+    unfold transf_program.
+    match goal with | |- context [ map ?a ?x ] => remember (map a x) as bb end.
+    simpl in Heqbb.
+    subst f. unfold print in *.
+    simpl.
+    (*Check map_partial.
+    Print Errors.res.
+    Check List.In.*)
+    cut (forall x, List.In x bb -> match transf_cminorsel_fundef (snd x) with OK _ => true | _ => false end = true).
+    clear.
+    intros. 
+    cut (match map_partial prefix_name transf_cminorsel_fundef bb with OK _ => true | _ => false end = true).
+    destruct (map_partial prefix_name transf_cminorsel_fundef bb). simpl. intros.
+    eexists {| prog_funct := l; prog_main := main; prog_vars := nil |}.
+    trivial.
+    auto with *.
+
+    case_eq (bb).
+    trivial.
+    intros. revert H. revert p l H0.
+    induction bb. auto with *.
+    intros. injection H0. intros. rewrite H1 in *. rewrite H2 in *. clear H0 H1 H2.
+    simpl.
+    generalize (H p (List.in_eq _ _)).
+    destruct p. simpl. destruct (transf_cminorsel_fundef f ).
+    cut (match map_partial prefix_name transf_cminorsel_fundef l with OK _ => true | _ => false end = true).
+    destruct (map_partial prefix_name transf_cminorsel_fundef l).
+    trivial.
+    trivial.
+    case_eq l. trivial. intros. 
+    generalize (IHbb _ _ H0); intros.
+    apply H1. intros.  apply H.
+    auto with *.
+    trivial.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    case_eq bb. 
+    auto. intros p l H. rewrite <- Heqbb in H. injection H ; clear H.
+    intros H H0 x H1. destruct H1. subst x. subst p. simpl. trivial.
+    clear bb Heqbb . rename H into Heqbb. rename l into bb.
+    clear p H0. revert x H1.
+
+    subst bb.
+    intuition.
+    subst x.
+    unfold transf_cminorsel_fundef. simpl.
+    unfold transf_rtl_fundef. simpl.
+    match goal with |- context [ Csharpminor.fn_sig ?a ] => remember (Csharpminor.fn_sig a) as b end.
+    match goal with |- context [ Tailcall.transf_function ?a ] => remember (Tailcall.transf_function a) as bb end.
+    revert Heqbb.
+    unfold Tailcall.transf_function. simpl.
+    match goal with |- context [ Tailcall.transf_instr ?a ] => remember (Tailcall.transf_instr a) as bbb end.
+    unfold Tailcall.transf_instr in Heqbbb.
+    unfold RTL.transf_function.
+    intros. subst bb. simpl.
+    match goal with |- context [ CastOptim.transf_function ?a ] => remember a as bb end.
+    subst bbb.
+    unfold PTree.map in Heqbb. simpl in Heqbb.
+    repeat rewrite compose_print_identity.
+    subst b.
+    revert Heqbb.
+    unfold RTLgen.ret_reg. simpl.
+    intros. 
+    (* *)
+    subst bb. simpl.
+    match goal with |- context [ PTree.Node ?a ?b ?c ] => remember (PTree.Node a b c) as bb end.
+    match goal with |- context [ Csharpminor.fn_sig ?a ] => remember a as bbb end.
+    revert Heqbbb.
+    unfold Cshmgen.make_cast. simpl. unfold Cshmgen.make_intconst. simpl.
+    intros. subst bbb.
+    unfold Csharpminor.fn_sig. simpl.
+    unfold CastOptim.transf_function. simpl.
+    match goal with |- context [ CastOptim.transf_code ?a _ ] => remember a as bbb end.
+    revert Heqbbb.
+    unfold CastOptim.analyze.
+    simpl.
+    unfold CastOptim.transfer. simpl.
+    unfold RTL.successors. simpl.
+    intros. 
+    subst bb. simpl in * .
+    (*Print Module CastOptim.
+    Print Module CastOptim.DS.*)
+    revert Heqbbb.
+    match goal with |- context [ CastOptim.DS.fixpoint ?a ?b ?c ] => remember (CastOptim.DS.fixpoint a b c) as oo end.
+*)
     admit.
   Qed.
 
