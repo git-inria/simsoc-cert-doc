@@ -1,0 +1,12 @@
+#!/bin/sh
+set -x
+set -e
+
+D=../../../../../arm6/simlight2
+A=all.c
+
+cd $D
+make $A
+cd -
+ln -s $D/$A simlight.c
+make
