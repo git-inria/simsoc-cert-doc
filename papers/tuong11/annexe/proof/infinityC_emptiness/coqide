@@ -1,0 +1,9 @@
+#!/bin/sh
+
+ARCH=`sed -n -e 's/^ARCH=//p' ../../../../../compcert/Makefile.config`
+VARIANT=`sed -n -e 's/^VARIANT=//p' ../../../../../compcert/Makefile.config`
+
+coqide \
+  -I ../../../../../compcert/lib -I ../../../../../compcert/common -I ../../../../../compcert/$ARCH/$VARIANT -I ../../../../../compcert/$ARCH -I ../../../../../compcert/backend -I ../../../../../compcert/cfrontend -I ../../../../../compcert/driver \
+  -I ../../../../../coq \
+  $1
