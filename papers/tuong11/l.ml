@@ -330,4 +330,6 @@ struct
   let rightarrowtriangle = \"rightarrowtriangle\" @ ([], A)
 
   let description l = itemize (BatList.map (fun (i, msg) -> textbf i ^^ newline ^^ msg) l)
+
+  let forceline = newline
 end

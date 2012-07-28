@@ -1021,10 +1021,10 @@ The goal of {P.simcert}~{let module S = Sfoot in footnote () "{English.newreleas
 "
 ; paragraph "Related work"
 ; "
-A formalization of the ARMv7 processor is reported in~{cite ["conf/itp/FoxM10"]}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions. 
+A formalization of the ARMv7 processor is reported in {cite ["conf/itp/FoxM10"]}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions. 
 We are interested to automatically generate a Coq model, which aim to be as understandable as possible to the {S.Manual.ArmSh.C.human} of reference. We will show later how coercions and notations in Coq are advantages for readability, but we will also notice some limitations of their use for a large proof project. Organizing the project modularly in Coq will also permit us to integrate simultaneously ARMv6 and SH4 in a generic simulator, and gain an easier interaction with {P.compcert}.
 "
-; subsubsection ~label:Label.simgendef "The simulator {S.SL.coq} and the toolkit {S.simgen}"
+; subsubsection ~label:Label.simgendef "The simulator {S.SL.coq} {forceline}and the toolkit {S.simgen}"
 ; "
 Now, before considering the SH, let us look at what we already have in {P.simsoc} and {P.simcert}. On one side, there is {S.SL.C.gcc}. On the other side, a mathematical model in Coq had automatically been built for the ARM~{cite ["arm"]} and thus a special simulator has especially been created to integrate as well as to test the model : {S.SL.coq}.
 The behavior of {S.SL.C.gcc} and {S.SL.coq}, which have both been manually designed, is intentionally the same : for compiling, these two simulators respectively need the {S.Manual.Arm.C.gcc} and {S.Manual.Arm.coq} specification{let module S = Sfoot in footnote () "As for {S.SL.C.gcc} and {S.SL.coq}, we will indifferently write ``{S.Manual.ArmSh.C.gcc}'' and ``{S.Manual.ArmSh.coq}'' when the processor we implicitly think can be ARMv6 or SH4. Note that before~{ref_ Label.simu_sh4}, the processor we think is only ARMv6."}.
@@ -1239,8 +1239,8 @@ For clarity, results can now be classified in two parts, we present first modifi
    ; "Character mapping", "We replaced for example some wrong ``,'' by <!;!>. Note that the variable ``H'00000100'' contains an illegal character for a variable, in contrast to this accepted form : <!H_00000100!>."
    ; "Reduced syntax", "For a function taking more than one argument, it is frequent to encounter this reduced declaration : ``f (int x, y) \{{ppp}\}''. So, we expand the type at every argument position : <!f (int x, int y) {!{PPP}!}!>. 
 
-Every pattern matching " ^^ newline ^^ 
-"``case($value$) \{ $pattern_1$ : {ppp} $pattern_n$ : {ppp} \}'' have been replaced by " ^^ newline ^^ 
+Every patterns matching " ^^ forceline ^^ 
+"``case($value$) \{ $pattern_1$ : {ppp} $pattern_n$ : {ppp} \}'' have been replaced by " ^^ forceline ^^ 
 "<!switch(!>$value$<!) { case !>$pattern_1$<! : !{PPP}! case !>$pattern_n$<! : !{PPP}! }!>."
    ; "Wrong overloading form", "A call to <!data_type_of!> is performed in <!9.28 FCNVDS!>, which seems to refer to the <!data_type_of!> defined at the beginning of section 9. However the called function takes one more argument than the defined. This situation has been handled by renaming the called <!data_type_of!> into a new function, which goal is to call the defined <!data_type_of!> with the right arguments. In the same spirit, we renamed <!FSUB!> to <!FSUB_!> in its pseudocode part because <!FSUB!> is in fact a directive already defined : <!#define FSUB !{PPP}!!>"
 ; "PDF translation errors", "The extracted text from a PDF document introduces some repetitive background side effects : every encoded string ``–='' (representing the OCaml string <!"\xE2\x80\x93="!>) needs to be replaced by a simple <!-=!>. Space separated words ``normal_ fcnvds'' are merged to form a single word <!normal_fcnvds!>..."
@@ -1422,20 +1422,20 @@ The appendix {ref_ Label.appendix_singl} contains more explanations.
 
 {hspace (`Ex 1.)}
 
-We can wonder if the {S.Manual.ArmSh.coq} we generate can be written in a total monadic style~{cite ["conf/itp/FoxM10"]}. For example, the <!if_then!> constructor can become a <!if_then!> monadic combinator, as well as the several encountered <!ConditionPassed!>. Then we hope one can rewrite {newline}
-``<!<s0> if_then (ConditionPassed s0 cond) !{PPP}!!>'' as {newline}
+We can wonder if the {S.Manual.ArmSh.coq} we generate can be written in a total monadic style~{cite ["conf/itp/FoxM10"]}. For example, the <!if_then!> constructor can become a <!if_then!> monadic combinator, as well as the several encountered <!ConditionPassed!>. Then we hope one can rewrite {forceline}
+``<!<s0> if_then (ConditionPassed s0 cond) !{PPP}!!>'' as {forceline}
  ``<!if_then (ConditionPassed_s0 cond) !{PPP}!!>'' annihilating the need to use <!_get_loc!> and <!_get_st!>{let module S = Sfoot in footnote () "Because the first call to {texttt "_get_st"} at the start affects the variable {texttt "s0"}, this variable needs to be treated carefully, in a monadic reference for example, if we delete {texttt "_get_st"}."}. However we are in front of a difficulty. Indeed, the automatically generated {S.Manual.ArmSh.coq} uses extensively the coercion facility, for instance to consider a boolean value as a word (or integer)~{cite ["arm"]}. Hence, the Coq code is finally very close to the original {S.Manual.ArmSh.C.gcc}. Because sometimes the <!st!> is deeply embedded in arithmetical expressions, we 
 have a problem of coercion at higher-order level. Currently an
 expression like
-<!zeq 1 true!> is implicitly translated to <!zeq 1 (Z_of_bool true)!>
+<!zeq 1 true!> is implicitly translated to {forceline}<!zeq 1 (Z_of_bool true)!>
 with <!zeq : Z -> Z -> bool!>.
-If now, we have a <!zeq_!> of type {newline}<!semfun Z -> semfun Z -> semfun bool!>,
+If now, we have a <!zeq_!> of type <!semfun Z -> semfun Z -> semfun bool!>,
 this is not well-typed :
 <!zeq_ (ret 1) (ret true)!>,
 unless we give explicitly the hint annotation
 <!zeq_ (ret (1 : Z)) (ret (true : Z))!>.
 Note that for readability we can also introduce a notation and write
-something similar to <!zeq_ { 1 } { true }!>.
+something similar to {forceline}<!zeq_ { 1 } { true }!>.
 
 Because the final goal of the {S.Manual.ArmSh.coq} is also the proof, we can now wonder if it is finally convenient to perform some proof with notations rather than concrete definitions.
 "
@@ -1600,7 +1600,7 @@ The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} t
 "
 ; paragraph "Explicit annotations"
 ; "
-The counterpart of using this kind of simplified way for our printer (i.e. using the dependently form as {newline}
+The counterpart of using this kind of simplified way for our printer (i.e. using the dependently form as {forceline}
 <!| "Tvoid" | "Tfloat" | "Tfunction" | "Tnil" | "Tcons"!>) is highlighted by the necessity to explicitly mention the arity of each constructor. This can constitute a notable inconvenient, but in the absence of annotations, the type reconstruction becomes undecidable.
 The other alternative would be to give the constructor as a more normal form ``<!_ -> ... -> _!>''. However, the real <!AST.program fundef type!> contains approximatively a hundred of constructors and specifying the type with a single number has rather been a good compromise.
 "
@@ -1923,8 +1923,8 @@ In~{ref_ Label.simgendef} and the SH part, we have explained the automatic impor
 
 For this particular case, the generation of {S.C.asm} being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the {S.simgen_ast}. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the {S.C.asm} source into the {S.C.compcert} AST, 
 {itemize
-[ "on one hand we have an OCaml function translating from {S.simgen_ast} to Coq AST,"
-; "on the other hand, we have another OCaml function from {S.simgen_ast} to {S.C.compcert} AST." ]
+[ "on one hand we have an OCaml function translating {forceline}from {S.simgen_ast} to Coq AST,"
+; "on the other hand, we have another OCaml function {forceline}from {S.simgen_ast} to {S.C.compcert} AST." ]
 } 
 As we think they can easily be translated in Coq, the problem of good equivalence between the {S.Manual.ArmSh.coq} and the {S.Manual.C.asm} can be simplified to the problem of building a couple given a particular {S.simgen_ast}, i.e writing a Coq function of type : {newline}
 <!  (!>{S.Simgen.coq}<!, !>{S.Simgen.coq_deep_ocaml}<!) -> 
@@ -2000,7 +2000,7 @@ let u1 n to_list1 sep xs surr =
   let c = fun s l -> combine (v_to_list s) l in
   List.fold_left (fun x x0 -> x) (c sep (c surr xs))
 ~>
-is accepted by the OCaml type-checker but it does not match its extracted interface, because <!u1!> has a too general type. This can be resolved by manually replacing <!let v_to_list = to_list0 n!> by <!let v_to_list v = to_list0 n v!>.
+is accepted by the OCaml type-checker but it does not match its extracted interface, because <!u1!> has a too general type. This can be resolved by manually replacing {forceline}``<!let v_to_list   = to_list0 n  !>'' by {forceline}``<!let v_to_list v = to_list0 n v!>''.
 
 "
 ; paragraph "Others possible solutions"
@@ -2062,7 +2062,7 @@ let u1 n to_list1 sep xs surr =
 "
 ; paragraph "Localization in the source"
 ; "
-In {texttt "coq_svn_{Version.coqsvn ^^ Code.latex_of_ppp PPP}mlutil.ml"}, the {eta}-reduction performed in the function <!kill_dummy!> does not perform an {eta}-reduction test to avoid a not generalizable <!'_a!>. At the time of writing, it is not sure that this test may or not be done in a similar way as {newline ^^ texttt "coq_svn_{Version.coqsvn ^^ Code.latex_of_ppp PPP}extraction.ml"}.
+In {texttt "coq_svn_{Version.coqsvn ^^ Code.latex_of_ppp PPP}mlutil.ml"}, the {eta}-reduction performed in the function <!kill_dummy!> does not perform an {eta}-reduction test to avoid a not generalizable <!'_a!>. At the time of writing, it is not sure that this test may or not be done in a similar way as {forceline ^^ texttt "coq_svn_{Version.coqsvn ^^ Code.latex_of_ppp PPP}extraction.ml"}.
 Remark also, even if it has not been tested, that we may factorize the part under the case <!MLletin!> in <!kill_dummy!> with the <!MLletin!> part in <!kill_dummy_hd!> by abstracting what is necessary.
 "
 ; subsubsection ~label:Label.appendix_singl "The optimized simplification of proofs on modules"
@@ -2097,7 +2097,7 @@ However, the extracted OCaml program is not well-typed because the extracted mod
 ; "
 {itemize
 [
-"We can explicitly strengthened the type of <!F!> by writing ``<!Inductive F : Set := .!>''."
+"We can explicitly strengthened the type of <!F!> by writing {forceline}``<!Inductive F : Set := .!>''."
 ; 
 "At the end, if we mention that the definition inside the module will be used : ``<!Definition t := M.t.!>'', the extraction works correctly because <!M.t!> has been classified as a value that the extraction can not avoid. Hence, <!Visit.add_ref!> will be called before we enter in <!extract_sfb!>." ]
 }
