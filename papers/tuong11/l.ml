@@ -138,15 +138,11 @@ struct
     struct
       open Caml2html.Output_latex
 
-      let f = function
-        | None, _ -> black
-        | Some c, _ -> of_int_255 (let [ i1 ; i2 ; i3 ] = BatList.map int_of_string (BatString.nsplit c \",\") in i1, i2, i3)
-
-      let comment = f comment_color
-      let alpha_keyword = f alpha_keyword_color
-      let nonalpha_keyword = f nonalpha_keyword_color
-      let string = f string_color
-      let construct = f construct_color
+      let comment = of_int_255 (153, 0, 0)
+      let alpha_keyword = of_int_255 (128, 128, 128)
+      let nonalpha_keyword = black
+      let string = of_int_255 (170, 68, 68)
+      let construct = of_int_255 (0, 51, 204)
     end
     include C
   end
