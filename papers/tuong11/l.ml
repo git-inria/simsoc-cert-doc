@@ -2,7 +2,7 @@ module BatList =
 struct
   include BatList
 
-  let nsplit f = 
+  let nsplit f =
     let rec aux acc (f1, f2) = function
       | [] -> List.rev acc
       | l -> aux (take_while f1 l :: acc) (f2, f1) (drop_while f1 l) in
@@ -50,13 +50,13 @@ struct
   module Color : COLOR with type 'a tup3 = 'a * 'a * 'a =
   struct
     type 'a tup3 = 'a * 'a * 'a
-    type raw_color = 
+    type raw_color =
       | N_255 of int tup3
       | N_1 of float tup3
 
     module Float3Map = BatMap.Make (struct type t = float tup3  let compare = compare end)
 
-    let n1_of_n255 (r, g, b) = 
+    let n1_of_n255 (r, g, b) =
       let f x = float x /. 255. in
       f r, f g, f b
 
@@ -66,18 +66,18 @@ struct
 
     let raw_color_compare a b = compare (raw_color a) (raw_color b)
 
-    let get_color_id, fold = 
+    let get_color_id, fold =
       let refe = ref (Float3Map.empty, 0) in
-      (fun col -> 
+      (fun col ->
         let map, dim_map = !refe in
-        let o, i = 
+        let o, i =
           let col = raw_color col in
           match Float3Map.Exceptionless.find col map with
-            | None -> 
+            | None ->
               Some (Float3Map.add col dim_map map, Pervasives.succ dim_map), dim_map
             | Some i -> None, i in
         let _ = match o with None -> () | Some r -> refe := r in
-        i, col), 
+        i, col),
       fun f -> let map, _ = !refe in Float3Map.fold f map
 
     type color = int (* id *) * raw_color
@@ -96,8 +96,8 @@ struct
     end
     let color_of_name x = text (Printf.sprintf \"color%d\" x)
 
-    let definecolor (id, col) = 
-      let msg, colo = 
+    let definecolor (id, col) =
+      let msg, colo =
         match col with
           | N_1 (r, g, b) -> "rgb", text (Printf.sprintf \"%f, %f, %f\" r g b)
           | N_255 (r, g, b) -> "RGB", text (Printf.sprintf \"%d, %d, %d\" r g b) in
@@ -110,18 +110,18 @@ struct
 
     let definecolor_used, definecolor_reset, textcolor_, cellcolor_, color_, color_name_ =
       let col_map = ref ColorMap.empty in
-      (fun f -> ColorMap.fold (fun k _ -> f k) !col_map), 
+      (fun f -> ColorMap.fold (fun k _ -> f k) !col_map),
       (fun _ -> col_map := ColorMap.empty),
-      (fun c -> 
+      (fun c ->
         let _ = col_map := ColorMap.add c () !col_map in
         textcolor c),
-      (fun c -> 
+      (fun c ->
         let _ = col_map := ColorMap.add c () !col_map in
         cellcolor c),
-      (fun c -> 
+      (fun c ->
         let _ = col_map := ColorMap.add c () !col_map in
         color c),
-      (fun c -> 
+      (fun c ->
         let _ = col_map := ColorMap.add c () !col_map in
         color_name c)
 
@@ -134,7 +134,7 @@ struct
     let violet = of_int_255 (206, 100, 255)
     let red_light = of_int_255 (255, 216, 224)
     let red = of_int_255 (200, 72, 0)
-    module C = 
+    module C =
     struct
       open Caml2html.Output_latex
 
@@ -162,7 +162,7 @@ struct
 
     type label = L of int
 
-    let mk_new = 
+    let mk_new =
       let r = ref 0 in
       fun _ -> let _ = incr r in !r
 
@@ -173,7 +173,7 @@ struct
       L lab,
       unusual_command
         (Printf.sprintf \"newtheorem%s\" (if star then \"*\" else \"\"))
-        ((A, brace, text (string_of_name (L lab))) 
+        ((A, brace, text (string_of_name (L lab)))
          :: (A, brace, param)
          :: match opt with Some t -> [ A, bracket, t ] | None -> []) A
 
@@ -191,7 +191,7 @@ struct
   let url x = \"url\" @ ([text x], A)
   let nolinkurl x = \"nolinkurl\" @ ([text x], A)
 
-  type 'a mail = 
+  type 'a mail =
     | Mail of 'a
     | Http of 'a
     | Https of 'a
@@ -210,31 +210,31 @@ struct
     | `C -> text \"c\"
     | `R -> text \"r\"
     | `Vert -> text \"|\"
-    | `Raw s -> text \"!\" ^^ within_braces s 
+    | `Raw s -> text \"!\" ^^ within_braces s
     | `P s -> concat [ "p" ; text \"{\" ; latex_of_size s ; text \"}\" ]
-    | `Sep t -> concat [ text \"@{\" ; t ; text \"}\"] 
+    | `Sep t -> concat [ text \"@{\" ; t ; text \"}\"]
 
   type 'a row_line =
     | Data of 'a
     | Hline
     | Cline of int * int
 
-  let title f_sz l_no o_lg (* should be greater than -> *) l_yes = 
+  let title f_sz l_no o_lg (* should be greater than -> *) l_yes =
     match
       List.fold_left
-        (fun (acc, nb_blank, pos) x -> 
-          List.fold_left 
-            (fun acc x -> 
+        (fun (acc, nb_blank, pos) x ->
+          List.fold_left
+            (fun acc x ->
               let x = f_sz x in
               Data (BatList.flatten
-                      [ BatList.init nb_blank (fun _ -> multicolumn 1 "l|" "") 
+                      [ BatList.init nb_blank (fun _ -> multicolumn 1 "l|" "")
                       ; [ if pos = 1 then x else multicolumn pos "l" x ] ]) :: acc) acc x,
           Pervasives.succ nb_blank,
           pred pos)
         ([], 0, match o_lg with None -> List.length l_yes | Some nb -> nb)
         l_yes
     with
-      | Data l :: xs, _, _ -> 
+      | Data l :: xs, _, _ ->
         List.rev
           (Data (BatList.flatten [ l_no ; l ])
            ::
@@ -246,41 +246,42 @@ struct
 
   let cline i1 i2 = \"cline\" @ ([text (Printf.sprintf \"%d-%d\" i1 i2)], A)
 
-  let tabular x body = 
+  let tabular x body =
     environment \"tabular\" ~args:[A, concat (BatList.map latex_of_array_column x)]
       (A, concat (BatList.map (function Data l -> concat (BatList.interleave (text \" & \") l) ^^ newline | Hline -> hline ^^ text \"\n\" | Cline (i1, i2) -> cline i1 i2 ^^ text \"\n\") body)) A
 
   let bibliographystyle x = \"bibliographystyle\" @ ([x], A)
   let bibliography x = \"bibliography\" @ ([x], A)
-  let subparagraph x = \"subparagraph\" @ ([x], A) 
+  let subparagraph x = \"subparagraph\" @ ([x], A)
   let footnote () = footnote (* we change the type of Latex.footnote to remember that it has the side effect of resizing fonts *)
   let alltt x = environment \"alltt\" (A, x) A
   let mbox x =  \"mbox\" @ ([x], A)
   let fbox x =  \"fbox\" @ ([x], A)
-  let spacing x = 
+  let spacing x =
     environment \"spacing\" ~args:[A, "0.80"]
       (A, x) A
-  let longtable x body = 
+  let longtable x body =
     space ^^ (* WARNING [longtable] can have a bad behaviour if we delete this [space] *)
     environment \"longtable\" ~opt:(A, "l") ~args:[A, concat (BatList.map latex_of_array_column x)]
       (A, concat (BatList.map (function Data l -> concat (BatList.interleave (text \" & \") l) ^^ newline | Hline -> hline ^^ text \"\n\" | Cline (i1, i2) -> cline i1 i2 ^^ text \"\n\") body)) A
   (*let vdots = \"vdots\" @ ([], A)*)
-  let textcircled x = \"textcircled\" @ ([x], A) 
-  let ding x = \"ding\" @ ([text (string_of_int x)], A) 
+  let textcircled x = \"textcircled\" @ ([x], A)
+  let ding x = \"ding\" @ ([text (string_of_int x)], A)
 
-  let upper_important = 
+  let upper_important =
     let open BatSet in
+    let module StringSet = BatSet.Make (String) in
     let l_not = StringSet.of_enum (BatList.enum [ \"with\" ; \"the\" ]) in
-    
-    BatList.map (fun s -> 
+
+    BatList.map (fun s ->
       let esp = \" \" in
       BatIO.to_string (BatList.print ~first:\"\" ~last:\"\" ~sep:esp BatString.print)
-        (BatList.map 
-           (function 
+        (BatList.map
+           (function
              | s when s = \"\" || StringSet.mem s l_not -> s
              | s -> BatString.splice s 0 1 (String.make 1 (Char.uppercase s.[0]))) (BatString.nsplit s esp)))
 
-  let concat_line_t l = 
+  let concat_line_t l =
     concat (BatList.interleave newline l)
 
   let concat_line_string l = concat_line_t (BatList.map (fun s -> text s) l)
@@ -296,7 +297,7 @@ struct
   let justify x = text \"\\justify \" ^^ x
   let justify2 x = text \"\\justify \" ^^ x
 (*
-  let justify x = 
+  let justify x =
     List.fold_left (fun acc (n, sz) -> acc ^^ fontdimen_font n sz) ""
     [ 2, `Em 0.4
     ; 3, `Em 0.2
@@ -304,7 +305,7 @@ struct
     ; 7, `Em 0.1 ]
     ^^ x
 
-  let justify2 x = 
+  let justify2 x =
     List.fold_left (fun acc (n, sz) -> acc ^^ fontdimen_font n sz) ""
     [ 2, `Em 0.4
     ; 3, `Em 0.2

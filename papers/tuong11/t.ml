@@ -1,21 +1,21 @@
 open L open L
 
-let main prelude l = 
+let main prelude l =
   emit
     (document
-       ~options:[ `A4paper ; `Pt 11 ] 
+       ~options:[ `A4paper ; `Pt 11 ]
        ~packages:(
-         BatList.flatten 
+         BatList.flatten
            [ [ (* "babel", [ "english"; "francais" ] *)
-               "inputenc", "utf8" 
+               "inputenc", "utf8"
              ; "fontenc", "T1"
              ; "xcolor", "table" ]
            ; BatList.map (fun x -> x, "")
              [ "lmodern"
-               
+
              ; "calc" ; "array" ; "alltt" (*; "setspace"*) ; "longtable"
              ; "url"
-             
+
              ; "tikz"
 
              (* "xltxtra" *)
@@ -40,9 +40,9 @@ let main prelude l =
              ; "multirow"
 
              ; "hyperref" ]
-           
+
            ])
-       ~author:(concat_line_t 
+       ~author:(concat_line_t
                   [ "Frédéric Tuong"
                   ; footnotesize "INRIA - LIAMA"
                   ; footnotesize (mail \"frederic.tuong@inria.fr\") ])
@@ -63,7 +63,7 @@ type ppp = PPP
 
 type 'a humanc = Comment of 'a list
 
-module P = 
+module P =
 struct
   let ocaml = "OCaml"
   let compcert = "CompCert"
@@ -88,7 +88,7 @@ struct
   let newrelease = "A first public release will be soon available"
   let outworld = "the outside world"
 
-  let coqkernel = 
+  let coqkernel =
     let to_check = false in
     let msg = \"The kernel does not recognize yet that a parameter can be instantiated by an inductive type.\" in
     let check () =
@@ -96,12 +96,12 @@ struct
                                           (concat
                                              [ "<<echo '>>"
                                              ; "<<
-Module Type MM. 
-  Parameter t : Type. 
-End MM. 
+Module Type MM.
+  Parameter t : Type.
+End MM.
 
-Module M : MM. 
-  Inductive t := . 
+Module M : MM.
+  Inductive t := .
 End M.
                                                 >>"
                                              ; "<<' | coqtop>>" ])) in
@@ -154,7 +154,7 @@ struct
 
   module SL_gen (P_ : sig val sl : Latex.t end) =
   struct
-    module M (P_ : sig val sl : Latex.t end) = 
+    module M (P_ : sig val sl : Latex.t end) =
     struct
       module Make (M : sig val coq : Latex.t val equiv_prefix : Latex.t end) = struct
         let sl x = texttt ("{M.coq}-" ^^ Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) x ^^ P_.sl)
@@ -204,25 +204,25 @@ let interl x = interl_ (fun x -> x) x
 module Comment_sz (SZ_s : SIZE_DYN) (SZ_comment : SIZE_DYN) =
 struct
   module S = S_sz (SZ_s)
-  
+
   let comment m_beg m_end f_tabular f_col f_vert l =
     let f x = [ multirow2 (SZ_comment.footnote (texttt x)) ] in
-    let row = 
+    let row =
       BatList.take (List.length l)
         (BatList.map f_col [ S.C.human ; S.C.gcc ; S.C.compcert ; S.C.asm ; S.C.lambda_l ]) in
     f_tabular
       SZ_comment.tiny
 
       (BatList.flatten [ [ `R ] ; interl_ f_vert (List.length row) `C ; [ `L ] ])
-      
-      (BatList.map 
+
+      (BatList.map
          (fun l -> Data (BatList.flatten l))
          [ [ f (f_col m_beg) ; row ; f (f_col m_end) ]
-         ; BatList.map (BatList.map (fun x -> f_col x)) 
+         ; BatList.map (BatList.map (fun x -> f_col x))
            [ [ "" ] ; l ; [ "" ] ] ])
 end
 
-module Comment = 
+module Comment =
   Comment_sz
     (struct let normal = scriptsize let footnote = tiny let tiny _ = assert false end)
     (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
@@ -231,11 +231,11 @@ module Comment =
 module Code =
 struct
 
-  let num_line f l = 
+  let num_line f l =
     longtable [ `Vert ; `C (*`P (`Pt 0.01)*) (*; `Vert*) ; `L ]
       (BatList.flatten
          [ [ Cline (1, 1) ]
-         ; BatList.mapi (fun i s -> 
+         ; BatList.mapi (fun i s ->
              Data [ (*if i = 0 || i = pred n_end then "${circ}$" else "${vdots}$"*)
                     (*lwavy*)
                     text \" \"
@@ -252,7 +252,7 @@ struct
 
   let output_code = true
 
-  module V = 
+  module V =
   struct
     include Verbatim
     let verbatim = if output_code then verbatim else fun _ -> ""
@@ -264,21 +264,21 @@ struct
     let verbatim = if output_code then verbatim else fun _ -> ""
   end
 
-  let unique_string_of_ppp = 
-    let s = Printf.sprintf \"(*%s*)\" (Int64.to_string (Random.int64 Int64.max_int)) in 
+  let unique_string_of_ppp =
+    let s = Printf.sprintf \"(*%s*)\" (Int64.to_string (Random.int64 Int64.max_int)) in
     fun PPP -> s
 
   let latex_of_ppp PPP = textit (Color.textcolor_ Color.green (LV.verbatim \"[...]\"))
 
   module Raw_ =
   struct
-    let verbatim x = 
+    let verbatim x =
       concat (BatList.map (function `V s -> text s | _ -> failwith \"to complete !\") x)
   end
 
-  module Raw = 
+  module Raw =
   struct
-    let verbatim x = 
+    let verbatim x =
       concat (BatList.map (function
         | `V s -> texttt (LV.verbatim s)
         | `C p -> texttt (latex_of_ppp p)
@@ -290,7 +290,7 @@ struct
   module Coq =
   struct
 
-    module Parse = 
+    module Parse =
     struct
 
       let string_of_token = let open Coq_lex in function
@@ -304,81 +304,81 @@ struct
       let parse s =
         let l = ref [] in
         let b = try Some (Coq_lex.delimit_sentence (fun i1 i2 t -> l := (i1, i2, t) :: !l) s) with Coq_lex.Unterminated -> None in
-        List.rev !l, 
-        b, 
+        List.rev !l,
+        b,
         match !l with
-          | (_, p0, _) :: _ -> 
-            BatOption.map 
+          | (_, p0, _) :: _ ->
+            BatOption.map
               (fun p1 -> (if s.[p0] = '.' then None else Some (String.sub s p0 (p1 - p0 - 1))), BatString.lchop ~n:p1 s)
               (try Some (Pervasives.succ (BatString.find_from s p0 \".\")) with _ -> None)
           | _ -> None
 
       let parse_coq s_init =
-        let parse s = 
-          let l, b, s_end = 
+        let parse s =
+          let l, b, s_end =
             let rec aux pos acc_l s =
               match parse s with
-                | [i1, i2, Coq_lex.Comment], b, s_end -> 
-                  let _ = 
+                | [i1, i2, Coq_lex.Comment], b, s_end ->
+                  let _ =
                     if (match b with None -> false | Some b -> i2 = Pervasives.succ b)
                     then () else failwith \"to complete !00\" in
                   (match s_end with
                     | None -> [i1, i2, Coq_lex.Comment], None, s_end (*raise Coq_lex.Unterminated*)
                     | Some (Some s, s_end) ->
                       aux (pos + i2) ([ pos + i1, pos + i2, Coq_lex.Comment ] :: acc_l) (Printf.sprintf \"%s.%s\" s s_end))
-                | l, b, s_end -> 
+                | l, b, s_end ->
                   BatList.flatten (List.rev (BatList.map (fun (i1, i2, t) -> pos + i1, pos + i2, t) l :: acc_l)), BatOption.map ((+) pos) b, s_end in
             aux 0 [] s in
-          let l, p = 
-            List.fold_left (fun (acc, pos) (i1, i2, t) -> 
+          let l, p =
+            List.fold_left (fun (acc, pos) (i1, i2, t) ->
               if i1 >= pos then
                 (Text (String.sub s i1 (i2 - i1), t) ::
                    (if i1 > pos then
                        Delim (Some (String.sub s pos (i1 - pos))) :: acc
                     else
-                       acc)), 
-                i2 
+                       acc)),
+                i2
               else
                 failwith \"overlapping\") ([], 0) l in
 
-          let l, s_end = 
+          let l, s_end =
             match s_end with
-              | None -> 
-                (match b with 
-                  | Some b -> 
-                    if s = \"\" then failwith \"to complete !1\" else 
+              | None ->
+                (match b with
+                  | Some b ->
+                    if s = \"\" then failwith \"to complete !1\" else
                       (Delim (Some (BatString.left s b)) :: Delim None :: l), Some (BatString.lchop ~n:(Pervasives.succ b) s)
-                  | None -> 
+                  | None ->
                     if s = \"\" then failwith \"to complete !2\" else
-                      (if 
+                      (if
                           match l with Text (_, Coq_lex.Comment) :: _ -> true | _ -> false
                        then
                           l
                        else
                           let _ = Printf.printf \"iiiiiiiiiiiiiiii%s\n%!\" s in
                           Delim (Some s) :: l), None)
-              | Some (s_else, s_end) -> 
+              | Some (s_else, s_end) ->
                 (let _ = if b = None then failwith \"to complete !3\" else () in
-                match s_else with 
+                match s_else with
                   | None -> l
                   | _ -> Delim s_else :: l), Some s_end in
           List.rev l, b, s_end in
 
         let rec aux acc = function
           | \"\" -> List.rev acc
-          | s -> 
+          | s ->
             let l, b, o = parse s in
-            match o with 
+            match o with
               | None -> List.rev ((l, b) :: acc)
               | Some s_end -> aux ((l, b) :: acc) s_end in
         aux [] s_init
 
       let batstring_print io s = BatString.print io (Printf.sprintf \"\034%s\034\" (String.escaped s))
 
-      let print (l, b) = 
+      let print (l, b) =
         Printf.sprintf \"%s, %s\"
-          (BatIO.to_string (BatList.print (fun oc d -> 
-            BatString.print oc 
+          (BatIO.to_string (BatList.print (fun oc d ->
+            BatString.print oc
               (match d with
                 | Text a -> \"Text (\" ^ BatIO.to_string (fun oc (s, t) -> BatString.print oc (Printf.sprintf \"\034%s\034, %s\" (String.escaped s) (string_of_token t)) ) a ^ \")\"
                 | Delim o -> \"Delim (\" ^  BatIO.to_string (BatOption.print batstring_print) o ^ \")\"
@@ -386,17 +386,17 @@ struct
            )) l)
           (BatIO.to_string (BatOption.print (fun oc i -> BatString.print oc (Printf.sprintf \"%d\" i))) b)
 
-      let print_coq (l : ((string * Coq_lex.token, string option) split_result list * int option) list) = 
+      let print_coq (l : ((string * Coq_lex.token, string option) split_result list * int option) list) =
         BatIO.to_string (BatList.print (fun io x -> BatString.print io (print x))) l
 
     end
 
 
-    let verbatim x = 
+    let verbatim x =
       (*let _ = List.iter (function `V s -> Printf.printf \"%s\" s | `C _ -> Printf.printf \"%s\" \"(*[...]*)\") x in*)
-      let s = 
+      let s =
         BatIO.to_string (BatList.print ~first:\"\" ~last:\"\" ~sep:\"\" BatString.print)
-          (BatList.map (function 
+          (BatList.map (function
             | `V s -> s
             | `C p -> unique_string_of_ppp p
             | _ -> failwith \"to complete !\") x) in
@@ -416,13 +416,13 @@ struct
       let l = regroup_endl (BatList.map fst l) in
 
       let l = BatList.map
-        (fun l -> 
+        (fun l ->
           let ll =
             BatList.flatten
               (BatList.flatten
-                 ([ BatList.map (function 
+                 ([ BatList.map (function
                    | Text (s, Coq_lex.Comment) when s = unique_string_of_ppp PPP -> [ Text (latex_of_ppp PPP) ]
-                   | Text (s, tok) -> 
+                   | Text (s, tok) ->
                        let declaration_color = Color.red (*construct*) (*Color.nonalpha_keyword*) in
                        [ Text (Color.textcolor_ (let open Coq_lex in match tok with
                          | Comment -> Color.comment
@@ -432,11 +432,11 @@ struct
                          | Qed -> Color.yellow
                          | String -> Color.string) (LV.verbatim s)) ]
                    | Delim None -> [ Text (Color.textcolor_ Color.black (LV.verbatim \".\")) ]
-                   | Delim (Some s) -> 
+                   | Delim (Some s) ->
                      BatList.map
-                       (function 
+                       (function
                          | Str.Text s -> Text (LV.verbatim s)
-                         | Str.Delim s -> Delim (LV.verbatim s)) 
+                         | Str.Delim s -> Delim (LV.verbatim s))
                        (Str.full_split (Str.regexp_string \"\n\") s)) l
                   ; [[ Text (Color.textcolor_ Color.grey (*"${circ}$"*) (LV.verbatim \".\") (* end sentence *)) ]]])
               ) in
@@ -446,7 +446,7 @@ struct
         ) l in
 
       let l = BatList.flatten l in
-      num_line (fun s -> texttt (footnotesize s)) 
+      num_line (fun s -> texttt (footnotesize s))
         (BatList.flatten
            (BatList.map (function
              | [] -> []
@@ -456,11 +456,11 @@ struct
               (BatList.nsplit (function Text _ -> true | Delim _ -> false) l)))
 
   end
-      
+
 
   module Ml =
   struct
-  
+
     open Printf
 
     let stringpair_of_token = function
@@ -482,32 +482,32 @@ struct
         | a, b -> sprintf \"%s %S\" a b
 
     let print_tokens (l : Caml2html.Input.token list) =
-      List.iter (fun s -> 
+      List.iter (fun s ->
         printf \"%s; \" (string_of_token s))
         l
 
-    let verbatim = 
+    let verbatim =
       function
-        | [ `V s ] -> 
+        | [ `V s ] ->
           let l = Caml2html.Input.string s in
-          num_line (fun s -> texttt (footnotesize s)) 
-            (BatList.flatten 
+          num_line (fun s -> texttt (footnotesize s))
+            (BatList.flatten
                (BatList.map (function
                  | [] -> []
                  | Text _ :: _ as l -> [ concat (BatList.map (function Text x -> x) l) ]
                  | Delim _ :: l -> BatList.map (fun _ -> "") l
                  | _ -> assert false)
                   (BatList.nsplit (function Text _ -> true | Delim _ -> false)
-                     (List.map (fun x -> 
+                     (List.map (fun x ->
                        match
                          match x with
                            | `Comment s -> Text (Some Color.comment, s)
-                           | `Keyword s -> 
+                           | `Keyword s ->
                              Text (Some
                                      (match s.[0] with
                                        | 'a' .. 'z' -> Color.construct
-                                       | _ -> 
-                                         (*let _ = 
+                                       | _ ->
+                                         (*let _ =
                                            if String.length s > 1 then
                                              Printf.printf \"%s %!\" (string_of_token (`Keyword s)) in*)
                                          Color.yellow), s)
@@ -517,14 +517,14 @@ struct
                            | `Construct s -> Text (Some Color.green, s)
 
                            | `Quotation _
-                           | `Tab       
+                           | `Tab
                            | `Start_annot _
-                           | `Stop_annot _ 
+                           | `Stop_annot _
                            | `Special_comment _ -> failwith \"to complete !\"
                        with
                          | Delim d -> Delim d
                          | Text (color, s) ->
-                           Text 
+                           Text
                              ((match color with
                                | None -> fun x -> x
                                | Some c -> Color.textcolor_ c) (LV.verbatim s))
@@ -532,10 +532,10 @@ struct
         | _ -> failwith \"to complete !\"
 
   end
-  
+
   module Humc =
   struct
-    let verbatim = 
+    let verbatim =
       let f_sz = footnotesize in
       let v col s = Color.textcolor_ col (LV.verbatim s) in
       let v_c c = Str.regexp_string (Printf.sprintf \"%c =\" c), (fun s -> Color.textcolor_ Color.yellow (LV.verbatim (String.make 1 s.[0])) ^^ LV.verbatim \" =\") in
@@ -556,7 +556,7 @@ struct
                                                             ; Str.regexp_string \"#include\", v Color.violet
                                                             ; Str.regexp \"\034.+\034\", v Color.string ] (LV.verbatim) s)) in
       function
-        | [ `V \"\" ; `C (Comment l) ; `V x ] -> 
+        | [ `V \"\" ; `C (Comment l) ; `V x ] ->
           let l_head, l_body = Comment.comment "/*" "*/" (fun _ x y -> x, y) (fun x -> Color.textcolor_ Color.comment x) (fun _ -> `Raw (Color.color_ Color.comment ^^ vrule)) l in
           let dim_col = 2 + List.length l in
           longtable (`Vert :: `C (*`P (`Pt 0.01)*) (*; `Vert*) :: l_head)
@@ -564,12 +564,12 @@ struct
                [ [ Cline (1, 1) ]
                ; BatList.map (function Data l -> Data (space :: BatList.map f_sz l) | _ -> assert false) l_body
 
-               ; BatList.mapi (fun i s -> 
+               ; BatList.mapi (fun i s ->
                  Data [ space ; multicolumn dim_col "l" (f s) ]) (LV.split_lines (LV.trim ['\n'] x))
                ; [ Cline (1, 1) ] ])
 
         | _ -> failwith \"to complete !\"
-            
+
   end
 end
 
@@ -595,7 +595,7 @@ struct
     let simsoc = "0.7.1"
     let simcert = "1660" (* in svn *)
     let compcert = P.compcert ^^ " 1.8.2"
-    module Filename = struct (* it regroups filename used in the report *)    
+    module Filename = struct (* it regroups filename used in the report *)
       (*let stat_arm1 = \"stat_arm1_1660\"*)
     end
   end
@@ -617,9 +617,9 @@ module S = S_sz (struct let normal = normalsize let footnote = footnotesize let 
 module Sfoot = S_sz (struct let normal = footnotesize let footnote = scriptsize let tiny _ = assert false end)
 module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let tiny _ = assert false end)
 
-module Label = 
+module Label =
 struct
-  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, th_init_state, concl, appendix_speed, appendix_eta, appendix_singl = 
+  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, th_init_state, concl, appendix_speed, appendix_eta, appendix_singl =
     label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label ()
 
   let ex, newth_ex = Th.newtheorem "Example" ~opt:"subsection"
@@ -633,12 +633,12 @@ end
 module Performance =
 struct
 
-  type simlight = 
+  type simlight =
     | No_simlight
     | Simlight__short
     | Simlight2
 
-  type file = 
+  type file =
     | No_thumb of simlight
     | With_thumb (* we assume [With_optim] *)
 
@@ -659,8 +659,9 @@ struct
 
   let str_of_float = Printf.sprintf \"%.2f\"
   let str_of_float_percent = Printf.sprintf \"%.1f\"
-       
-  open BatMap
+
+  module StringMap = BatMap.Make (String)
+  module IntMap = BatMap.Make (BatInt)
 
   let only_one_elt = function [] -> assert false | [_] -> true | _ -> false
 
@@ -669,24 +670,24 @@ struct
     List.rev
       (IntMap.fold
          (fun _ { data = (v_perf, name) ; t_mima } l ->
-           let row_min_pos, row_max_pos = 
+           let row_min_pos, row_max_pos =
              match t_mima with Some { t_min = (row_min_pos, _) ; t_max = (row_max_pos, _) } -> Some row_min_pos, Some row_max_pos | _ -> None, None in
-           fst 
+           fst
            (List.fold_left
-             (fun (l, row_pos) (name, v) -> 
+             (fun (l, row_pos) (name, v) ->
                let opt, thumb =
                  let open English in
-                 let is_sl2, thumb_enabled = 
-                   match v.data.file with 
+                 let is_sl2, thumb_enabled =
+                   match v.data.file with
                      | No_thumb No_simlight
                      | No_thumb Simlight__short -> false, false
                      | No_thumb Simlight2 -> true, false
                      | With_thumb -> true, true in
                  let mk_color = function true -> fun f -> f yes | false -> fun f -> Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) (f no) in
                  mk_color is_sl2 (fun x -> x ^^ ""), mk_color thumb_enabled (fun x -> x ^^ "") in
-           Data 
+           Data
              (texttt (Latex.Verbatim.verbatim name)
-              :: 
+              ::
               opt
               ::
               thumb
@@ -694,47 +695,47 @@ struct
               latex_of_int v.data.nb_iter
               ::
               let l_tps = v.data.time in
-              let (mi_pos, mi), (ma_pos, ma) = 
+              let (mi_pos, mi), (ma_pos, ma) =
                 match v.t_mima with None -> assert false | Some v -> v.t_min, v.t_max in
-              let () = 
+              let () =
                 if mi_pos <> ma_pos then () else assert false (* all values are equal *) in
-              BatList.flatten 
-                [    BatList.mapi (fun pos d -> 
+              BatList.flatten
+                [    BatList.mapi (fun pos d ->
                        "{
-                         match 
+                         match
                            if pos = mi_pos then Some Color.green_light else if pos = ma_pos then Some Color.red_light else None
                          with
                           | None -> ""
                           | Some color -> Color.cellcolor_ color
                         } {
                            let t = text (str_of_float (d /. float_of_int v.data.nb_iter *. 1000.)) in
-                           if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then 
+                           if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then
                              Color.textcolor_ (Color.blue) t
                            else if not (only_one_elt v_perf) && pos = ma_pos && Some row_pos = row_max_pos then
                              Color.textcolor_ (Color.red) t
                            else
                              t
-                          }") l_tps 
+                          }") l_tps
                 ; [ Latex.Verbatim.verbatim (Printf.sprintf \"+%s %%\" (str_of_float_percent (100. -. mi *. 100. /. ma)) ^ \"\") ] ])
            ::
            l,
            Pervasives.succ row_pos)
-             (Hline :: l, 0) 
+             (Hline :: l, 0)
              (match List.map (fun v -> \"\", v) v_perf with
-               | [] -> [] 
-               | (_, x) :: xs -> (name, x) :: xs))) 
+               | [] -> []
+               | (_, x) :: xs -> (name, x) :: xs)))
          map
          [])
 
   let compute_mima_column l_tps =
     let t_min, t_max, _ =
       List.fold_left
-        (fun (o_min, o_max, pos) d -> 
-          let f_extr f_min o_min = 
+        (fun (o_min, o_max, pos) d ->
+          let f_extr f_min o_min =
             match o_min with
               | None -> Some (pos, d)
-              | Some (mi_pos, mi) -> 
-                let mi2 = f_min mi d in                    
+              | Some (mi_pos, mi) ->
+                let mi2 = f_min mi d in
                 Some ((if d = mi2 then pos else mi_pos), mi2) in
           f_extr min o_min,
           f_extr max o_max,
@@ -755,95 +756,95 @@ struct
 
            let row_min_pos, row_max_pos = None, None in
            let l = Hline :: l in
-           fst 
+           fst
            (
-             (  
+             (
                let row_pos = 0 in
                let opt, thumb =
                  let open English in
-                 let is_sl2, thumb_enabled = false, false in                   
+                 let is_sl2, thumb_enabled = false, false in
                  let mk_color = function true -> fun f -> f yes | false -> fun f -> Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) (f no) in
                  mk_color is_sl2 (fun x -> x ^^ ""), mk_color thumb_enabled (fun x -> x ^^ "") in
-           Data 
+           Data
              (texttt (Latex.Verbatim.verbatim name)
               ::
               let l_tps = List.map (fun (v, n) -> List.nth v.time n, v.nb_iter) [ x_ocaml, 0 ; x_sl, 0 ; x_sl2, 0 ; x_sl, 4 ; x_sl2, 4 ] in
-              let (mi_pos, mi), (ma_pos, ma) = 
+              let (mi_pos, mi), (ma_pos, ma) =
                 match compute_mima_column (BatList.map (fun (f, nb) -> f /. float_of_int nb) l_tps) with None -> assert false | Some v -> v.t_min, v.t_max in
-              let () = 
+              let () =
                 if mi_pos <> ma_pos then () else assert false (* all values are equal *) in
-              BatList.flatten 
-                [    BatList.mapi (fun pos (d, nb_iter) -> 
+              BatList.flatten
+                [    BatList.mapi (fun pos (d, nb_iter) ->
                        "{
-                         match 
+                         match
                            if pos = mi_pos then Some Color.green_light else if pos = ma_pos then Some Color.red_light else None
                          with
                           | None -> ""
                           | Some color -> Color.cellcolor_ color
                         } {
                            let t = text (str_of_float (d /. float_of_int nb_iter *. 1000.)) in
-                           (*if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then 
+                           (*if not (only_one_elt v_perf) && pos = mi_pos && Some row_pos = row_min_pos then
                              Color.textcolor_ (Color.blue) t
                            else if not (only_one_elt v_perf) && pos = ma_pos && Some row_pos = row_max_pos then
                              Color.textcolor_ (Color.red) t
                            else*)
                              t
-                          }") l_tps 
+                          }") l_tps
                 ; [ Latex.Verbatim.verbatim (Printf.sprintf \"+%s %%\" (str_of_float_percent (100. -. mi *. 100. /. ma)) ^ \"\") ] ])
            ::
            l,
            Pervasives.succ row_pos)
              )
-             | _ -> 
-               if List.exists (function {data = {file = No_thumb No_simlight}} -> true  | _ -> false ) lll then 
+             | _ ->
+               if List.exists (function {data = {file = No_thumb No_simlight}} -> true  | _ -> false ) lll then
                  Printf.kprintf failwith \"%s %d\" name (List.length lll)
                else
                  l
-         ) 
+         )
          map
          [])
 
   let performance_of_file f_mima (f_simlight, file) map =
-      fold_double 
-        (fun (map, dim_map) (name, s) -> 
+      fold_double
+        (fun (map, dim_map) (name, s) ->
           let name = BatString.trim name in
           let nb_iter :: l_tps = BatList.filter_map (function \"\" -> None | s -> Some s) (BatString.nsplit s \" \") in
-          let l_tps = 
+          let l_tps =
             BatList.map float_of_string l_tps in
           let t_mima = f_mima l_tps in
-          let name, file = 
+          let name, file =
             let und = \"_\" in
-            let l, file = 
+            let l, file =
               match List.rev (BatString.nsplit name und) with
-                | \"a\" :: l -> l, No_thumb f_simlight 
+                | \"a\" :: l -> l, No_thumb f_simlight
                 | \"t\" :: l -> l, With_thumb
                 | _ -> Printf.kprintf failwith \"file %S does not end with a recognized extension\" name in
             BatString.join und (List.rev l), file in
 
-          let dim_map, index = 
+          let dim_map, index =
             match StringMap.Exceptionless.find name map with
               | Some (_, index) -> dim_map, index
-              | None -> let d = Pervasives.succ dim_map in d, d in 
+              | None -> let d = Pervasives.succ dim_map in d, d in
 
           StringMap.modify_def
             ([], index)
             name
-            (fun (l, index) -> { data = { file ; nb_iter = int_of_string nb_iter ; time = l_tps } ; t_mima } :: l, index) 
-            map, 
+            (fun (l, index) -> { data = { file ; nb_iter = int_of_string nb_iter ; time = l_tps } ; t_mima } :: l, index)
+            map,
           dim_map)
         map
         (BatList.filter
-           (function \"\" -> false | _ -> true) 
-           (BatString.nsplit 
+           (function \"\" -> false | _ -> true)
+           (BatString.nsplit
               (BatFile.with_file_in file BatIO.read_all) \"\n\"))
 
-  let compute_mima_row f_extr = 
-    StringMap.map 
-      (fun (l, i) -> 
+  let compute_mima_row f_extr =
+    StringMap.map
+      (fun (l, i) ->
 
-        let l = 
+        let l =
           List.fast_sort
-            (fun v1 v2 -> 
+            (fun v1 v2 ->
               let f v = match v.data.file with
                 | No_thumb No_simlight -> -1
                 | No_thumb Simlight__short -> 0
@@ -852,30 +853,30 @@ struct
               compare (f v1) (f v2))
             l in
 
-        { data = l, i 
+        { data = l, i
         ; t_mima = f_extr l })
 
-  let stat_file1 = 
+  let stat_file1 =
     [ Simlight__short, Version.Cpp11_bis.Filename.stat_arm1
     ; Simlight2, Version.Cpp11_bis.Filename.stat_arm2 ]
 
-  let stat_file2 = 
+  let stat_file2 =
     (No_simlight, Version.Cpp11_bis.Filename.stat_armo)
 
-  let map_perf f_compute_mima_column = 
+  let map_perf f_compute_mima_column =
     List.fold_left
       (fun map sl_file -> performance_of_file f_compute_mima_column sl_file map)
       (StringMap.empty, 0)
       stat_file1
 
-  let draw_performance1 f_tabular = 
+  let draw_performance1 f_tabular =
     f_tabular (BatList.flatten [ `L :: `C :: `C :: `Vert :: interl 7 `R ])
       (BatList.flatten
-         [ (let module S = Ssmall in 
+         [ (let module S = Ssmall in
             let f n = [ "{texttt "gcc -m32 -O{latex_of_int n}"}" ] in
             title
              (fun x -> x)
-             [ ] 
+             [ ]
              None
              [ [ "ARMv6 Executable and Linkable Format (ELF)" ]
              ; [ "Do we execute with the optimized version of the simulator ?" ]
@@ -889,42 +890,42 @@ struct
              ; [ "Relative" ; "gain" ; "between" ; "max" ; "and" ; "min" ] ])
          ; to_latex
            (compute_mima_row
-              (fun l -> 
+              (fun l ->
                 let fold get_min f_min =
                   let get_min v = snd (get_min v) /. float_of_int v.data.nb_iter in
-                  match 
-                    List.fold_left 
+                  match
+                    List.fold_left
                       (fun (o, pos) v ->
                         let v_min = get_min v in
                         (match o with
                           | None -> Some (pos, v_min)
-                          | Some (pos1, min1) -> 
+                          | Some (pos1, min1) ->
                             let min2 = f_min min1 v_min in
-                            Some ((if min2 = v_min then pos else pos1), min2)), 
+                            Some ((if min2 = v_min then pos else pos1), min2)),
                         Pervasives.succ pos)
                       (None, 0)
-                      l 
+                      l
                   with
                     | None, _ -> assert false
                     | Some p, _ -> p in
-                
+
                 Some { t_min = fold (fun v -> match v.t_mima with None -> assert false | Some v -> v.t_min) min
                      ; t_max = fold (fun v -> match v.t_mima with None -> assert false | Some v -> v.t_max) max })
               (fst (map_perf compute_mima_column))) ])
 
-  let draw_performance2 f_tabular = 
+  let draw_performance2 f_tabular =
     f_tabular (BatList.flatten [ `L :: `Vert :: interl 6 `R ])
       (BatList.flatten
-         [ (let module S = Ssmall in 
-            let f optim _ = 
+         [ (let module S = Ssmall in
+            let f optim _ =
               let l_of_bool b = if b then English.yes else English.no in
               "({l_of_bool optim} opt)" in
             title
              (fun x -> x)
-             [ ] 
+             [ ]
              None
              [ [ "ARMv6 Executable and Linkable Format ({English.no} Thumb generation)" ]
-             ; [ "Time in milliseconds of 1 iteration" 
+             ; [ "Time in milliseconds of 1 iteration"
                ; "with {S.SL.Ocaml.coq} {f false false}," ; "compiled by {texttt "ocamlopt"}" ]
              ; [ "with {S.SL.C.asm} {f false false}," ; "compiled by {P.compcert} {texttt Version.compcert_arch}" ]
              ; [ "with {S.SL.C.asm} {f true false}," ; "compiled by {P.compcert} {texttt Version.compcert_arch}" ]
@@ -933,17 +934,17 @@ struct
              ; [ "Relative gain" ; "between max and min" ] ])
          ; to_latex2
            ((*StringMap.map
-              (fun v -> 
-                { v with data = 
+              (fun v ->
+                { v with data =
                     match v.data with
                       | { data = [ sl_ocaml ; sl1 ; sl2 ] ; t_mima = None } as v, i -> { v with t_mima = Some () }, i
                       | _ -> assert false }) *)
               (compute_mima_row (fun _ -> None) (fst (performance_of_file (fun _ -> None) stat_file2 (map_perf (fun _ -> None)))))) ])
 end
 
-let _ = 
-  let th_same_source l = 
-    let l, last = 
+let _ =
+  let th_same_source l =
+    let l, last =
       let last :: l = List.rev l in
       List.rev l, last in
     Th.env Label.fact "
@@ -954,8 +955,8 @@ However their possible different behavior at runtime, {concat (BatList.map (fun 
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
 " in
 
-  let l = 
-[ tableofcontents 
+  let l =
+[ tableofcontents
 
 
 (*****************************************************************************)
@@ -967,11 +968,11 @@ However their possible different behavior at runtime, {concat (BatList.map (fun 
 (* Plus particulièrement, {P.simcert} contient un simulateur du processeur ARMv6 écrit en Coq. Pour le modéliser et l'intégrer au sein de Coq, il a été nécessaire de construire un modèle formel du processeur, ce modèle nous informe précisément sur la sémantique de chaque instruction.  *)
 (* Notre travail s'intéresse à l'importation d'un autre type de processeur au projet {P.simcert} : il s'agit du processeur SH4. Comme pour l'ARM, nous montrons à la section [?] comment obtenir un modèle mathématique du SH4 à partir de son manuel de référence. *)
 (* ************************ *)
-; "Stability of embedded systems depends on the good behavior of their components. Before reaching the construction of the final material in factory, exhaustive testing is thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the {P.simsoc} project~{cite ["ossc09"]} is to permit engineers to develop systems with such a tool, it contains a simulator split modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economical impact. On the other side, the time execution of an algorithm depends on the processor's optimizations. To get a safe system, the need to work with simulators are then going increasingly. However, how can we guarantee the {emph "exact"} behavior between simulator and embedded systems ? 
+; "Stability of embedded systems depends on the good behavior of their components. Before reaching the construction of the final material in factory, exhaustive testing is thus a strong requirement. At the same time, designer tends to be interested in software simulating the global system and taking a real binary as input. The goal of the {P.simsoc} project~{cite ["ossc09"]} is to permit engineers to develop systems with such a tool, it contains a simulator split modularly into several components. Among these components, the processor is an important element to consider not only during the production but also for the simulation. On one side, errors of conception are susceptible to have a high economical impact. On the other side, the time execution of an algorithm depends on the processor's optimizations. To get a safe system, the need to work with simulators are then going increasingly. However, how can we guarantee the {emph "exact"} behavior between simulator and embedded systems ?
 The goal of {P.simcert} is precisely to answer this question, we propose to certify each part of {P.simsoc}. Being an ambitious project, we plan to begin with the correction of the processor, this targets directly the heart of the simulator.
 
 In particular, {P.simcert} contains a simulator of the ARMv6 written in Coq~{cite ["arm6refman"; "arm"]}. The language Coq is a system which builds a constructive proof from a specification by looking at the programmer's hints~{cite ["Coq:manual"]}. One common application is the extraction procedure which translates the proof, considered as a {lambda}-term, to another functional language like OCaml~{cite ["OCaml"]}. To model and integrate the simulator within Coq, it was necessary to build a formal model of the processor, this model informs us precisely on the semantics of each instruction.
-The formal model of the ARMv6 has been automatically generated. To prove that the {P.simcert} framework is completely modular, our work focuses on the automatic importation of another type of processor into the {P.simcert} project : the SH4 processor~{cite ["sh4refman"]}. 
+The formal model of the ARMv6 has been automatically generated. To prove that the {P.simcert} framework is completely modular, our work focuses on the automatic importation of another type of processor into the {P.simcert} project : the SH4 processor~{cite ["sh4refman"]}.
 
 As for ARM, we show at section~{ref_ Label.simu_sh4} how to automatically generate a mathematical model of SH from his reference manual. Section~{ref_ Label.fast_certi} presents our first step into the certification problem. Our work begins now with some general definitions in section~{ref_ Label.certi_sim}.
 "
@@ -1010,7 +1011,7 @@ For the following, we will use the symbols
 ; "Generally, a processor simulator basically needs two informations in order to accomplish its task.
 {itemize
 [ "The ``pseudocode'' describes the behavior of each instruction. Each processor instructions (add, cpy, mov ...) are precisely composed of sequences of low-level primitives : copy, affectation of register or access operation to the memory... The unknown or uncertainty behaviors in some situations are in general stated in the reference {S.Manual.ArmSh.C.human} (for example, ``UNPREDICTABLE'' case in instruction for the ARM, the same is described in Appendix B for the SH). In any case, specified or not, when importing the semantics to some formal model, we will be forced to explicitly specify the meaning of all the unknown behavior."
-; "The ``decoder'' pilots the association from binary word to instruction. Given a binary word of fixed size, the goal is to retrieve from this word the instruction associated to the word, in order to execute it, as well as his potential arguments. 
+; "The ``decoder'' pilots the association from binary word to instruction. Given a binary word of fixed size, the goal is to retrieve from this word the instruction associated to the word, in order to execute it, as well as his potential arguments.
 The correction of the decoder is as important as the pseudocode for a good simulation. We want for example to be sure that there is only one instruction associated to a word." ]
 }
 Providing these two informations, we are able to model a simple simulator in Coq{let module S = Sfoot in footnote () "Coq being a strongly normalizing language, the simulation is performed within a fixed number of recursive step."}. This is exactly what the {P.simcert} project contains.
@@ -1021,7 +1022,7 @@ The goal of {P.simcert}~{let module S = Sfoot in footnote () "{English.newreleas
 "
 ; paragraph "Related work"
 ; "
-A formalization of the ARMv7 processor is reported in {cite ["conf/itp/FoxM10"]}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions. 
+A formalization of the ARMv7 processor is reported in {cite ["conf/itp/FoxM10"]}. The ARMv7 model has been constructed manually using the proof assistant HOL4, with monad as combinator for semantic functions.
 We are interested to automatically generate a Coq model, which aim to be as understandable as possible to the {S.Manual.ArmSh.C.human} of reference. We will show later how coercions and notations in Coq are advantages for readability, but we will also notice some limitations of their use for a large proof project. Organizing the project modularly in Coq will also permit us to integrate simultaneously ARMv6 and SH4 in a generic simulator, and gain an easier interaction with {P.compcert}.
 "
 ; subsubsection ~label:Label.simgendef "The simulator {S.SL.coq} {forceline}and the toolkit {S.simgen}"
@@ -1035,7 +1036,7 @@ To illustrate this, we present here {S.Manual.Arm.coq}, which contains {S.Pseudo
 ; subsubsection ~label:Label.oldarm "The generated {S.Pseudocode.Arm.coq}"
 
 ; "
-This file contains the semantics of all the instructions written in the Coq language. Each instruction from the {S.Manual.Arm.C.human} of reference is translated in a similar Coq function, called ``<!..._step!>'' function. 
+This file contains the semantics of all the instructions written in the Coq language. Each instruction from the {S.Manual.Arm.C.human} of reference is translated in a similar Coq function, called ``<!..._step!>'' function.
 Furthermore, as for modularity the generation of the {S.Decoder.Arm.coq} is currently done in a separate way than the {S.Pseudocode.Arm.coq}, we create an inductive type <!inst!> containing exactly a constructor for each ``<!..._step!>'' function. <!inst!> will be useful for interoperability between {S.Pseudocode.Arm.coq} and {S.Decoder.Arm.coq}. At the end of {S.Pseudocode.Arm.coq}, there is a main function <!step!> which role is, given a value of type <!inst!>, to retrieve the corresponding ``<!..._step!>'' function to run it.
 
 Instructions from the ARMv6 are a bit special. Given a fixed sized word, we usually think about the instruction corresponding to this word, in particular during the decoding phase. But in ARMv6, we need to parameterized our thought one step higher. Indeed, some instructions take as argument a special parameter. This parameter is intended to be specially treated and a preliminary function need to be applied before the real execution of the instruction. This typical case is the {emph "addressing mode"}.
@@ -1051,7 +1052,7 @@ Inductive mode1 : Type := #{PPP}#.
 Inductive mode2 : Type := #{PPP}#.
 Inductive mode3 : Type := #{PPP}#.
 Inductive mode4 : Type :=
-  | M4_Incr_after         #{PPP}# 
+  | M4_Incr_after         #{PPP}#
   | M4_Incr_before        #{PPP}#
   | M4_Decr_after         #{PPP}#
   | M4_Decr_before        #{PPP}#.
@@ -1075,7 +1076,7 @@ Definition M4_Incr_after_step s0 W cond n r #{PPP}# : result * word * word :=
 "
 ; subparagraph "Correspondence between the type and definition"
 ; "
-Finally, this simple part illustrates the symmetry between type and definitions. 
+Finally, this simple part illustrates the symmetry between type and definitions.
 <#
 Definition mode1_step (s0 : state) (m : mode1) := #{PPP}#.
 Definition mode2_step (s0 : state) (m : mode2) := #{PPP}#.
@@ -1098,11 +1099,11 @@ Here, the same structure as the {emph "addressing mode"} is done for the {emph "
 ; subparagraph "Type"
 ; "
 <#
-Inductive inst : Type := 
+Inductive inst : Type :=
 #{PPP}#
-  | LDM2 (m_ : mode4) (cond : opcode) (register_list : word) 
+  | LDM2 (m_ : mode4) (cond : opcode) (register_list : word)
 #{PPP}#
-  | SMLSLD (X : bool) (cond : opcode) 
+  | SMLSLD (X : bool) (cond : opcode)
       (dHi : regnum) (dLo : regnum) (m : regnum) (s : regnum)
 #{PPP}#.
 #>
@@ -1116,7 +1117,7 @@ Definition LDM2_step (s0 : state) cond r s #{PPP}# : result :=
   if_then (ConditionPassed s0 cond)
     (fun loc b st => block (
       (fun loc b st => update_loc n0 (*address*) s loc b st) ::
-      (fun loc b st => loop 0 n14 (fun i => 
+      (fun loc b st => loop 0 n14 (fun i =>
         if_then (zeq (r[i]) 1)
           (fun loc b st => block (
             (fun loc b st => #{PPP}# (read st (#{PPP}# loc) Word) loc b st) ::
@@ -1128,17 +1129,17 @@ Definition LDM2_step (s0 : state) cond r s #{PPP}# : result :=
 Definition SMLSLD_step (s0 : state) X cond dHi dLo m s #{PPP}# : result :=
   if_then (ConditionPassed s0 cond)
     (fun loc b st => block (
-      (fun loc b st => update_loc n1 (*operand2*) 
+      (fun loc b st => update_loc n1 (*operand2*)
         (if zeq X 1 then Rotate_Right #{PPP}# else reg_content s0 s) loc b st) ::
-      (fun loc b st => update_loc64 n0 (*accvalue*) 
+      (fun loc b st => update_loc64 n0 (*accvalue*)
         (or64 (#{PPP}# ((*ZeroExtend*)(reg_content st dHi))) #{PPP}#) loc b st) ::
-      (fun loc b st => update_loc n2 (*product1*) 
+      (fun loc b st => update_loc n2 (*product1*)
         (mul #{PPP}# (get_signed_half0 (get_loc n1 (*operand2*) loc))) loc b st) ::
-      (fun loc b st => update_loc n3 (*product2*) 
+      (fun loc b st => update_loc n3 (*product2*)
         (mul #{PPP}# (get_signed_half1 (get_loc n1 (*operand2*) loc))) loc b st) ::
-      (fun loc b st => update_loc64 n4 (*result*) (sub64 (add64 
-          (get_loc64 n0 (*accvalue*) loc) 
-          (get_loc n2 (*product1*) loc)) 
+      (fun loc b st => update_loc64 n4 (*result*) (sub64 (add64
+          (get_loc64 n0 (*accvalue*) loc)
+          (get_loc n2 (*product1*) loc))
         (get_loc n3 (*product2*) loc)) loc b st) ::
       (fun loc b st => set_reg dLo (get_lo (get_loc64 n4 (*result*) loc)) loc b st) ::
       (fun loc b st => #{PPP}# (get_hi (get_loc64 n4 (*result*) loc)) loc b st) ::
@@ -1171,7 +1172,7 @@ The structure of this file is rather simple. Given a word, we decompose it into 
 "
 ; subsection "The {P.compcert} project"
 ; "
-The goal of {P.compcert} is precisely to transform most of the {S.C.human} programs to an assembler program, with a semantic preservation certificate. 
+The goal of {P.compcert} is precisely to transform most of the {S.C.human} programs to an assembler program, with a semantic preservation certificate.
 
 Generally, if the compiler can produce an assembler file from a {S.C.human} program, the well behavior at runtime of the assembler produced depends on two facts :
 {itemize
@@ -1179,7 +1180,7 @@ Generally, if the compiler can produce an assembler file from a {S.C.human} prog
 ; "and the well behavior of the program at {S.C.compcert} production time (as well as a heuristically{let module S = Sfoot in footnote () "Starting from {S.C.gcc}, there is currently no Coq proof of semantic preservation to {S.C.compcert}
 . " (*, because*)} good translation from {S.C.human} to {S.C.compcert})." ]
 }
-The first point is feasible as supposed~{cite ["Leroy-Compcert-CACM"]}. Indeed, the section~{ref_ Label.fast_certi} will explain how such kind of interpretation or simulation could safely be performed. 
+The first point is feasible as supposed~{cite ["Leroy-Compcert-CACM"]}. Indeed, the section~{ref_ Label.fast_certi} will explain how such kind of interpretation or simulation could safely be performed.
 About the generation of a formal model, one could also agree that a manual formalization is hard or unexciting. Here begins the automatic generation of the SH4 model.
 "
 (*****************************************************************************)
@@ -1197,7 +1198,7 @@ Besides the target fixed at this advanced {S.simgen_ast}, we show at the next pa
 (* ************************ french *)
 (* Le manuel SH4 contient au total environ 450 pages, la partie où se trouve les informations correspondant au pseudocode et au décodeur occupe une place assez importante, près de la moitié du fichier. Construire directement à la main un modèle en Coq est donc long ou avec risques possibles d'erreurs. De plus, les informations à importer sont à première vue organisées de façon régulière, et il semble donc accessible de les traiter automatiquement avec un programme. *)
 (* ************************ *)
-The {S.Manual.Sh.C.human} totals about 450 pages, informations corresponding to the pseudocode and decoder occupy an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors. 
+The {S.Manual.Sh.C.human} totals about 450 pages, informations corresponding to the pseudocode and decoder occupy an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors.
 Furthermore, while reading it briefly, we have been having a strong conjecture that the {S.C.human} code specified in the instructions can be easily translated to {S.C.gcc}. To experiment our intuition, we have planned to use the FrontC package as type representing our futur {S.C.gcc} program in OCaml.
 {Th.env Label.note "
 Let us name
@@ -1211,9 +1212,9 @@ The parsing of the decoder informations was merely fast, except for the <!9.33 F
 "
 ; paragraph "Patching phase"
 ; "
-Interesting informations in the {S.Manual.Sh.C.human} are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions only specific to floating instructions, followed by a sequence of description of the instructions. 
+Interesting informations in the {S.Manual.Sh.C.human} are located at ``section 9, Instruction Descriptions''. It is formed by a preliminary header containing functions only specific to floating instructions, followed by a sequence of description of the instructions.
 
-Corrections needed to bring to the {S.Manual.Sh.C.human} are essentially composed of missing symbol ``;'', missing type informations before some parameters and unbounded value encountered. 
+Corrections needed to bring to the {S.Manual.Sh.C.human} are essentially composed of missing symbol ``;'', missing type informations before some parameters and unbounded value encountered.
     "
 ; paragraph "More confidence by type-checking"
 ; "
@@ -1237,10 +1238,10 @@ For clarity, results can now be classified in two parts, we present first modifi
    [ "Wrapping comments", "Some {S.C.human} code includes sentences commonly found from the english language. Everytime the situation occurs, we use our intuition to place <!/* !{PPP}! */!> around the appropriate part."
    ; "Character repetition", "For example, some parenthesis are opened twice, some are closed twice, and some are swapped or missed. In general, the cost performed is just one single addition or one single deletion."
    ; "Character mapping", "We replaced for example some wrong ``,'' by <!;!>. Note that the variable ``H'00000100'' contains an illegal character for a variable, in contrast to this accepted form : <!H_00000100!>."
-   ; "Reduced syntax", "For a function taking more than one argument, it is frequent to encounter this reduced declaration : ``f (int x, y) \{{ppp}\}''. So, we expand the type at every argument position : <!f (int x, int y) {!{PPP}!}!>. 
+   ; "Reduced syntax", "For a function taking more than one argument, it is frequent to encounter this reduced declaration : ``f (int x, y) \{{ppp}\}''. So, we expand the type at every argument position : <!f (int x, int y) {!{PPP}!}!>.
 
-Every patterns matching " ^^ forceline ^^ 
-"``case($value$) \{ $pattern_1$ : {ppp} $pattern_n$ : {ppp} \}'' have been replaced by " ^^ forceline ^^ 
+Every patterns matching " ^^ forceline ^^
+"``case($value$) \{ $pattern_1$ : {ppp} $pattern_n$ : {ppp} \}'' have been replaced by " ^^ forceline ^^
 "<!switch(!>$value$<!) { case !>$pattern_1$<! : !{PPP}! case !>$pattern_n$<! : !{PPP}! }!>."
    ; "Wrong overloading form", "A call to <!data_type_of!> is performed in <!9.28 FCNVDS!>, which seems to refer to the <!data_type_of!> defined at the beginning of section 9. However the called function takes one more argument than the defined. This situation has been handled by renaming the called <!data_type_of!> into a new function, which goal is to call the defined <!data_type_of!> with the right arguments. In the same spirit, we renamed <!FSUB!> to <!FSUB_!> in its pseudocode part because <!FSUB!> is in fact a directive already defined : <!#define FSUB !{PPP}!!>"
 ; "PDF translation errors", "The extracted text from a PDF document introduces some repetitive background side effects : every encoded string ``–='' (representing the OCaml string <!"\xE2\x80\x93="!>) needs to be replaced by a simple <!-=!>. Space separated words ``normal_ fcnvds'' are merged to form a single word <!normal_fcnvds!>..."
@@ -1265,7 +1266,7 @@ main () {}
 
 ; subsection "Grouping SH4 and ARMv6 into a common pseudocode generator"
 ; "
-The next step after the obtaining of an OCaml value representing the {S.Manual.Sh.C.human} is its integration in {P.simcert}. To this end, we have performed two modifications : 
+The next step after the obtaining of an OCaml value representing the {S.Manual.Sh.C.human} is its integration in {P.simcert}. To this end, we have performed two modifications :
 {itemize
 [ "at the {S.SL.coq} source by adding the model of the SH4 processor (model of the state, particular numbering of register, semantics of remaining undefined functions...),"
 ; "at {S.simgen} to generate the {S.Manual.Sh.coq} in the same way as what is done for ARMv6." ]
@@ -1292,7 +1293,7 @@ Additionally, we also notice that the <!loc!> variable, used to model some local
 
 {hspace (`Ex 1.)}
 
-We will explain later that our goal is to prove the well-defined behavior of the Coq simulator, as well as the {S.C.gcc} simulator. Modifications on the Coq code can thus be considered as superfluous, except for precisely readability of the proof we plan to do. In particular, it is close to some form of compilation to a factorized {lambda}-code. Without going formally, we are interested to minimize, as possible as it can be, the number of node representing the Coq AST for simplifying the future proof (for example, among the optimizations cited above, one can imagine transforming a 
+We will explain later that our goal is to prove the well-defined behavior of the Coq simulator, as well as the {S.C.gcc} simulator. Modifications on the Coq code can thus be considered as superfluous, except for precisely readability of the proof we plan to do. In particular, it is close to some form of compilation to a factorized {lambda}-code. Without going formally, we are interested to minimize, as possible as it can be, the number of node representing the Coq AST for simplifying the future proof (for example, among the optimizations cited above, one can imagine transforming a
 {texttt ("if {Code.latex_of_ppp PPP} then f f_true else f f_false")} into a {texttt ("f (if {Code.latex_of_ppp PPP} then f_true else f_false)") }).
 
 {hspace (`Ex 1.)}
@@ -1305,21 +1306,21 @@ Simplifications are done inside the semantic definition and the correspondence t
 
 {hspace (`Ex 1.)}
 
-We assume below 
+We assume below
 {itemize
 [ "having defined a notation for vectors as
 <#
-  Notation "{{ a ; .. ; b }}" := 
+  Notation "{{ a ; .. ; b }}" :=
     (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..).
 #>
 (see the Coq library <!Bvector!>). In particular, we rely on the type-checker to guess the <!nat!> associated to each element."
 ; "having these notations for semantic functions
 <#
-  Notation "'<.' loc '.>' A" := (_get_loc (fun loc => A)) 
+  Notation "'<.' loc '.>' A" := (_get_loc (fun loc => A))
     (at level 200, A at level 100, loc ident).
-  Notation "'<' st '>' A" := (_get_st (fun st => A)) 
+  Notation "'<' st '>' A" := (_get_st (fun st => A))
     (at level 200, A at level 100, st ident).
-  Notation "'<:' loc st ':>' A" := (<.loc.> <st> A) 
+  Notation "'<:' loc st ':>' A" := (<.loc.> <st> A)
     (at level 200, A at level 100, loc ident, st ident).
   Notation "'do_then' A ; B" := (next A B)
     (at level 200, A at level 100, B at level 200).
@@ -1357,7 +1358,7 @@ Definition mode1_step (m : mode1) : _ -> semfun unit := mode_step #{PPP}#.
 Definition LDM2_step cond r s #{PPP}# : semfun _ := <s0>
   if_then (ConditionPassed s0 cond)
     ([ update_loc n0 (*address*) s
-    ; loop 0 n14 (fun i => 
+    ; loop 0 n14 (fun i =>
          if_then (zeq (r[i]) 1)
            ([ <:loc st:> #{PPP}# (read st (#{PPP}# loc) Word)
            ; <.loc.> #{PPP}# (add (#{PPP}# loc) (repr 4)) ])) ]).
@@ -1365,7 +1366,7 @@ Definition LDM2_step cond r s #{PPP}# : semfun _ := <s0>
 (* A4.1.81 SMLSLD *)
 Definition SMLSLD_step X cond dHi dLo m s : semfun _ := <s0>
   if_then (ConditionPassed s0 cond)
-    ([ <st> let operand2 := 
+    ([ <st> let operand2 :=
               if zeq X 1 then Rotate_Right #{PPP}# else reg_content s0 s in
     let accvalue := or64 (#{PPP}# ((*ZeroExtend*)(reg_content st dHi))) #{PPP}# in
     let product1 := mul #{PPP}# (get_signed_half0 operand2) in
@@ -1399,7 +1400,7 @@ The parameter <!st!> having been moved to the end, we observe a certain symmetry
 "
 ; paragraph "Limit of the Coq generation"
 ; "
-The packing system of module as a first-class value in {Version.ocaml} encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents. 
+The packing system of module as a first-class value in {Version.ocaml} encourages us to organize rapidly the code for ARMv6 and SH4. The counterpart is the explicit typing required of the module contents.
 
 The typing information becomes also mandatory in Coq, when sometimes we need to explicitly redefine by hand some record, especially when {English.coqkernel}. Remark that writing annotations in Coq is more complex than writing annotations in OCaml. For example, we present here a warning where some explicit type annotations need to be manipulated carefully. The datatype modeling the exception in the ARMv6 processor has been defined as follows :
 <#
@@ -1424,7 +1425,7 @@ The appendix {ref_ Label.appendix_singl} contains more explanations.
 
 We can wonder if the {S.Manual.ArmSh.coq} we generate can be written in a total monadic style~{cite ["conf/itp/FoxM10"]}. For example, the <!if_then!> constructor can become a <!if_then!> monadic combinator, as well as the several encountered <!ConditionPassed!>. Then we hope one can rewrite {forceline}
 ``<!<s0> if_then (ConditionPassed s0 cond) !{PPP}!!>'' as {forceline}
- ``<!if_then (ConditionPassed_s0 cond) !{PPP}!!>'' annihilating the need to use <!_get_loc!> and <!_get_st!>{let module S = Sfoot in footnote () "Because the first call to {texttt "_get_st"} at the start affects the variable {texttt "s0"}, this variable needs to be treated carefully, in a monadic reference for example, if we delete {texttt "_get_st"}."}. However we are in front of a difficulty. Indeed, the automatically generated {S.Manual.ArmSh.coq} uses extensively the coercion facility, for instance to consider a boolean value as a word (or integer)~{cite ["arm"]}. Hence, the Coq code is finally very close to the original {S.Manual.ArmSh.C.gcc}. Because sometimes the <!st!> is deeply embedded in arithmetical expressions, we 
+ ``<!if_then (ConditionPassed_s0 cond) !{PPP}!!>'' annihilating the need to use <!_get_loc!> and <!_get_st!>{let module S = Sfoot in footnote () "Because the first call to {texttt "_get_st"} at the start affects the variable {texttt "s0"}, this variable needs to be treated carefully, in a monadic reference for example, if we delete {texttt "_get_st"}."}. However we are in front of a difficulty. Indeed, the automatically generated {S.Manual.ArmSh.coq} uses extensively the coercion facility, for instance to consider a boolean value as a word (or integer)~{cite ["arm"]}. Hence, the Coq code is finally very close to the original {S.Manual.ArmSh.C.gcc}. Because sometimes the <!st!> is deeply embedded in arithmetical expressions, we
 have a problem of coercion at higher-order level. Currently an
 expression like
 <!zeq 1 true!> is implicitly translated to {forceline}<!zeq 1 (Z_of_bool true)!>
@@ -1456,7 +1457,7 @@ In any case, these results is susceptible to be changed, because we mainly need 
 Inside each instructions in the {S.Manual.ArmSh.C.human}, we suspect there is at most one access to modify the environment per line. It concerns the storing of value inside memory or to the local stack <!loc!>. We have also encountered several read of mutable variable in one line, which does not seem to conflict with storing at the same time. Because the {S.Manual.ArmSh.coq} may changed in the future (if we discover some erroneous specifications), the current correctness guarantee relies first on its good type-checking.
 Note that for SH4, there is a specific instruction <!Read_Byte!> to access a particular location. We found convenient to set the type of this function to a monadic one, i.e. <!word -> semfun word!> as well as its companion <!Write_Byte!>. Because <!Read_Byte!> can be present several times in a line, it was necessary to coat it with an explicit call to <!bind!>. Then the computation ``sequentially'' continues inside the body of <!bind!>.
 
-About the correction of our simplification process of the accumulator <!st!>, <!loc!> and <!b!>, 
+About the correction of our simplification process of the accumulator <!st!>, <!loc!> and <!b!>,
 {itemize
 [ "we can add more <!_get_loc!> or <!_get_st!> at any positions (accepting at least a well-typed monadic expression), because we already know there is no conflict between these names and other variable names coming from the {S.Manual.ArmSh.coq}, thanks to the good type-checking of the previous {S.Manual.ArmSh.coq}. Moreover, we also know that any variable (generally leaving in the {lambda}-calculus theory) is captured by the nearest abstraction."
 ; "If we add less <!_get_loc!> or <!_get_st!> at any positions (requiring at least one), the semantics can wrongly changed. Because the new {S.Manual.ArmSh.coq} type-checks correctly for ARM and SH, if for example we add less <!_get_loc!> at a certain position, then it means necessarily that the <!loc!> used refers wrongly to an external <!_get_loc!>." ]
@@ -1467,10 +1468,10 @@ Hence, in any case, we hope the test validation of the {S.Manual.ArmSh.coq} will
 "
 ; section ~label:Label.fast_certi "Towards a ``fast'' certified simulator"
 ; "
-Recall that our objective is to guarantee the correction of any program simulated by {S.SL.C.gcc}, written in ARMv6 or SH4, and the requirement of the same state of registers for {S.SL.C.gcc} and {S.SL.coq} after each instructions. 
+Recall that our objective is to guarantee the correction of any program simulated by {S.SL.C.gcc}, written in ARMv6 or SH4, and the requirement of the same state of registers for {S.SL.C.gcc} and {S.SL.coq} after each instructions.
 
-We plan to prove this in Coq, because the sources of {S.SL.coq} are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a {S.C.gcc} code, in particular to be able to work further with the {S.SL.C.gcc}. 
-Because the {S.SL.coq} is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to {S.SL.C.gcc}, that there is some correspondence between {S.SL.coq} and {S.SL.C.gcc}. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for every instruction simulated by {S.SL.C.gcc}, as this last aim to mimic {S.SL.coq}. 
+We plan to prove this in Coq, because the sources of {S.SL.coq} are already and directly accessible in Coq. Thus, first we need to get a Coq representation of a {S.C.gcc} code, in particular to be able to work further with the {S.SL.C.gcc}.
+Because the {S.SL.coq} is Coq well-typed, we already know its termination (after any supposed number of step given). Hence, it just remains to show that its behavior is coherent with respect to {S.SL.C.gcc}, that there is some correspondence between {S.SL.coq} and {S.SL.C.gcc}. Indeed, the equivalence proof we plan to write will contain implicitly the termination property for every instruction simulated by {S.SL.C.gcc}, as this last aim to mimic {S.SL.coq}.
 
 Now, for representing the {S.SL.C.gcc} code in Coq and reason with, we think about using the {S.C.compcert} type, because we suspect that its {S.C.gcc} code can be easily transformed to {S.C.compcert}. Above all, the {emph "not wrongly"} behavior (in the sense of~{cite ["Leroy-Compcert-CACM"]}) of {S.SL.C.gcc} implies the obtaining of a {emph "not wrongly"} assembler file, observationally equivalent to its source, thanks to the {P.compcert} semantic preservation. The {S.C.compcert} AST is also the first AST in the {P.compcert} translation chain where the {P.compcert} proof begins, and is thus the closest Coq AST to any {S.C.gcc}.
 
@@ -1489,7 +1490,7 @@ This leads us to the section explaining how such a parser can be constructed, an
 ; subsection ~label:Label.pretty_print "A Coq parser for {S.C.compcert}"
 ; "
 Our goal is to import a {S.C.gcc} code in Coq via the {S.C.compcert} AST. Assume we have an arbitrary {S.P.C.compcert} program that we need to work with a parsed representation in Coq during the development process of the proof. Such parser could naturally be written in a Turing complete point of view. But Coq is a language where the input and output with {English.outworld} can not easily be done in its proper language." (*let module S = Sfoot in footnote () "Enriching Gallina with new tactics implies to modify the source of Coq."*)
-; " At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with {English.outworld}. Because the language chosen for the extraction of {P.compcert} is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the {S.C.compcert} AST of {S.P.C.compcert}. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the {S.C.compcert} AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework. 
+; " At the same time, a program well-typed by the Coq type system can be extracted in a more complete programming language to interact easier with {English.outworld}. Because the language chosen for the extraction of {P.compcert} is OCaml, one can modify the sources of the extracted program by adding an OCaml pretty-printer, which target language is Coq ; this in order to get back the value inhabiting the {S.C.compcert} AST of {S.P.C.compcert}. But to be less dependent of the extracting algorithm (which can perform some renaming on variables), as well as the target language of extraction (which may change in the future), we plan to redact the most achievable part of the pretty printer in Coq. Then, we will be closer to the {S.C.compcert} AST and furthermore, we will have the possibility to evolve in a rich dependent type system framework.
 "
 ; subsubsection "The algorithm of parsing and pretty-printing"
 ; "
@@ -1529,8 +1530,8 @@ they transform $ty$ into a simple abstract datatype <!s!>, where <!s!> can be th
 
 Dependent types are precisely useful for performing a uniform operation on all the constructor, namely by allowing us to abstract the arity of the constructor we are folding. Indeed, when seeing the declarations above, our first will is to literally copy-paste them to produce these declarations :
 <#
-Definition _floatsize := __floatsize 
-  | "F32" 
+Definition _floatsize := __floatsize
+  | "F32"
   | "F64".
 
 Definition _type_ T (ty : #{PPP}#) := ty _ _floatsize
@@ -1559,7 +1560,7 @@ Check _INDUCTIVE : string -> forall n, s ** n.
   Notation "| x" := (_INDUCTIVE x _) (at level 9).
 
 Check _RECORD : forall n, vector string n -> s ** n.
-  Notation "{{ a ; .. ; b }}" := 
+  Notation "{{ a ; .. ; b }}" :=
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
 #>
 where the type <!vector!> and ``<!_ ^^  _ --> _!>'' are respectively more deeply explained in the Coq libraries <!Bvector!> and <!NaryFunctions!>.
@@ -1571,7 +1572,7 @@ The last ambiguity to resolve is the meaning of <!__floatsize!>, <!__type!>, <!_
 
 Finally, as <!_INDUCTIVE!> and <!_RECORD!> return the function type ``<!_ ** _!>'', we need to enhance the type of our recursors <!__floatsize!>, ..., <!__program!> by a more powerful one, and at least {emph "convertible"} to its initial type (the ``convertibility'' relation as defined in~{cite ["Coq:manual"]}). It means that we need to write explicitly their type~:
 <#
-  Notation "A [ a ; .. ; b ] -> C" := 
+  Notation "A [ a ; .. ; b ] -> C" :=
     (A ** a -> .. (A ** b -> C) ..) (at level 90).
 
 Definition __floatsize {A} : A [ 0   (* F32       :           _ *)
@@ -1636,7 +1637,7 @@ For the following, let us introduce
 }
 "}
 {let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}. 
+Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
 
 Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 "}
@@ -1683,9 +1684,9 @@ To force the compilation of {S.SL.C.gcc} by {P.compcert} to have a deterministic
 For the {texttt Version.compcert_arch} target, inspired from <!arm-linux!>, we tried randomly to change the heuristic from <!-m32!> to the explicit <!-m64!> in the preprocessing stage. Then the compilation successfully terminates ! On 32 and 64 bits computer, we can generate a 32 bits assembly file.
 "
 ; "``Modify the program {S.SL.C.gcc}, Keep the environment {P.compcert}''{newline}
-Here we replace, in the generated {S.Manual.Arm.C.gcc} as well as the whole {S.SL.C.gcc}, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits. 
+Here we replace, in the generated {S.Manual.Arm.C.gcc} as well as the whole {S.SL.C.gcc}, every 64 bits type by a record containing two 32 bits field. Usual arithmetical operations on 64 bits are then simulated in 32 bits.
 
-Because 32 bits data-structures are supported, the compilation process terminates. 
+Because 32 bits data-structures are supported, the compilation process terminates.
 However, contrarily to the previous solution, it requires here to activate in {P.compcert} the emulation of assignment between structs or unions (see the option <!-fstruct-assign!>){let module S = Sfoot in footnote () "Because the activation of this option affects the {P.compcert} heuristic, we can finally wonder if the environment has really been kept !"}." ]
 }
 
@@ -1695,7 +1696,7 @@ Recall that {S.SL.Arm.C.gcc} includes initially the generated {S.Manual.Arm.C.gc
 "
 ; subparagraph "Validation tests"
 ; "
-After the modification performed above, we now have a single program, called {S.SL.C.gcc} or {S.SL.C.asm} (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think about {S.SL.C.gcc} as a more close synonym for {S.SL.C.asm}, we need at least to study their behavior at runtime. 
+After the modification performed above, we now have a single program, called {S.SL.C.gcc} or {S.SL.C.asm} (depending on the speaking context), compiling with target fixed at 32 and 64 bits. However to be able to think about {S.SL.C.gcc} as a more close synonym for {S.SL.C.asm}, we need at least to study their behavior at runtime.
 
 We observed unfortunately that unlike {ref_ Label.ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
 More precisely, by examining closely the situation, we remarked for instance that this {S.C.human} program~:
@@ -1748,7 +1749,7 @@ Now, validation tests succeed on both {S.SL.C.gcc} and {S.SL.C.asm}." (* Except 
 "
 ; subsubsection ~label:Label.th_init_state "Does {S.SL.C.asm} terminate ?"
 ; "
-We are now one step closer to invocate the main {P.compcert} theorem, which predicts completely the behavior of the assembly file produced from {S.SL.C.asm}. 
+We are now one step closer to invocate the main {P.compcert} theorem, which predicts completely the behavior of the assembly file produced from {S.SL.C.asm}.
 {itemize
 [ "Because {S.SL.C.asm} has in fact been existentially produced, it means the compilation process has lead to a successful monadic value. This is a condition needed first by the main {P.compcert} theorem. Due to the success to get an assembly file, we conjecture this condition is easy to prove in Coq, in particular using some ``<!vm_compute!>''."
 ; "Besides that hypothesis, the main {P.compcert} theorem takes precisely as parameter the behavior we estimate for the source. Indeed, it is our task to give a bet on a behavior $b$ the initial {S.SL.C.asm} has (at {S.C.compcert} AST production time), and to show that its execution really follows $b$. Then, if $b$ is not classified in particular as a {emph "wrong"} behavior, {P.compcert} will answer us that the assembly executable has surely the behavior $b$." ]
@@ -1762,7 +1763,7 @@ Th.env Label.def "
 We define :
 {itemize
 [ "{S.C.lambda_l} for {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:" ^^
-  enumerate [ "the associated {SL_p.Coq.Deep.asm} has been obtained successfully," 
+  enumerate [ "the associated {SL_p.Coq.Deep.asm} has been obtained successfully,"
           ; "the behavior of the {SL_p.Coq.Deep.compcert} is {emph "not wrong"}." ]
 (*" can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (and preserving at least from the {S.C.compcert} big-step semantic). Moreover, the behavior of the initial source is required to be proved {emph "not wrong"}."*)
 ; "{SL_p.Coq.Deep.lambda_l} will naturally stand for the {SL_p.Coq.Deep.asm} (if {SL_p.C.asm} {in_} {S.C.lambda_l})." ]
@@ -1778,14 +1779,14 @@ int main(int _) {
 }
 @>
 because the type of the main function (called from {English.outworld}) is not of the form {texttt "unit {rightarrow} int"}. Thus it initially goes wrong by definition.
-"} 
+"}
 We conclude straightforwardly~:
 {Th.env Label.fact "
 The {S.SL.C.asm} is not a {S.C.lambda_l} program because as a simulator, its task is to simulate an arbitrary assembly file given in input.
 
 More clearly~:
 <#
-Lemma no_initial_state : 
+Lemma no_initial_state :
   forall s, ~ Csem.initial_state asmC_simlight s.
 
   Proof.
@@ -1795,28 +1796,28 @@ Lemma no_initial_state :
     vm_compute in H3. inversion H3.
   Qed.
 
-Proposition wrong_behavior : 
+Proposition wrong_behavior :
   program_behaves (Csem.semantics asmC_simlight) (Goes_wrong E0).
 
   Proof.
-    apply program_goes_initially_wrong ; 
+    apply program_goes_initially_wrong ;
     apply no_initial_state.
   Qed.
 #>
 (Note that, except ``<!asmC_simlight!>'' which designates {S.SL.C.asm} and has been produced by our pretty-printer, every others free variables are more explained in the original source of CompCert.)
 (* see in CompCert /common/Behaviors.v *)
-"} 
+"}
 This result appears unsatisfactory. In particular, the classification made by the {S.C.lambda_l} group restricts a bit the general notion of correctness one could have for an arbitrary {S.C.human} program.
 {
-let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in 
-let module SL_a = S.SL_gen (struct let sl = "ASM" end) in 
+let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in
+let module SL_a = S.SL_gen (struct let sl = "ASM" end) in
 let i_sqcup x = index sqcup (tiny x) in
 "Assume the pretty-printer <!parse!> (just defined in {ref_ Label.pretty_print}) being a morphism preserving the applicative operator ``${sqcup}$'' : {align_ "$({SL_p.C.asm}, {i_sqcup "apply"}) {overset "<!parse!>" longrightarrow} ({SL_p.Coq.Deep.asm}, {i_sqcup "APPLY"})$"}
-Then, instead of searching if {S.SL.C.asm} {in_} {S.C.lambda_l}, one could determine if 
+Then, instead of searching if {S.SL.C.asm} {in_} {S.C.lambda_l}, one could determine if
 {align_ "{forall} {SL_a.C.asm}, ({S.SL.C.asm} {i_sqcup "apply"} {SL_a.C.asm}) {in_} {S.C.lambda_l} "}"
 }
 
-{let module SL_a = S.SL_gen (struct let sl = "FUN" end) in 
+{let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
 let i_sqcup x = index sqcup (tiny x) in
 Th.env Label.def "
 We present here
@@ -1841,11 +1842,11 @@ int main() {
   return 0;
 }
 @>"
-; subparagraph "Towards the membership of {S.P.C.asm} in {S.C.lambda_l}" 
+; subparagraph "Towards the membership of {S.P.C.asm} in {S.C.lambda_l}"
 ; "Here is the proof that {S.P.C.compcert} terminates, with a specific input-output traces and exit number~:
 <#
-Proposition source_terminates : 
-  { trace : _ & { result : _ & 
+Proposition source_terminates :
+  { trace : _ & { result : _ &
   Cstrategy.bigstep_program_terminates program_c trace result } }.
     Proof. #{PPP}# Qed.
 Definition trace := projT1 source_terminates.
@@ -1854,9 +1855,9 @@ Definition result := projT1 (projT2 source_terminates).
 #>"
 ; "As soon as the assembly file can be obtained successfully, we can predict that it behaves as the original {S.P.C.compcert}~:
 <#
-Proposition asm_of_c : 
+Proposition asm_of_c :
   { program_asm : _ | transf_c_program program_c = OK program_asm } ->
-  { program_asm : _ & { trace : _ & { result : _ & 
+  { program_asm : _ & { trace : _ & { result : _ &
   transf_c_program program_c = OK program_asm /\
   Cstrategy.bigstep_program_terminates program_c trace result /\
   program_behaves (Asm.semantics program_asm) (Terminates trace result) } } }.
@@ -1869,8 +1870,8 @@ Proposition production_successful :
     Proof. admit. Qed.
 #>"
 ; "Note that, once smaller lemmas are completed, the main result appears immediately~:<#
-Theorem certifying_production : 
-  { program_asm : _ & { trace : _ & { result : _ & 
+Theorem certifying_production :
+  { program_asm : _ & { trace : _ & { result : _ &
   transf_c_program program_c = OK program_asm /\
   Cstrategy.bigstep_program_terminates program_c trace result /\
   program_behaves (Asm.semantics program_asm) (Terminates trace result) } } }.
@@ -1896,7 +1897,7 @@ Finally, we wonder if we can begin first with the equivalence between {S.SL.Coq.
 (*
 Then we will know at the meta level that {S.SL.C.asm} can not have a {emph "wrong"} behavior, even if a constructive $b$ has not yet been exhibited in Coq at that time (a condition needed for the creation of {S.SL.C.lambda_l}).
 
-In conclusion, if we choose first to prove a kind of equivalence between {S.SL.Coq.Deep.compcert} and {S.SL.coq}, and succeed, we will have meta proved the non wrong behavior for {S.SL.C.asm}. 
+In conclusion, if we choose first to prove a kind of equivalence between {S.SL.Coq.Deep.compcert} and {S.SL.coq}, and succeed, we will have meta proved the non wrong behavior for {S.SL.C.asm}.
  By extending the reasoning further, we would be sure that the semantic of the initial source has been preserved to assembler. Moreover, we conjecture all this reasoning can yet be formally proved in a type system not different than at Coq level, by starting to exhibit a particular behavior $b$ from one side of the equivalence~: from the {S.SL.Coq.Deep.compcert}, or maybe the {S.SL.coq} side...*)
 
 This solution has been explored and is further detailed in {cite ["shi2011"]}.
@@ -1911,28 +1912,28 @@ Initially, before the creation of any simulator in {P.simsoc}, remark that to ge
 "
 ; paragraph "Coq {longleftarrow_} {S.C.infty}~?"
 ; "
-The problem we are focusing is more open than only oriented from Coq to {S.C.infty}. For example, even if the {S.Manual.ArmSh.coq} is usually considered as the model of reference, for validation, tests are usually performed in {S.SL.C.asm} due to performance issue (appendix {ref_ Label.appendix_speed}). Indeed, we are interested in a semantical preservative way to report back modifications from {S.C.infty} side to Coq. 
+The problem we are focusing is more open than only oriented from Coq to {S.C.infty}. For example, even if the {S.Manual.ArmSh.coq} is usually considered as the model of reference, for validation, tests are usually performed in {S.SL.C.asm} due to performance issue (appendix {ref_ Label.appendix_speed}). Indeed, we are interested in a semantical preservative way to report back modifications from {S.C.infty} side to Coq.
 
-More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the {S.Manual.ArmSh.C.asm} is only formed with recursive functions. If we omit this semantical preservative requirement, the question remains important for proving the correction of an arbitrary {S.C.infty} code. Given a {S.C.human} code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ? 
+More generally, it may be difficult to prove the semantical preservation from a Turing-complete language to Coq. Nevertheless, we conjecture the {S.Manual.ArmSh.C.asm} is only formed with recursive functions. If we omit this semantical preservative requirement, the question remains important for proving the correction of an arbitrary {S.C.infty} code. Given a {S.C.human} code, under which conditions can one retrieve a ``similar'' Coq code, attesting its good termination ?
 
 "
 ; paragraph "OCaml {longrightarrow_} (Coq {longleftrightarrow_} {S.C.infty}) ?"
 ; "
 
-In~{ref_ Label.simgendef} and the SH part, we have explained the automatic importation of the {S.Manual.ArmSh.C.human} by {S.simgen} into {S.C.asm}. By following our reasoning of translating {S.C.infty} into some form of Coq code, it is legitimate to ask if we can also translate the {S.Manual.C.asm} in Coq directly. However, the generation of the {S.Manual.C.asm} being an automatic process, we had found convenient to use the existing code to produce the {S.Manual.ArmSh.coq} in the same OCaml environment. Then, {S.simgen} generates both the {S.Manual.C.asm} and the {S.Manual.ArmSh.coq}. By catching the reasoning in this context, the intention to prove the equivalence between these {emph "two"} outputs of a {emph "single"} program (here {S.simgen}) from a {emph "single"} input is less astonishing. 
+In~{ref_ Label.simgendef} and the SH part, we have explained the automatic importation of the {S.Manual.ArmSh.C.human} by {S.simgen} into {S.C.asm}. By following our reasoning of translating {S.C.infty} into some form of Coq code, it is legitimate to ask if we can also translate the {S.Manual.C.asm} in Coq directly. However, the generation of the {S.Manual.C.asm} being an automatic process, we had found convenient to use the existing code to produce the {S.Manual.ArmSh.coq} in the same OCaml environment. Then, {S.simgen} generates both the {S.Manual.C.asm} and the {S.Manual.ArmSh.coq}. By catching the reasoning in this context, the intention to prove the equivalence between these {emph "two"} outputs of a {emph "single"} program (here {S.simgen}) from a {emph "single"} input is less astonishing.
 
-For this particular case, the generation of {S.C.asm} being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the {S.simgen_ast}. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the {S.C.asm} source into the {S.C.compcert} AST, 
+For this particular case, the generation of {S.C.asm} being automatic, instead of proving directly the output's equivalence, we can think about proving the good generation starting from the {S.simgen_ast}. Indeed, by approximating the raw Coq source into its AST (the Coq AST), as well as approximating the {S.C.asm} source into the {S.C.compcert} AST,
 {itemize
 [ "on one hand we have an OCaml function translating {forceline}from {S.simgen_ast} to Coq AST,"
 ; "on the other hand, we have another OCaml function {forceline}from {S.simgen_ast} to {S.C.compcert} AST." ]
-} 
+}
 As we think they can easily be translated in Coq, the problem of good equivalence between the {S.Manual.ArmSh.coq} and the {S.Manual.C.asm} can be simplified to the problem of building a couple given a particular {S.simgen_ast}, i.e writing a Coq function of type : {newline}
-<!  (!>{S.Simgen.coq}<!, !>{S.Simgen.coq_deep_ocaml}<!) -> 
-    { (!>{S.Manual.ArmSh.coq}<!  ,  !>{S.Manual.Coq.Deep.infty}<!) 
+<!  (!>{S.Simgen.coq}<!, !>{S.Simgen.coq_deep_ocaml}<!) ->
+    { (!>{S.Manual.ArmSh.coq}<!  ,  !>{S.Manual.Coq.Deep.infty}<!)
     |  !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq.Deep.infty}<!  }!>{newline}
 (*or this one (which seems harder) : {newline}
-<!  !>{S.Simgen.coq_deep_ocaml} <!-> 
-    { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq.Deep.infty}<!) 
+<!  !>{S.Simgen.coq_deep_ocaml} <!->
+    { (!>{S.Manual.ArmSh.coq}<!, !>{S.Manual.Coq.Deep.infty}<!)
     | !>{S.Manual.ArmSh.coq}<! <~> !>{S.Manual.Coq.Deep.infty}<! }!>{newline}*)
 Of course, the equivalence function ``<!<~>!>'' still remains to be defined, but constructing this function-proof may be easier than working directly on the output. Hence, this solution can figure as a potential candidate to explore.
 
@@ -1962,12 +1963,12 @@ Finally, we hope to plug our certified simulator after the {P.compcert} chain le
 ; "The {P.simsoc} team has released an archive including a simulator of ARMv6 instructions and also a cross-compiler targeting the ARMv6 : {https \"gforge.inria.fr/projects/simsoc\"}. In fact, the simulator present in {P.simsoc} version {Version.Cpp11.simsoc} {let module S = Sfoot in footnote () (https \"gforge.inria.fr/frs/download.php/28048/simsoc-0.7.1.tar.gz\")} (in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/libsimsoc/processors/arm_v6/simlight"}) is an optimized form of {S.SL.C.gcc} : for example, as new feature, it simulates the Thumb instruction set~{cite ["arm"]}. The not-optimized version can be found here~: {http \"formes.asia/media/simsoc-cert/simsoc-cert.tar.gz\"} (in {texttt "arm6/simlight"}){let module S = Sfoot in footnote () "Note that the support of the SH4 processor is not present in this archive..."}.
 
 We now summarize all the results in a table. Remark that most of the following {S.C.gcc} examples could be found in {texttt "{P.simsoc}_{Version.Cpp11.simsoc}/examples/Demo/soft"}."
-; Performance.draw_performance1 (fun x y -> small (longtable x y)) 
+; Performance.draw_performance1 (fun x y -> small (longtable x y))
 
 ; newpage
 ; subsubsection "Comparison with {S.SL.coq}"
 ; "The {S.SL.coq} code can successfully be extracted to OCaml, we will call it {S.SL.Ocaml.coq}. However, at the time of writing, it does not support the Thumb instructions. Here are the results."
-; Performance.draw_performance2 (fun x y -> small (longtable x y)) 
+; Performance.draw_performance2 (fun x y -> small (longtable x y))
 ; "Remark that {S.SL.Coq.Deep.compcert} can also be extracted to OCaml. However, this deep embedded program can not be rawly tested without the use of the {let i_sqcup x = index sqcup (tiny x) in i_sqcup "APPLY"} operator : since {Version.compcert}, even if the option <!-interp!> permits to interpret an arbitrary {S.C.compcert} code, this code also needs to be in {S.C.lambda_l}. But we have proved in {ref_ Label.th_init_state} that {S.SL.C.asm} does not belong to {S.C.lambda_l} (moreover, we have at runtime : ``{texttt "ERROR: Initial state undefined"}'')."
 
 ; subsection "Errors in the OCaml extracted code"
@@ -2014,8 +2015,8 @@ Require Import List.
 
 Definition to_list0 : forall A n,
   Vector.t A n -> { _ : list A | True } :=
-  fun A _ v => @exist (list A) (fun _ => True) 
-    match v with 
+  fun A _ v => @exist (list A) (fun _ => True)
+    match v with
     | Vector.cons x _ _ => List.cons x List.nil
     | Vector.nil => List.nil
     end I.
@@ -2098,7 +2099,7 @@ However, the extracted OCaml program is not well-typed because the extracted mod
 {itemize
 [
 "We can explicitly strengthened the type of <!F!> by writing {forceline}``<!Inductive F : Set := .!>''."
-; 
+;
 "At the end, if we mention that the definition inside the module will be used : ``<!Definition t := M.t.!>'', the extraction works correctly because <!M.t!> has been classified as a value that the extraction can not avoid. Hence, <!Visit.add_ref!> will be called before we enter in <!extract_sfb!>." ]
 }
 "
@@ -2120,15 +2121,15 @@ Module MM := Make M.
   in
 
   let l_hypersetup =
-    BatList.flatten 
+    BatList.flatten
       [ [ "colorlinks", "true" ]
-      ; BatList.map 
-        (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b))) 
+      ; BatList.map
+        (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b)))
         [ "linkcolor", (*137, 59, 187*)144, 0, 24
         ; "citecolor", 0, 163, 100
         ; "urlcolor", 0, 60, 141 ] ] in
 
-  main 
+  main
     [ Label.newth_ex
     ; Label.newth_note
     ; Label.newth_fact
