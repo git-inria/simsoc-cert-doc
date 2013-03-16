@@ -286,6 +286,38 @@ struct
       concat (BatList.map (function `V s -> text s | _ -> failwith \"to complete !\") x)
   end
 
+  module Dot =
+  struct
+    let l_to_string s =
+      BatString.map (function '\n' -> ' ' | x -> x) (Latex.to_string s)
+
+    let verbatim x =
+      let () = ignore (List.iter (function `V _ | `C _ -> () | _ -> failwith \"to complete !\") x) in
+
+      let opt, f_after, x =
+        match x with
+        | `V \"\" :: `C opt :: x ->
+          \"--codeonly\", tikzpicture opt, x
+        | _ ->
+          \"--figonly\", (fun x -> x), x in
+
+      let ic, oc = BatUnix.open_process (sprintf \"dot2tex %s --autosize\" opt) in
+      let () =
+        begin
+          List.iter
+            (fun o ->
+              BatInnerIO.nwrite oc
+                (match o with
+                | `V s -> s
+                | `C s -> l_to_string s
+                | _ -> failwith \"to complete !\"))
+            x;
+          BatInnerIO.close_out oc;
+        end in
+
+      f_after (text (BatInnerIO.read_all ic))
+  end
+
   module Raw =
   struct
     let verbatim x =
