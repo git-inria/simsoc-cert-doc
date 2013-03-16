@@ -1,5 +1,7 @@
 open Melt_lib open L
 
+open Printf
+
 let main prelude l =
   let l, options, documentclass, prelude2 = latex_init l in
   emit
@@ -125,6 +127,7 @@ sig
   val normal : Latex.t -> Latex.t
   val footnote : Latex.t -> Latex.t
   val tiny : Latex.t -> Latex.t
+  val color_keyword : Color.color option
 end
 
 module S_sz (Sz : SIZE_DYN) =
@@ -158,8 +161,13 @@ struct
   struct
     module M (P_ : sig val sl : Latex.t end) =
     struct
+      let add_color s =
+        match Sz.color_keyword with
+        | None -> s
+        | Some c -> Color.textcolor_ c s
+
       module Make (M : sig val coq : Latex.t val equiv_prefix : Latex.t end) = struct
-        let sl x = texttt ("{M.coq}-" ^^ Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) x ^^ P_.sl)
+        let sl x = texttt (add_color "{M.coq}-" ^^ Color.textcolor_ (Color.of_int_255 (let i = 100 in i, i, i)) x ^^ P_.sl)
 
         module Deep = MK (struct let make x = sl (mk_ "C" x) end)
         module Deep_ocaml = MK (struct let make x = sl (mk_ P.ocaml x) end)
@@ -173,7 +181,7 @@ struct
       module Coq = Make (struct let coq = P.coq let equiv_prefix = "${equiv}$" end)
       module Ocaml = Make (struct let coq = P.ocaml let equiv_prefix = "{P.coq}${equiv}$" end)
       module Ocaml_deep = Make (struct let coq = P.ocaml let equiv_prefix = "{P.coq}{C.compcert}" end)
-      module C = MK (struct let make x =  mk_ "C" x ^^ texttt ("-" ^^ P_.sl) end)
+      module C = MK (struct let make x = add_color (mk_ "C" x ^^ texttt "-") ^^ texttt P_.sl end)
 
       let coq = Coq.coq
       let coq_deep_ocaml = Coq.coq_deep_ocaml
@@ -226,8 +234,8 @@ end
 
 module Comment =
   Comment_sz
-    (struct let normal = scriptsize let footnote = tiny let tiny _ = assert false end)
-    (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
+    (struct let normal = scriptsize let footnote = tiny let tiny _ = assert false let color_keyword = None end)
+    (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = None end)
 
 
 module Code =
@@ -463,8 +471,6 @@ struct
   module Ml =
   struct
 
-    open Printf
-
     let stringpair_of_token = function
       | `Comment s -> \"Comment\", s
       | `Construct s -> \"Construct\", s
@@ -615,9 +621,9 @@ struct
 end
 
 
-module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
-module Sfoot = S_sz (struct let normal = footnotesize let footnote = scriptsize let tiny _ = assert false end)
-module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let tiny _ = assert false end)
+module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = None end)
+module Sfoot = S_sz (struct let normal = footnotesize let footnote = scriptsize let tiny _ = assert false let color_keyword = None end)
+module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let tiny _ = assert false let color_keyword = None end)
 
 module Label =
 struct
@@ -952,8 +958,8 @@ let _ =
     Th.env Label.fact "
 However their possible different behavior at runtime, {concat (BatList.map (fun x -> x ^^ ", ") l)}and {last} come from an initial same source. This source belongs to :
 { let module Comment = Comment_sz
-        (struct let normal = normalsize let footnote = footnotesize let tiny = tiny end)
-        (struct let normal = normalsize let footnote = large3 let tiny = small end) in
+        (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = None end)
+        (struct let normal = normalsize let footnote = large3 let tiny = small let color_keyword = None end) in
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
 " in
 
