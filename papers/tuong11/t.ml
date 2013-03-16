@@ -1,9 +1,11 @@
 open Melt_lib open L
 
 let main prelude l =
+  let l, options, documentclass, prelude2 = latex_init l in
   emit
     (document
-       ~options:[ `A4paper ; `Pt 11 ]
+       ~options
+       ~documentclass
        ~packages:(
          BatList.flatten
            [ [ (* "babel", [ "english"; "francais" ] *)
@@ -49,7 +51,7 @@ let main prelude l =
        ~title:(large3 (textbf (concat_line_string (upper_important [ \"generating the SH4 model\" ; \"with CompCert\" ]))))
        ~date:"November 2010 - October 2011"
 
-       ~prelude:(concat prelude)
+       ~prelude:(concat (List.append prelude prelude2))
 
        (concat l))
 
@@ -955,7 +957,7 @@ However their possible different behavior at runtime, {concat (BatList.map (fun 
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
 " in
 
-  let l =
+  let l = PaperA4
 [ abstract "The simulation of Systems-on-Chip (SoC) gains wider acceptance in the area of embedded systems, allowing to test exhaustively the hardware as soon as the prototyping step begins. {P.simsoc} is a simulator firstly optimized on the CPU component (ISS), as this part is a major bottleneck for the simulation speed. But a fast simulator is especially profitable for the debugging activity, if beyond speed it simulates faithfully the ISS. So the {P.simcert} project has formalized in {P.coq} a model of a real CPU: the ARMv6 processor is automatically generated from its reference manual.
 
 However, to evaluate the scalability of this toolkit, we propose to enhance modularly the process behind the generator so that ideally a bundle of processors could be certified at the cost of one. In this report, we generate a well typed version of the SH4 processor's manual, verified by the {P.gcc} and {P.compcert} compilers, and we report our experimentations of using {P.compcert} as a generic platform for proofs in {P.coq} to deeply embed the resulting well typed simulator, both the ARMv6 and SH4 ISS. As a side effect, {P.compcert} being defined in {P.coq}, we develop in {P.coq} a parsing/printing loop from {P.coq} to {P.coq}. Based on a high level front-end as {S.C.compcert}, the goal is to easily mimic the correctness proof being established for one processor (e.g. ARMv6) to others (e.g. SH4), and at long-term, extend the overall to prove the correctness of a given {S.C.compcert} program, that would moreover have ARMv6 and SH4 as certified back-end."

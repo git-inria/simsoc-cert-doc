@@ -250,6 +250,9 @@ struct
     environment \"tabular\" ~args:[A, concat (BatList.map latex_of_array_column x)]
       (A, concat (BatList.map (function Data l -> concat (BatList.interleave (text \" & \") l) ^^ newline | Hline -> hline ^^ text \"\n\" | Cline (i1, i2) -> cline i1 i2 ^^ text \"\n\") body)) A
 
+  let multiline l = tabular [`C] (BatList.map (fun x -> Data [x]) l)
+  let multiline_ s = multiline (BatList.map text (BatString.nsplit s ~by:\"\n\"))
+
   let bibliographystyle x = \"bibliographystyle\" @ ([x], A)
   let bibliography x = \"bibliography\" @ ([x], A)
   let subparagraph x = \"subparagraph\" @ ([x], A)
@@ -330,4 +333,140 @@ struct
   let description l = itemize (BatList.map (fun (i, msg) -> textbf i ^^ newline ^^ msg) l)
 
   let forceline = newline
+
+  let frame_fragile x =
+    environment \"frame\" ~opt:(A, "fragile")
+      (A, x) A
+  let pause =  \"pause\" @ ([], A)
+
+  let tikzpicture opt x = environment \"tikzpicture\" ~opt:(A, concat [ ">=latex,line join=bevel," ; opt ]) (A, x) A
+
+  let s_concat s =
+    let rec aux = function
+      | [] -> ""
+      | [x] -> x
+      | x :: xs -> x ^^ s ^^ (aux xs) in
+    aux
+
+  open Printf
+
+  let includegraphics =
+    let i o filename = command ~packages:[\"graphicx\", \"\"] ~opt:(A, o) \"includegraphics\" [ A, text filename ] T in
+    let n = \"node\" @ ([], A) in
+    let brack l = concat [ text \"{\" ; l ; text \"}\" ] in
+    fun ?trim ?page ?scale ~x ~y filename ->
+      tikzpicture
+        (text (sprintf \"overlay, shift={(%f, %f)}\" x y))
+        (concat [ n ; " (label) at (0,0){brack (i
+          (s_concat "," (List.flatten [ (match trim with None -> [] | Some (i1,i2,i3,i4) -> [ "clip" ; "trim=" ^^ concat (BatList.map (fun s -> latex_of_size s ^^ " ") [i1 ; i2 ; i3 ; i4])])
+                                      ; (match page with None -> [] | Some s -> [text (sprintf \"page=%d\" s)])
+                                      ; (match scale with None -> [] | Some s -> [text (sprintf \"scale=%f\" s)]) ])) filename)};" ])
+
+  module B =
+  struct
+    type 'a frame =
+    | Abr of 'a frame list
+    | Center of 'a (* center *)
+    | Top of 'a (* top *)
+    | Bottom of 'a (* bottom *)
+
+    let optcmd name = function
+      | Some arg -> command name [T, arg] T
+      | None -> empty
+
+    let frame ?title ?subtitle ~opt body =
+      let x = concat [
+        optcmd \"frametitle\" title;
+        optcmd \"framesubtitle\" subtitle;
+        body;
+      ] in
+      environment ~opt \"frame\" (T, x) T
+
+    let rec mk_frame = function
+      | Center (title, body) -> [Beamer.frame ~title body]
+      | Top (title, body) -> [frame ~opt:(A, "t") ~title body]
+      | Bottom (title, body) -> [frame ~opt:(A, "b") ~title body]
+      | Abr l -> BatList.flatten (BatList.map mk_frame l)
+
+    let setbeamertemplate template body =
+      unusual_command \"setbeamertemplate\" [ T, brace, text template
+                                            ; T, bracket, body
+                                  (*; T, body*) ] T
+    let usecolortheme x = \"usecolortheme\" @ ([x], A)
+    let usetheme x = \"usetheme\" @ ([x], A)
+    let useoutertheme o x = command \"useoutertheme\" ~opt:(A, o) [A, x] A
+    let useinnertheme o x = command \"useinnertheme\" ~opt:(A, o) [A, x] A
+(*    let stepcounter *)
+
+
+    let texpic = picture_of_latex
+
+    let texbox ?dx ?dy ?name ?brush ?stroke ?pen ?dash ?fill ?style x =
+      Mlpost.Box.pic (*?dx ?dy ?name ?brush ?stroke ?pen ?dash ?fill*) ?style (texpic x)
+
+    let lines_box l =
+      let l = List.map texbox l in
+      Mlpost.Box.vbox l
+
+    let blue_tit = `RGB (0., 0., 0.7)
+
+    let _, section =
+      (* produce a table of contents page, highlighting section number
+         [index] (starting from 1) if specified *)
+      let toc ?index all_sections =
+        concat
+          (List.fold_left
+             (fun x f -> f x)
+             all_sections
+             [ BatList.map2
+                 Beamer.color
+                 ((* Colorize titles. *)
+                   match index with
+                   | None -> BatList.map (fun _ -> blue_tit) all_sections
+                   | Some index ->
+                     BatList.mapi
+                       (fun i title -> if Pervasives.succ i = index then blue_tit else `Gray)
+                       all_sections)
+             ; BatList.map large2 (* make them bigger *)
+             ; list_insert "{par}{bigskip}" (* insert some space *) ]) in
+
+      let sections = variable [] in (* accumulate the list of section titles *)
+
+      (* toc_slide *)
+      (fun () -> Center ("", final sections toc)),
+
+      (* section *)
+      (fun title ->
+        Center
+          (setf sections (fun sections -> List.append sections [ title ]),
+           get sections (fun now -> final sections (toc ~index:(List.length now)))))
+
+    let grey = Beamer.color (let i = 0.3 in `RGB (i, i, i))
+    let red = Beamer.color `Red
+    let blue = Beamer.color `Blue
+    let emph = red
+    let white = Beamer.color (let i = 1. in `RGB (i, i, i))
+  end
+
+  type document =
+  | Beamer of (Latex.t (* title *) * Latex.t (* body *)) B.frame
+  | PaperA4 of Latex.t list
+
+  let latex_init = function
+    | Beamer l ->
+      B.mk_frame l,
+      [],
+      `Beamer,
+      [ Beamer.setbeamertemplate `NavigationSymbols ""
+    (*; B.setbeamertemplate \"blocks\" "rounded"*)
+    (*; B.usecolortheme "fly"*)
+    (*; B.usetheme "Boadilla"
+      ; B.setbeamertemplate \"Footline\" "default"*)
+(*    ; B.useoutertheme "" "default"
+      ; text \"\\defbeamertemplate*{footline}{default}
+{}\"*)
+      ; B.usecolortheme "rose"
+      ; B.useinnertheme "shadow" "rounded"
+      ]
+    | PaperA4 l -> l, [ `A4paper ; `Pt 11 ], `Article, []
 end
