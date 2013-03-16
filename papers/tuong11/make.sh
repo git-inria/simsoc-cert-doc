@@ -7,6 +7,7 @@ cd _melt
 
 cp ../_tags .
 cp ../melt_lib.ml melt_lib.mlt
+cp ../simsoc_cert.ml simsoc_cert.mlt
 cp ../t.ml t.mlt
 cp ../t.bib .
 cp ../Makefile .
@@ -16,6 +17,7 @@ cp ../stat_arm2_1789 .
 cp ../stat_armocaml_1789 .
 
 meltpp t.mlt -o t.ml -open Latex -open Melt
+meltpp simsoc_cert.mlt -o simsoc_cert.ml -open Latex -open Melt
 meltpp melt_lib.mlt -o melt_lib.ml -open Latex -open Melt
 mlpost -cairo -pdf -ocamlbuild -ccopt "-use-ocamlfind" t.ml
 ocamlbuild -use-ocamlfind -no-links t.native --
