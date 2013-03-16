@@ -1,75 +1,18 @@
 open Melt_lib open L
 open Simsoc_cert
 
-let main prelude l =
-  let l, options, documentclass, prelude2 = latex_init l in
-  emit
-    (document
-       ~options
-       ~documentclass
-       ~packages:(
-         BatList.flatten
-           [ [ (* "babel", [ "english"; "francais" ] *)
-               "inputenc", "utf8"
-             ; "fontenc", "T1"
-             ; "xcolor", "table" ]
-           ; BatList.map (fun x -> x, "")
-             [ "lmodern"
-
-             ; "calc" ; "array" ; "alltt" (*; "setspace"*) ; "longtable"
-             ; "url"
-
-             ; "tikz"
-
-             (* "xltxtra" *)
-             ; "xspace"
-
-
-             ; "amsmath"
-             ; "amssymb"
-             ; "amsfonts"
-             ; "amsthm"
-
-             (* "latexsym" *)
-             (* "graphicx" *)
-             (* "multirow" *)
-
-             (* "enumerate" *)
-             ; "float"
-
-             (* "bbding" *)
-             ; "pifont"
-
-             ; "multirow"
-
-             ; "hyperref" ]
-
-           ])
-       ~author:(concat_line_t
-                  [ "Frédéric Tuong"
-                  ; footnotesize "INRIA - LIAMA"
-                  ; footnotesize (mail \"frederic.tuong@inria.fr\") ])
-       ~title:(large3 (textbf (concat_line_string (upper_important [ \"generating the SH4 model\" ; \"with CompCert\" ]))))
-       ~date:"November 2010 - October 2011"
-
-       ~prelude:(concat (List.append prelude prelude2))
-
-       (concat l))
-
-(* \ifhevea\setboolean{footer}{false}\fi *)
-
-(*  \newenvironment{fontsans} *)
-(*    {\begin{divstyle}{fontsans}} *)
-(*    {\end{divstyle}} *)
-
 ##verbatim '?' = Code.Raw_.verbatim
 ##verbatim '!' = Code.Raw.verbatim
 ##verbatim '#' = Code.Coq.verbatim
 ##verbatim '~' = Code.Ml.verbatim
 ##verbatim '@' = Code.Humc.verbatim
 
-let _ =
-  let l = PaperA4
+let () =
+  main
+    ~packages:[ "xcolor", "table" ]
+    ~author:[ footnotesize (mail \"frederic.tuong@inria.fr\") ]
+
+    (PaperA4
 [ abstract "The simulation of Systems-on-Chip (SoC) gains wider acceptance in the area of embedded systems, allowing to test exhaustively the hardware as soon as the prototyping step begins. {P.simsoc} is a simulator firstly optimized on the CPU component (ISS), as this part is a major bottleneck for the simulation speed. But a fast simulator is especially profitable for the debugging activity, if beyond speed it simulates faithfully the ISS. So the {P.simcert} project has formalized in {P.coq} a model of a real CPU: the ARMv6 processor is automatically generated from its reference manual.
 
 However, to evaluate the scalability of this toolkit, we propose to enhance modularly the process behind the generator so that ideally a bundle of processors could be certified at the cost of one. In this report, we generate a well typed version of the SH4 processor's manual, verified by the {P.gcc} and {P.compcert} compilers, and we report our experimentations of using {P.compcert} as a generic platform for proofs in {P.coq} to deeply embed the resulting well typed simulator, both the ARMv6 and SH4 ISS. As a side effect, {P.compcert} being defined in {P.coq}, we develop in {P.coq} a parsing/printing loop from {P.coq} to {P.coq}. Based on a high level front-end as {S.C.compcert}, the goal is to easily mimic the correctness proof being established for one processor (e.g. ARMv6) to others (e.g. SH4), and at long-term, extend the overall to prove the correctness of a given {S.C.compcert} program, that would moreover have ARMv6 and SH4 as certified back-end."
@@ -1234,24 +1177,4 @@ End Make.
 Module MM := Make M.
 #>
 "
-]
-  in
-
-  let l_hypersetup =
-    BatList.flatten
-      [ [ "colorlinks", "true" ]
-      ; BatList.map
-        (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b)))
-        [ "linkcolor", (*137, 59, 187*)144, 0, 24
-        ; "citecolor", 0, 163, 100
-        ; "urlcolor", 0, 60, 141 ] ] in
-
-  main
-    [ Label.newth_ex
-    ; Label.newth_note
-    ; Label.newth_fact
-    ; Label.newth_def
-    ; Label.newth_remark
-    ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
-    ; hypersetup l_hypersetup ]
-    l
+])

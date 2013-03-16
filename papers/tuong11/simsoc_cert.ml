@@ -932,3 +932,82 @@ However their possible different behavior at runtime, {concat (BatList.map (fun 
         (struct let normal = normalsize let footnote = large3 let tiny = small let color_keyword = None end) in
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
 "
+
+let main ~packages ~author l =
+
+  let l_hypersetup = (* WARNING side effect, if delta reduced *)
+    BatList.flatten
+      [ [ "colorlinks", "true" ]
+      ; BatList.map
+        (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b)))
+        [ "linkcolor", (*137, 59, 187*)144, 0, 24
+        ; "citecolor", 0, 163, 100
+        ; "urlcolor", 0, 60, 141 ] ] in
+
+  let l, options, documentclass, prelude2 = latex_init l in
+
+  emit
+    (document
+       ~options
+       ~documentclass
+       ~packages:(
+         BatList.flatten
+           [ ( (* "babel", [ "english"; "francais" ] *)
+               ("inputenc", "utf8")
+             :: ("fontenc", "T1")
+             :: packages )
+           ; BatList.map (fun x -> x, "")
+             [ "lmodern"
+
+             ; "calc" ; "array" ; "alltt" (*; "setspace"*) ; "longtable"
+             ; "url"
+
+             ; "tikz"
+
+             (* "xltxtra" *)
+             ; "xspace"
+
+
+             ; "amsmath"
+             ; "amssymb"
+             ; "amsfonts"
+             ; "amsthm"
+
+             (* "latexsym" *)
+             (* "graphicx" *)
+             (* "multirow" *)
+
+             (* "enumerate" *)
+             ; "float"
+
+             (* "bbding" *)
+             ; "pifont"
+
+             ; "multirow"
+
+             ; "hyperref" ]
+
+           ])
+       ~author:(concat_line_t
+                  ( "Frédéric Tuong"
+                  :: footnotesize "INRIA - LIAMA"
+                  :: author))
+       ~title:(large3 (textbf (concat_line_string (upper_important [ \"generating the SH4 model\" ; \"with CompCert\" ]))))
+       ~date:"November 2010 - October 2011"
+
+       ~prelude:(concat (List.append
+                           [ Label.newth_ex
+                           ; Label.newth_note
+                           ; Label.newth_fact
+                           ; Label.newth_def
+                           ; Label.newth_remark
+                           ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
+                           ; hypersetup l_hypersetup ] prelude2))
+
+       (concat l))
+
+(* \ifhevea\setboolean{footer}{false}\fi *)
+
+(*  \newenvironment{fontsans} *)
+(*    {\begin{divstyle}{fontsans}} *)
+(*    {\end{divstyle}} *)
