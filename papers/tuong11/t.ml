@@ -1,4 +1,4 @@
-open L open L
+open Melt_lib open L
 
 let main prelude l =
   emit
