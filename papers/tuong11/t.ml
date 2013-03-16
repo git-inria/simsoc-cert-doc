@@ -296,6 +296,12 @@ struct
         | `T t -> failwith \"to complete !\") x)
   end
 
+  module Raw__ =
+  struct
+    let verbatim = function
+        | [ `V x ] -> num_line (fun s -> texttt (footnotesize (LV.verbatim s))) (LV.split_lines (LV.trim ['\n'] x))
+        | _ -> failwith \"to complete !\"
+  end
 
   module Coq =
   struct
