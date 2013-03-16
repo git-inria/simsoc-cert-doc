@@ -10,7 +10,9 @@ open Simsoc_cert
 let () =
   main
     ~packages:[ "xcolor", "table" ]
-    ~author:[ footnotesize (mail \"frederic.tuong@inria.fr\") ]
+    ~author:(BatList.map footnotesize
+               [ st (texttt "frederic.tuong@inria.fr")
+               ; mail \"tuong@users.gforge.inria.fr\" ])
 
     (PaperA4
 [ abstract "The simulation of Systems-on-Chip (SoC) gains wider acceptance in the area of embedded systems, allowing to test exhaustively the hardware as soon as the prototyping step begins. {P.simsoc} is a simulator firstly optimized on the CPU component (ISS), as this part is a major bottleneck for the simulation speed. But a fast simulator is especially profitable for the debugging activity, if beyond speed it simulates faithfully the ISS. So the {P.simcert} project has formalized in {P.coq} a model of a real CPU: the ARMv6 processor is automatically generated from its reference manual.

@@ -985,7 +985,8 @@ let main ~packages ~author l =
 
              ; "multirow"
 
-             ; "hyperref" ]
+             ; "hyperref"
+             ; "soul" ]
 
            ])
        ~author:(concat_line_t

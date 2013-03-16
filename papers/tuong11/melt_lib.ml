@@ -329,6 +329,7 @@ struct
   let overset x y = \"overset\" @ ([x ; y], A)
   let rightsquigarrow = \"rightsquigarrow\" @ ([], A)
   let rightarrowtriangle = \"rightarrowtriangle\" @ ([], A)
+  let st x = \"st\" @ ([x], A)
 
   let description l = itemize (BatList.map (fun (i, msg) -> textbf i ^^ newline ^^ msg) l)
 
