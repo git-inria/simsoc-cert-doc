@@ -46,7 +46,7 @@ let main prelude l =
                   [ "Frédéric Tuong"
                   ; footnotesize "INRIA - LIAMA"
                   ; footnotesize (mail \"frederic.tuong@inria.fr\") ])
-       ~title:(large3 (textbf (concat_line_string (upper_important [ \"fast certified simulation\" ; \" with the SH4 model\" ]))))
+       ~title:(large3 (textbf (concat_line_string (upper_important [ \"generating the SH4 model\" ; \"with CompCert\" ]))))
        ~date:"November 2010 - October 2011"
 
        ~prelude:(concat prelude)

@@ -272,7 +272,7 @@ struct
   let upper_important =
     let open BatSet in
     let module StringSet = BatSet.Make (String) in
-    let l_not = StringSet.of_enum (BatList.enum [ \"with\" ; \"the\" ]) in
+    let l_not = StringSet.of_enum (BatList.enum [ \"with\" ; \"the\" ; \"for\" ; \"from\" ; \"to\" ; \"through\" ; \"of\" ; \"a\" ]) in
 
     BatList.map (fun s ->
       let esp = \" \" in
