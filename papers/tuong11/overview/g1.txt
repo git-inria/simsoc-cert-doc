@@ -92,16 +92,16 @@ digraph G {
   /* */
   mid [shape=point, color=white]
 
-  iss -> simlight_dots [color=white, arrowhead=none]
-  coq_src -> coq_src1a [color=white, arrowhead=none]
-  coq_src -> coq_src1b [color=white, arrowhead=none]
-  coq_src1a -> coq_src_dot [color=white, arrowhead=none]
-  coq_src1b -> coq_src_dot [color=white, arrowhead=none]
-  compcert_src_c_syntax -> compcert_src_dot [color=white, arrowhead=none]
-  coq_src2 -> coq_pp [color=white, arrowhead=none]
-  coq_proof -> coq_src [color=white, arrowhead=none]
-  coq_proof -> compcert_src_c_syntax [color=white, arrowhead=none]
-  compcert_src_c_syntax -> coq_src2 [color=white, arrowhead=none]
+  iss -> simlight_dots [style=invis]
+  coq_src -> coq_src1a [style=invis]
+  coq_src -> coq_src1b [style=invis]
+  coq_src1a -> coq_src_dot [style=invis]
+  coq_src1b -> coq_src_dot [style=invis]
+  compcert_src_c_syntax -> compcert_src_dot [style=invis]
+  coq_src2 -> coq_pp [style=invis]
+  coq_proof -> coq_src [style=invis]
+  coq_proof -> compcert_src_c_syntax [style=invis]
+  compcert_src_c_syntax -> coq_src2 [style=invis]
   /* */
   pdf_arm -> pdf_txt_arm [color=dodgerblue]
   pdf_sh -> pdf_txt_sh [color=dodgerblue]
@@ -114,11 +114,11 @@ digraph G {
 
   pseudocode -> iss [color=dodgerblue]
 
-  c_parser -> c_syntax [color=white]
-  c_syntax -> c_dots [color=white]
+  c_parser -> c_syntax [style=invis]
+  c_syntax -> c_dots [style=invis]
 
 
-  shast -> c_parser [color=white, style=dotted, arrowhead=none]
+  shast -> c_parser [style=invis]
 
   pseudocode -> coq_src1a [color=dodgerblue]
   pseudocode -> coq_src1b [color=dodgerblue]
@@ -126,23 +126,23 @@ digraph G {
 //  iss -> coq_ast [color=saddlebrown]
 //  c_syntax -> coq_ast [color=saddlebrown]
 //  coq_ast -> coq_src2 [color=saddlebrown]
-  c_syntax -> mid [color=white, arrowhead=none]
-  mid -> coq_src2 [color=white]
-  iss -> c_parser [color=white, arrowhead=none]
-  c_parser -> c_syntax [color=white, arrowhead=none]
+  c_syntax -> mid [style=invis]
+  mid -> coq_src2 [style=invis]
+  iss -> c_parser [style=invis]
+  c_parser -> c_syntax [style=invis]
 
-  coq_pp -> mid [color=white, arrowhead=none, style=dotted]
+  coq_pp -> mid [style=invis]
 //  c_syntax -> coq_src2 [color=dodgerblue4]
 
 
-  iss -> c_parser [ltail=cluster_c, color=white]
+  iss -> c_parser [ltail=cluster_c, style=invis]
 //  c_syntax -> c_dots [style=dotted, color=saddlebrown, arrowhead=none]
 //  c_dots -> iss_pp [style=dotted, color=saddlebrown]
 
 //  coq_proof -> coq_ast [ltail=cluster_coq]
 
-  compcert_src_c_syntax -> c_parser [color=white, ltail=cluster_compcert_src_src, lhead=cluster_compcert]
+  compcert_src_c_syntax -> c_parser [style=invis, ltail=cluster_compcert_src_src, lhead=cluster_compcert]
 
-  coq_proof -> coq_src2 [color=white, dir=both, arrowhead=dot, arrowtail=dot]
-  coq_proof -> coq_src1a [color=white, dir=both, arrowhead=dot, arrowtail=dot]
+  coq_proof -> coq_src2 [style=invis]
+  coq_proof -> coq_src1a [style=invis]
 }
