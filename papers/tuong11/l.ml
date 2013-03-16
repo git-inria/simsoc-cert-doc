@@ -255,6 +255,7 @@ struct
   let subparagraph x = \"subparagraph\" @ ([x], A)
   let footnote () = footnote (* we change the type of Latex.footnote to remember that it has the side effect of resizing fonts *)
   let alltt x = environment \"alltt\" (A, x) A
+  let abstract x = environment \"abstract\" (A, x) A
   let mbox x =  \"mbox\" @ ([x], A)
   let fbox x =  \"fbox\" @ ([x], A)
   let spacing x =
