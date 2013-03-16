@@ -988,19 +988,19 @@ struct
               (compute_mima_row (fun _ -> None) (fst (performance_of_file (fun _ -> None) stat_file2 (map_perf (fun _ -> None)))))) ])
 end
 
-let _ =
-  let th_same_source l =
-    let l, last =
-      let last :: l = List.rev l in
-      List.rev l, last in
-    Th.env Label.fact "
+let th_same_source l =
+  let l, last =
+    let last :: l = List.rev l in
+    List.rev l, last in
+  Th.env Label.fact "
 However their possible different behavior at runtime, {concat (BatList.map (fun x -> x ^^ ", ") l)}and {last} come from an initial same source. This source belongs to :
 { let module Comment = Comment_sz
         (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = None end)
         (struct let normal = normalsize let footnote = large3 let tiny = small let color_keyword = None end) in
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (BatList.init (List.length l + 2) (fun _ -> yes)) }
-" in
+"
 
+let _ =
   let l = PaperA4
 [ abstract "The simulation of Systems-on-Chip (SoC) gains wider acceptance in the area of embedded systems, allowing to test exhaustively the hardware as soon as the prototyping step begins. {P.simsoc} is a simulator firstly optimized on the CPU component (ISS), as this part is a major bottleneck for the simulation speed. But a fast simulator is especially profitable for the debugging activity, if beyond speed it simulates faithfully the ISS. So the {P.simcert} project has formalized in {P.coq} a model of a real CPU: the ARMv6 processor is automatically generated from its reference manual.
 
