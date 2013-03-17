@@ -224,19 +224,6 @@ module S = S_sz (struct let normal = normalsize let footnote = footnotesize let 
 module Sfoot = S_sz (struct let normal = footnotesize let footnote = scriptsize let tiny _ = assert false let color_keyword = None end)
 module Ssmall = S_sz (struct let normal = small let footnote = footnotesize let tiny _ = assert false let color_keyword = None end)
 
-module Label =
-struct
-  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, th_init_state, concl, appendix_speed, appendix_eta, appendix_singl =
-    label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label ()
-
-  let ex, newth_ex = Th.newtheorem "Example" ~opt:"subsection"
-  let note, newth_note = Th.newtheorem' "Notation"
-  let fact, newth_fact = Th.newtheorem "Fact"
-  let def, newth_def = Th.newtheorem' "Definition"
-  let remark, newth_remark = Th.newtheorem' "Remark"
-end
-
-
 module Performance =
 struct
 
@@ -561,82 +548,49 @@ However their possible different behavior at runtime, {concat (BatList.map (fun 
   let open English in Comment.comment "<<{>>" "<<}>>" (fun f_tiny x y -> newline ^^ f_tiny (tabular x y)) (fun x -> x) (fun x -> x) (H_comment (BatList.init (List.length l + 2) (fun _ -> yes))) }
 "
 
-let main ~packages ~author l =
+let main ~packages ~author =
+  latex_main
+    ~packages:(BatList.flatten
+                 [ ( (* "babel", [ "english"; "francais" ] *)
+                      ("inputenc", "utf8")
+                   :: ("fontenc", "T1")
+                   :: packages )
+                 ; BatList.map (fun x -> x, "")
+                   [ "lmodern"
 
-  let l_hypersetup = (* WARNING side effect, if delta reduced *)
-    BatList.flatten
-      [ [ "colorlinks", "true" ]
-      ; BatList.map
-        (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b)))
-        [ "linkcolor", (*137, 59, 187*)144, 0, 24
-        ; "citecolor", 0, 163, 100
-        ; "urlcolor", 0, 60, 141 ] ] in
+                   ; "calc" ; "array" ; "alltt" (*; "setspace"*) ; "longtable"
+                   ; "url"
 
-  let l, options, documentclass, prelude2 = latex_init l in
+                   ; "tikz"
 
-  emit
-    (document
-       ~options
-       ~documentclass
-       ~packages:(
-         BatList.flatten
-           [ ( (* "babel", [ "english"; "francais" ] *)
-               ("inputenc", "utf8")
-             :: ("fontenc", "T1")
-             :: packages )
-           ; BatList.map (fun x -> x, "")
-             [ "lmodern"
-
-             ; "calc" ; "array" ; "alltt" (*; "setspace"*) ; "longtable"
-             ; "url"
-
-             ; "tikz"
-
-             (* "xltxtra" *)
-             ; "xspace"
+                   (* "xltxtra" *)
+                   ; "xspace"
 
 
-             ; "amsmath"
-             ; "amssymb"
-             ; "amsfonts"
-             ; "amsthm"
+                   ; "amsmath"
+                   ; "amssymb"
+                   ; "amsfonts"
+                   ; "amsthm"
 
-             (* "latexsym" *)
-             (* "graphicx" *)
-             (* "multirow" *)
+                   (* "latexsym" *)
+                   (* "graphicx" *)
+                   (* "multirow" *)
 
-             (* "enumerate" *)
-             ; "float"
+                   (* "enumerate" *)
+                   ; "float"
 
-             (* "bbding" *)
-             ; "pifont"
+                   (* "bbding" *)
+                   ; "pifont"
 
-             ; "multirow"
+                   ; "multirow"
 
-             ; "hyperref"
-             ; "soul" ]
+                   ; "hyperref"
+                   ; "soul" ]
 
-           ])
-       ~author:(concat_line_t
-                  ( "Frédéric Tuong"
-                  :: footnotesize "INRIA - LIAMA"
-                  :: author))
-       ~title:(large3 (textbf (concat_line_string (upper_important [ \"generating the SH4 model\" ; \"with CompCert\" ]))))
-       ~date:"November 2010 - October 2011"
-
-       ~prelude:(concat (List.append
-                           [ Label.newth_ex
-                           ; Label.newth_note
-                           ; Label.newth_fact
-                           ; Label.newth_def
-                           ; Label.newth_remark
-                           ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
-                           ; hypersetup l_hypersetup ] prelude2))
-
-       (concat l))
-
-(* \ifhevea\setboolean{footer}{false}\fi *)
-
-(*  \newenvironment{fontsans} *)
-(*    {\begin{divstyle}{fontsans}} *)
-(*    {\end{divstyle}} *)
+                 ])
+    ~author:(concat_line_t
+               ( "Frédéric Tuong"
+                 :: footnotesize "INRIA - LIAMA"
+                 :: author))
+    ~title:[ \"generating the SH4 model\" ; \"with CompCert\" ]
+    ~date:"November 2010 - October 2011"

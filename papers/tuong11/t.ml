@@ -8,6 +8,14 @@ open Simsoc_cert
 ##verbatim '~' = Code.Ml.verbatim
 ##verbatim '@' = Code.Humc_.verbatim
 
+module Label =
+struct
+  include Label
+
+  let simu_sh4, fast_certi, certi_sim, pretty_print, simgendef, oldarm, ctx_compil, th_init_state, concl, appendix_speed, appendix_eta, appendix_singl =
+    label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label (), label ()
+end
+
 let () =
   main
     ~packages:[ "xcolor", "table" ]

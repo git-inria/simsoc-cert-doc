@@ -470,4 +470,56 @@ struct
       ; B.useinnertheme "shadow" "rounded"
       ]
     | PaperA4 l -> l, [ `A4paper ; `Pt 11 ], `Article, []
+
+  module Label =
+  struct
+    let ex, newth_ex = Th.newtheorem "Example" ~opt:"subsection"
+    let ex_, newth_ex_ = Th.newtheorem' "Example"
+    let note, newth_note = Th.newtheorem' "Notation"
+    let fact, newth_fact = Th.newtheorem "Fact"
+    let def, newth_def = Th.newtheorem' "Definition"
+    let remark, newth_remark = Th.newtheorem' "Remark"
+    let warn, newth_warn = Th.newtheorem' "Warning"
+  end
+
+  let latex_main ~packages ?author ?title ?date l =
+
+    let l_hypersetup = (* WARNING side effect, if delta reduced *)
+      BatList.flatten
+        [ [ "colorlinks", "true" ]
+        ; BatList.map
+          (fun (n, r, g, b) -> n, Color.color_name_ (Color.of_int_255 (r, g, b)))
+          [ "linkcolor", (*137, 59, 187*)144, 0, 24
+          ; "citecolor", 0, 163, 100
+          ; "urlcolor", 0, 60, 141 ] ] in
+
+    let l, options, documentclass, prelude2 = latex_init l in
+
+    emit
+      (document
+         ~options
+         ~documentclass
+         ~packages
+         ?author
+         ?title:(BatOption.map (fun title -> large3 (textbf (concat_line_string (upper_important title)))) title)
+         ?date
+         ~prelude:(concat (BatList.append
+                             [ Label.newth_ex
+                             ; Label.newth_ex_
+                             ; Label.newth_note
+                             ; Label.newth_fact
+                             ; Label.newth_def
+                             ; Label.newth_remark
+                             ; Label.newth_warn
+                             ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
+                             ; hypersetup l_hypersetup ]
+                             prelude2))
+         (concat l))
+
+(* \ifhevea\setboolean{footer}{false}\fi *)
+
+(*  \newenvironment{fontsans} *)
+(*    {\begin{divstyle}{fontsans}} *)
+(*    {\end{divstyle}} *)
+
 end
