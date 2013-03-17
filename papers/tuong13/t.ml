@@ -1,4 +1,5 @@
 open Melt_lib open L
+open Melt_highlight
 open Simsoc_cert
 
 ##verbatim '?' = Code.Raw_.verbatim
@@ -6,7 +7,7 @@ open Simsoc_cert
 ##verbatim '#' = Code.Coq.verbatim
 ##verbatim 'Z' = Code.Coq.verbatim
 ##verbatim '~' = Code.Ml.verbatim
-##verbatim '@' = Code.Humc.verbatim
+##verbatim '@' = Code.Humc_.verbatim
 ##verbatim 'O' = Code.Dot.verbatim
 ##verbatim 'X' = Code.Raw__.verbatim
 
@@ -368,7 +369,7 @@ O>")
 
 (* ********************************************************* *)
 ; B.Center ("ss",
-"<@@{let open English in Comment [ yes ; yes ; no ] }@
+"<@@{let open English in H_comment [ yes ; yes ; no ] }@
 struct S { unsigned long i:1 }
 main () {}
 @>")
@@ -599,7 +600,7 @@ Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 
 (* ********************************************************* *)
 ; B.Center ("",
-"<@@{let open English in Comment [ yes ; yes ; no ; no ]}@
+"<@@{let open English in H_comment [ yes ; yes ; no ; no ]}@
 #include <inttypes.h>
 
 void main() {
@@ -610,7 +611,7 @@ void main() {
 (* ********************************************************* *)
 ; B.Center ("",
             let blue = Color.textcolor_ Color.blue in
-"<@@{let open English in Comment (BatList.init 4 (fun _ -> yes))}@
+"<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
 #include <stdio.h>
 
 void main() {
@@ -652,7 +653,7 @@ We define :
 ; B.Center ("zz",
             Th.env Label.ex "
 This {S.C.asm} code is not a {S.C.lambda_l} program :
-<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
+<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
 int main(int _) {
   return 0;
 }
@@ -709,7 +710,7 @@ enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
 
 (* ********************************************************* *)
 ; B.Center ("",
-"<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
+"<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
 int main() {
   return 0;
 }

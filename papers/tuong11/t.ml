@@ -1,11 +1,12 @@
 open Melt_lib open L
+open Melt_highlight
 open Simsoc_cert
 
 ##verbatim '?' = Code.Raw_.verbatim
 ##verbatim '!' = Code.Raw.verbatim
 ##verbatim '#' = Code.Coq.verbatim
 ##verbatim '~' = Code.Ml.verbatim
-##verbatim '@' = Code.Humc.verbatim
+##verbatim '@' = Code.Humc_.verbatim
 
 let () =
   main
@@ -316,7 +317,7 @@ The typing process from the CIL AST to {S.C.compcert} has actually permitted us 
   [ "Unbound value", "This case occurs frequently. For example, the function {texttt "LDCRn_BANK"} in the part <!9.50 LDC!> uses the unbound variable {texttt "Rn_BANK"}.  After a search, we finally found that it is a meta abbreviation for {texttt "R"}$n${texttt "_BANK"}, with $n {in_} [|0;7|]$, as described in the function's comment. Then this special expansion of $n$ has been specially handled by our SH4 parser."
   ; "Type error", "We have discovered some new misleading types (for instance we introduce manually <!bool_of_word!> and <!nat_of_word!> in the definition of <!FPSCR_PR!> and <!FPSCR_FR!>)."
   ; "Typing of bit fields", "From {P.compcert}, ``{texttt "the type of a bit field must be an integer type no bigger than 'int'"}''. In particular, the {S.Manual.Sh.C.human} contains a part behaving like this rejected program :
-<@@{let open English in Comment [ yes ; yes ; no ] }@
+<@@{let open English in H_comment [ yes ; yes ; no ] }@
 struct S { unsigned long i:1 }
 main () {}
 @> To correct that, it suffices to rename every wrong <!unsigned long!> to <!int!> for example."
@@ -709,7 +710,7 @@ Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 By definition {S.SL.C.gcc} is GCC well-compiled, but until now, we have not precised the type of the machine used during compilation, e.g. a 32 or 64 bits processor, as well as the type of the processor that the binary will be run on, e.g. again a 32 or 64 bits (this last option can be chosen at the invocation of GCC). Hopefully, after at least four attempts, we found the same success of compilation of {S.SL.C.gcc} on any combination of 32 or 64 bits machine, and, 32 or 64 bits processor for the target{let module S = Sfoot in footnote () "Among the bits processor, there are of course others important characteristics describing a computer, for example, are we compiling on/for a PowerPC, IA32 or ARM machine~? Without giving complex details, we just precise that the success of these four attempts has been found on a particular same processor."}.
 
 Like GCC, {P.compcert} also allows us to customize the target of processor for the executable. Unlike GCC, no default choice is provided in the case the target is manually not specified, this choice becomes mandatory in {P.compcert}. By looking at the architecture of our own 32 and 64 bits computers, among the possibilities available by {P.compcert}, we opt to set {texttt Version.compcert_arch} first, with the hope to extend to other processors after. But since here, cares must be taken because this simple choice can have a non-trivial influence on proofs. In particular, this {S.C.gcc} program~:
-<@@{let open English in Comment [ yes ; yes ; no ; no ]}@
+<@@{let open English in H_comment [ yes ; yes ; no ; no ]}@
 #include <inttypes.h>
 
 void main() {
@@ -762,7 +763,7 @@ After the modification performed above, we now have a single program, called {S.
 
 We observed unfortunately that unlike {ref_ Label.ctx_compil}, there exist some tests which fail now. In fact, even if the problem of 64 bits data-structures is resolved at compilation time, some arithmetical operations using 32 bits data-structures can have a not expected behavior at execution time.
 More precisely, by examining closely the situation, we remarked for instance that this {S.C.human} program~:
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes))}@
+<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
 #include <stdio.h>
 
 void main() {
@@ -783,7 +784,7 @@ texttt (tabular (interl 4 `L)
 (in OCaml, <!Int32.shift_left 1_l 32!> evaluates to <!1_l!>).
 
 Remark that initially, starting from this {S.C.human} code included in {P.simsoc} and {P.simcert}~:
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes))}@
+<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
 #include <stdio.h>
 
 void main() {
@@ -835,7 +836,7 @@ Now enriched by this definition, can we apply the main CompCert theorem to {S.SL
 
 {Th.env Label.ex "
 This {S.C.asm} code is not a {S.C.lambda_l} program :
-<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
+<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
 int main(int _) {
   return 0;
 }
@@ -899,7 +900,7 @@ enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
 ; paragraph "Is {S.C.infty} empty ?"
 ; "
 Because the membership of {S.SL.C.asm} to {S.C.infty} depends at least on the shape of {S.C.lambda_l}, it is interesting to check if we can first exhibit an element from {S.C.lambda_l}, as this element will belong to {S.C.infty}. So, we tried to prove that it contains at least this simple {S.C.asm} program, called {S.P.C.asm}~:
-<@@{let open English in Comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
+<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
 int main() {
   return 0;
 }
@@ -942,7 +943,7 @@ Theorem certifying_production :
 ; "
 The proof of {texttt "production_successful"} failed, because it takes extensive computation time. During that time, we were thinking instead to an other way to solve the potential membership of {S.P.C.asm} to {S.C.infty}. This leads to the part explaining the shortcut found.
 (*
-<@@{let open English in Comment (BatList.init 4 (fun _ -> yes), Some maybe)}@
+<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes), Some maybe)}@
 main() {
   int x = 2;
   int y = 3;
