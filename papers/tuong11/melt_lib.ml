@@ -340,7 +340,9 @@ struct
       (A, x) A
   let pause =  \"pause\" @ ([], A)
 
-  let tikzpicture opt x = environment \"tikzpicture\" ~opt:(A, concat [ ">=latex,line join=bevel," ; opt ]) (A, x) A
+  let brack l = concat [ text \"{\" ; l ; text \"}\" ]
+  let scope ~x ~y cts = environment \"scope\" ~opt:(A, "shift={brack "({latex_of_float x},{latex_of_float y})"}") (A, cts) A
+  let tikzpicture ?shift opt cts = environment \"tikzpicture\" ~opt:(A, concat [ ">=latex,line join=bevel," ; opt ]) (A, match shift with None -> cts | Some (x, y) -> scope ~x ~y cts) A
 
   let s_concat s =
     let rec aux = function
@@ -354,11 +356,10 @@ struct
   let includegraphics =
     let i o filename = command ~packages:[\"graphicx\", \"\"] ~opt:(A, o) \"includegraphics\" [ A, text filename ] T in
     let n = \"node\" @ ([], A) in
-    let brack l = concat [ text \"{\" ; l ; text \"}\" ] in
     fun ?trim ?page ?scale ~x ~y filename ->
       tikzpicture
-        (text (sprintf \"overlay, shift={(%f, %f)}\" x y))
-        (concat [ n ; " (label) at (0,0){brack (i
+        "overlay"
+        (concat [ n ; "[shift={brack "({latex_of_float x},{latex_of_float y})"}] at (current page.south) {brack (i
           (s_concat "," (List.flatten [ (match trim with None -> [] | Some (i1,i2,i3,i4) -> [ "clip" ; "trim=" ^^ concat (BatList.map (fun s -> latex_of_size s ^^ " ") [i1 ; i2 ; i3 ; i4])])
                                       ; (match page with None -> [] | Some s -> [text (sprintf \"page=%d\" s)])
                                       ; (match scale with None -> [] | Some s -> [text (sprintf \"scale=%f\" s)]) ])) filename)};" ])
@@ -397,6 +398,7 @@ struct
     let usetheme x = \"usetheme\" @ ([x], A)
     let useoutertheme o x = command \"useoutertheme\" ~opt:(A, o) [A, x] A
     let useinnertheme o x = command \"useinnertheme\" ~opt:(A, o) [A, x] A
+    let setbeamersize x = \"setbeamersize\" @ ([x], A)
 (*    let stepcounter *)
 
 
@@ -450,25 +452,27 @@ struct
   end
 
   type document =
-  | Beamer of (Latex.t (* title *) * Latex.t (* body *)) B.frame
+  | Beamer of (size (* left *) * size (* right *)) option * (Latex.t (* title *) * Latex.t (* body *)) B.frame
   | PaperA4 of Latex.t list
 
   let latex_init = function
-    | Beamer l ->
+    | Beamer (page_width, l) ->
       B.mk_frame l,
       [],
       `Beamer,
-      [ Beamer.setbeamertemplate `NavigationSymbols ""
-    (*; B.setbeamertemplate \"blocks\" "rounded"*)
-    (*; B.usecolortheme "fly"*)
-    (*; B.usetheme "Boadilla"
-      ; B.setbeamertemplate \"Footline\" "default"*)
-(*    ; B.useoutertheme "" "default"
-      ; text \"\\defbeamertemplate*{footline}{default}
+      ( Beamer.setbeamertemplate `NavigationSymbols ""
+    (*:: B.setbeamertemplate \"blocks\" "rounded"*)
+    (*:: B.usecolortheme "fly"*)
+    (*:: B.usetheme "Boadilla"
+      :: B.setbeamertemplate \"Footline\" "default"*)
+(*    :: B.useoutertheme "" "default"
+      :: text \"\\defbeamertemplate*{footline}{default}
 {}\"*)
-      ; B.usecolortheme "rose"
-      ; B.useinnertheme "shadow" "rounded"
-      ]
+      :: B.usecolortheme "rose"
+      :: B.useinnertheme "shadow" "rounded"
+      :: match page_width with
+         | None -> []
+         | Some (left, right) -> [ B.setbeamersize ("text margin left=" ^^ latex_of_size left ^^ ",text margin right=" ^^ latex_of_size right) ])
     | PaperA4 l -> l, [ `A4paper ; `Pt 11 ], `Article, []
 
   module Label =

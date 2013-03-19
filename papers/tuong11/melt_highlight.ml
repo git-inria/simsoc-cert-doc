@@ -54,6 +54,25 @@ struct
 
   module Dot =
   struct
+
+    type shape =
+    | Note
+    | Box of bool (* true: rounded *)
+
+    type node =
+      { color : string
+      ; shape : shape }
+
+    type header =
+      { shift_x : float
+      ; shift_y : float
+      ; scale : float option
+      ; node : node }
+
+    type antiquote =
+    | Header of header
+    | B of Latex.t
+
     let l_to_string s =
       BatString.map (function '\n' -> ' ' | x -> x) (Latex.to_string s)
 
@@ -62,26 +81,54 @@ struct
 
       let opt, f_after, x =
         match x with
-        | `V \"\" :: `C opt :: x ->
-          \"--codeonly\", tikzpicture opt, x
+        | `V \"\" :: `C (Header header) :: x ->
+          \"--codeonly\",
+          tikzpicture
+            ~shift:(header.shift_x, header.shift_y)
+            (text
+               (sprintf \"overlay, shift={(current page.south west)}%s\"
+                   (match header.scale with
+                   | None -> \"\"
+                   | Some scale -> sprintf \", scale=%f, every node/.style={transform shape}\" scale))),
+          [ [ `V (BatString.concat \"\n\" [ \"digraph G {\"
+                                          ; \"  margin=0\"
+                                          ; \"  compound=true\"
+                                          ; sprintf \"  node [height=0.1, color=%s, shape=%s]\"
+                                              header.node.color
+                                              (match header.node.shape with
+                                              | Note -> \"note\"
+                                              | Box b -> \"box\" ^ if b then \", style=rounded\" else \"\")
+                                          ; \"  ranksep=0.01\"
+                                          ; \"  nodesep=0.1\" ] ) ]
+          ; x
+          ; [ `V \" }\" ] ]
+        | `V \"\" :: `C (B _) :: x -> assert false
         | _ ->
-          \"--figonly\", (fun x -> x), x in
+          \"--figonly\", (fun x -> x), [x] in
 
       let ic, oc = BatUnix.open_process (sprintf \"dot2tex %s --autosize\" opt) in
       let () =
         begin
           List.iter
-            (fun o ->
-              BatInnerIO.nwrite oc
-                (match o with
-                | `V s -> s
-                | `C s -> l_to_string s
-                | _ -> failwith \"to complete !\"))
+            (List.iter
+               (fun o ->
+                 BatInnerIO.nwrite oc
+                   (match o with
+                   | `V s -> s
+                   | `C (Header _) -> assert false
+                   | `C (B s) -> l_to_string s
+                   | _ -> failwith \"to complete !\")))
             x;
           BatInnerIO.close_out oc;
         end in
 
       f_after (text (BatInnerIO.read_all ic))
+
+    let color_name_ c = B (Color.color_name_ c)
+    let multiline_ x = B (multiline_ x)
+    let textcolor_ c s = B (Color.textcolor_  c s)
+    let multiline x = B (multiline x)
+    let symbolc x = B (symbolc x)
   end
 
   module Raw =

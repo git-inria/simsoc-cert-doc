@@ -33,31 +33,26 @@ let () =
     ~packages:[]
     ~author:[ footnotesize (mail \"tuong@users.gforge.inria.fr\") ]
 
-    (Beamer (B.Abr
+    (Beamer (Some (`Em 1., `Em 1.), B.Abr
 [ B.Center ("", "")
 
 (* ********************************************************* *)
 ; B.Abr (BatList.map
-           (fun (page, x, y, trim_top) ->
+           (fun (page, y, trim_top) ->
              B.Center
                ("Example: ARMv6 manual, AND instruction, page " ^^ latex_of_int page,
-                includegraphics ~x ~y ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~page ~scale:0.9 Argument.file_arm6))
-           [ 158, 4.9, -5.5, 25.
-           ; 159, 4.6, -6., 20. ])
+                includegraphics ~x:(-1.) ~y ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~page ~scale:0.9 Argument.file_arm6))
+           [ 158, -5.5, 25.
+           ; 159, -6., 20. ])
 
 (* ********************************************************* *)
 ; B.Center ("{P.simcert}, code generation from the manual",
+            let open Code.Dot in
             let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
             let module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = Some deepskyblue end) in
-            let dodgerblue = Color.color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
-            let floralwhite = "deepskyblue" in
-"<OO{text \"scale=0.6, every node/.style={transform shape}, overlay, shift={(-1.3, -8.3)}\"}O
-digraph G {
-  margin=0
-  compound=true
-  node [color=grey, shape=note, color=darksalmon, fontname="Gill Sans", height=0.1]
-  ranksep=0.001
-  nodesep=0.001
+            let dodgerblue = color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
+            let floralwhite = B "deepskyblue" in
+"<OO{ Header { shift_x = 0. ; shift_y = -8.3 ; scale = Some 0.6 ; node = { color = \"darksalmon\" ; shape = Note } } }O
 
   arm_pdf [texlbl="ARMv6.pdf"]
   arm_txt [texlbl="ARMv6.txt"]
@@ -74,15 +69,15 @@ digraph G {
     ast_pseudo [texlbl="pseudo-code"]
 
     intern_merge [shape=none, texlbl="merge \& preprocess"]
-    intern_ocaml [texlbl="internal representation of the AST in O{Color.textcolor_ deepskyblue P.ocaml}O"]
+    intern_ocaml [texlbl="internal representation of the AST in O{textcolor_ deepskyblue P.ocaml}O"]
 
     out_coq_ [shape=none, texlbl="O{multiline_ \"monadic higher order\nfactoring\"}O"]
     out_simlight_ [shape=none, texlbl="O{multiline_ \"normalization, flattening\nand specialization\"}O"]
   }
 
-  out_coq [style=filled, fillcolor=papayawhip, texlbl="shallow embedding to O{Color.textcolor_ deepskyblue "Coq"}O"]
+  out_coq [style=filled, fillcolor=papayawhip, texlbl="shallow embedding to O{textcolor_ deepskyblue "Coq"}O"]
   out_coq_to [shape=none, texlbl="copy"]
-  out_simlight [style=filled, fillcolor=papayawhip, texlbl="fast ISS (O{Color.textcolor_ deepskyblue S.C.gcc}O/C++)"]
+  out_simlight [style=filled, fillcolor=papayawhip, texlbl="fast ISS (O{textcolor_ deepskyblue S.C.gcc}O/C++)"]
   out_simlight_to [shape=none, texlbl="copy"]
 
   subgraph cluster_simsoc {
@@ -93,7 +88,7 @@ digraph G {
       style=dotted
       cluster_simsoc_arm_title [shape=none, texlbl="O{multiline ["ARMv6" ; S.SL.C.gcc ]}O"]
       simsoc_mmu [texlbl="MMU"]
-      simsoc_iss [style=filled, fillcolor=papayawhip, texlbl="fast ISS (O{Color.textcolor_ deepskyblue S.C.gcc}O/C++)"]
+      simsoc_iss [style=filled, fillcolor=papayawhip, texlbl="fast ISS (O{textcolor_ deepskyblue S.C.gcc}O/C++)"]
     }
     simsoc_peri [texlbl="O{multiline_ \"memory\nand peripherals\"}O"]
   }
@@ -130,21 +125,21 @@ digraph G {
 
   simsoc_iss -> out_simlight_to [dir=back]
   out_simlight_to -> out_simlight [dir=back]
-}
+
 O>")
 
 (* ********************************************************* *)
-; B.Center (let page = 234 in "Example: SH4 manual, AND instruction, page " ^^ latex_of_int page, includegraphics ~x:5.5 ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
+; B.Center (let page = 234 in "Example: SH4 manual, AND instruction, page " ^^ latex_of_int page, includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
 
 (* ********************************************************* *)
-; B.Center ("Example: SH4 manual, AND instruction, page 234 middle", includegraphics ~x:5.25 ~y:(-1.) ~scale:0.4 Argument.page_middle)
+; B.Center ("Example: SH4 manual, AND instruction, page 234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle)
 
 (* ********************************************************* *)
 ; B.Abr (BatList.map
            (fun (x, trim_top, img) ->
              B.Center ("Patching the SH4 manual, example ", includegraphics ~x ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~scale:0.6 img))
-           [ 5.5, 55., Argument.img1
-           ; 5., 52., Argument.img3 ])
+           [ 0., 55., Argument.img1
+           ; -1., 52., Argument.img3 ])
 
 (* ********************************************************* *)
 ; B.Center ("Patch generation in OCaml",
@@ -182,7 +177,8 @@ O>")
               ; Data ["patched.txt" ; "87372" ; "85070 {perc 97}" ; "872 {perc 1}" ; "1430 {perc 2}"] ])
 
 (* ********************************************************* *)
-; B.Abr (BatList.map
+; B.Abr (let open Code.Dot in
+         BatList.map
            (fun (fct_edge, darksalmon, draw_red, attr_error) ->
              B.Bottom
                ("CompCert, semantic preservation proved in {P.coq}",
@@ -191,18 +187,11 @@ O>")
                                               ; "``{red S.C.asm}'': last AST defined in Coq"
                                               ]))
                 ^^
-                let shift_x, shift_y = -3.5, -0.2 in
-                let edge_to_fct dir = concat [ "[" ; (match dir with `normal -> "" | `back -> "dir=back,") ; "color={darksalmon}]" ] in
-"<OO{text (sprintf \"every node/.style={transform shape}, overlay, shift={(%f, %f)}\" shift_x shift_y)}O
-digraph G {
-  margin=0
-  compound=true
-  node [color=grey, shape=box, style=rounded, color=mediumseagreen, fontname="Gill Sans", height=0.1]
-  ranksep=0.01
-  nodesep=0.1
+                let edge_to_fct dir = B (concat [ "[" ; (match dir with `normal -> "" | `back -> "dir=back,") ; "color={darksalmon}]" ]) in
+"<OO{ Header { shift_x = -2.9 ; shift_y = -0.2 ; scale = None ; node = { color = \"mediumseagreen\" ; shape = Box true } } }O
 
   /* nodes */
-  compcert_c [texlbl="O{S.C.compcert}O"]
+  compcert_c [texlbl="O{B S.C.compcert}O"]
   clight [texlbl="Clight"]
   c_minor [texlbl="CO{symbolc '#'}Ominor"]
   cminor [texlbl="Cminor"]
@@ -212,7 +201,7 @@ digraph G {
   ltlin [texlbl="LTLin"]
   linear [texlbl="Linear"]
   mach [texlbl="Mach"]
-  asm [texlbl="O{S.C.asm}O"]
+  asm [texlbl="O{B S.C.asm}O"]
 
   error O{attr_error}O
 
@@ -279,55 +268,47 @@ digraph G {
   linear_fct -> error O{fct_edge}O
   mach_fct -> error O{fct_edge}O
 
-}
 O>")
            )
            [ ( let darksalmon = Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71)) in
-               "[style=invis]"
+               B "[style=invis]"
              , darksalmon
-             , darksalmon
-             , "[texlbl=\"{phantom "monadic error"}\", color=white]" )
+             , B darksalmon
+             , B "[texlbl=\"{phantom "monadic error"}\", color=white]" )
 
-           ; ( "[color={Color.color_name_ (Color.of_int_255 (0xF5, 0xA7, 0x5F))}]"
+           ; ( B "[color={Color.color_name_ (Color.of_int_255 (0xF5, 0xA7, 0x5F))}]"
              , Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71))
-             , Color.color_name_ (let i = 200 in Color.of_int_255 (i, i, i))
-             , "[texlbl=\"monadic error\"]" ) ])
+             , color_name_ (let i = 200 in Color.of_int_255 (i, i, i))
+             , B "[texlbl=\"monadic error\"]" ) ])
 
 (* ********************************************************* *)
 ; B.Top ("CompCert, the generation{newline}from {P.coq} to {P.ocaml}",
-         minipage (`Cm 4.2)
-           (Th.env Label.note (concat [ "``{red S.C.human}'': an arbitrary sequence of character"
-                                      ; newline
-                                      ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
-                                      ; newline
-                                      ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
+         minipage (`Cm 5.)
+           (Th.env Label.note (itemize [ "``{red S.C.human}'': an arbitrary sequence of character"
+                                       ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
+                                       ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
          ^^
+         let open Code.Dot in
          let darksalmon_ = Color.of_int_255 (0xF5, 0xA7, 0x5F) in
-         let darksalmon = Color.color_name_ darksalmon_ in
+         let darksalmon = color_name_ darksalmon_ in
          let mediumseagreen_ = Color.of_int_255 (0x3C, 0xB3, 0x71) in
-         let mediumseagreen = Color.color_name_ mediumseagreen_ in
+         let mediumseagreen = color_name_ mediumseagreen_ in
          let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
-         let floralwhite = "deepskyblue" in
+         let floralwhite = B "deepskyblue" in
          let ocaml = texttt (Color.textcolor_ deepskyblue P.ocaml) in
          let coq = texttt (Color.textcolor_ deepskyblue P.coq) in
          let gcc = texttt (Color.textcolor_ deepskyblue S.C.gcc) in
          let col_fct = Color.textcolor_ darksalmon_ in
          let black s = small (emph (Color.textcolor_ (let i = 0x86 in Color.of_int_255 (i, i, i)) s)) in
          let green = Color.textcolor_ mediumseagreen_ in
-"<OO{text \"scale=0.9, every node/.style={transform shape}, overlay, shift={(-2.6, -6.3)}\"}O
-digraph G {
-  margin=0
-  compound=true
-  node [color=grey, shape=box, style=rounded, color=mediumseagreen, fontname="Gill Sans", height=0.1]
-  ranksep=0.01
-  nodesep=0.1
+"<OO{ Header { shift_x = -2.7 ; shift_y = -6.2 ; scale = Some 0.9 ; node = { color = \"mediumseagreen\" ; shape = Box true } } }O
 
   subgraph cluster_coq {
     style="dashed, rounded"
     color=O{floralwhite}O
 
-    compcert_c [texlbl="O{S.C.compcert}O"]
-    asm [texlbl="O{S.C.asm}O"]
+    compcert_c [texlbl="O{B S.C.compcert}O"]
+    asm [texlbl="O{B S.C.asm}O"]
 
     compcert_c_fct [texlbl="O{multiline [ col_fct (ocaml ^^ "-compiling") ; black ("(generated from " ^^ coq ^^ ")")]}O", color=darksalmon]
 
@@ -338,7 +319,7 @@ digraph G {
     style="dashed, rounded"
     color=O{floralwhite}O
 
-    human_c [texlbl="O{S.C.human}O"]
+    human_c [texlbl="O{B S.C.human}O"]
     human_c_fct [texlbl="O{multiline [ col_fct (gcc ^^ "-preprocessing {green "{longrightarrow}"} " ^^ ocaml ^^ "-parsing") ; black ("(not yet generated from " ^^ coq ^^ ")") ]}O", color=darksalmon]
     human_c -> human_c_fct [color=O{mediumseagreen}O]
 
@@ -361,11 +342,11 @@ digraph G {
   compcert_c_fct -> error [color=O{darksalmon}O]
   human_c_fct -> error [color=O{darksalmon}O]
   asm_fct -> error [color=O{darksalmon}O]
-}
+
 O>")
 
 (* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:5.5 ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 52.) ~scale:0.6 Argument.img2)
+; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 52.) ~scale:0.6 Argument.img2)
 
 (* ********************************************************* *)
 ; B.Center ("ss",
@@ -375,7 +356,7 @@ main () {}
 @>")
 
 (* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:5.5 ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 55.) ~scale:0.6 Argument.img4)
+; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 55.) ~scale:0.6 Argument.img4)
 
 (* ********************************************************* *)
 ; B.Center ("z",
@@ -411,22 +392,17 @@ Z>"
 
 (* ********************************************************* *)
 ; B.Center ("{P.simcert}, towards the correctness proof",
+            let open Code.Dot in
             let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
             let module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = Some deepskyblue end) in
             let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            let dodgerblue = Color.color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
-            let firebrick = Color.color_name_ (Color.of_int_255 (0xB2, 0x22, 0x22)) in
-            let floralwhite = "deepskyblue" in
-"<OO{text \"scale=0.8, every node/.style={transform shape}, overlay, shift={(-1.55, -6.6)}\"}O
-digraph G {
-  margin=0
-  compound=true
-  node [color=grey, shape=box, fontname="Gill Sans"]
-  ranksep=0.01
-  nodesep=0.1
+            let dodgerblue = color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
+            let firebrick = color_name_ (Color.of_int_255 (0xB2, 0x22, 0x22)) in
+            let floralwhite = B "deepskyblue" in
+"<OO{ Header { shift_x = -0.8 ; shift_y = -6.6 ; scale = Some 0.8 ; node = { color = \"darksalmon\" ; shape = Box false } } }O
 
-  pdf_sh [shape=note, color=darksalmon, texlbl="O{multiline [S.Manual.Sh.C.human ; "(pdf)"]}O"]
-  pdf_txt_sh [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, texlbl="O{multiline [S.Manual.Sh.C.human ; "(txt)"]}O"]
+  pdf_sh [shape=note, texlbl="O{multiline [S.Manual.Sh.C.human ; "(pdf)"]}O"]
+  pdf_txt_sh [shape=note, style=filled, fillcolor=papayawhip, texlbl="O{multiline [S.Manual.Sh.C.human ; "(txt)"]}O"]
 
   pseudocode [shape=ellipse, style=dashed, color=dodgerblue, texlbl="O{ multiline [ "pseudo-code and" ; "decoder generator" ] }O"]
 
@@ -437,8 +413,8 @@ digraph G {
     subgraph cluster_simlight {
       style=bold
       color=darksalmon
-      iss [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, texlbl="O{S.Manual.Sh.C.compcert}O"]
-      simlight_dots [shape=note, color=darksalmon, texlbl="O{ multiline [ S.SL.C.compcert ; "libraries" ] }O"]
+      iss [shape=note, style=filled, fillcolor=papayawhip, texlbl="O{B S.Manual.Sh.C.compcert}O"]
+      simlight_dots [shape=note, texlbl="O{ multiline [ S.SL.C.compcert ; "libraries" ] }O"]
     }
   }
 
@@ -452,15 +428,15 @@ digraph G {
       style=bold
       color=darksalmon
       bgcolor=papayawhip
-      coq_src2 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, texlbl="O{S.Manual.Sh.Coq.Deep.compcert}O"]
-      coq_src_dot [shape=note, color=darksalmon, texlbl="O{ multiline [ S.SL.Coq.Deep.compcert ; "libraries" ] }O"]
+      coq_src2 [shape=note, style=filled, fillcolor=papayawhip, texlbl="O{B S.Manual.Sh.Coq.Deep.compcert}O"]
+      coq_src_dot [shape=note, texlbl="O{ multiline [ S.SL.Coq.Deep.compcert ; "libraries" ] }O"]
     }
 
     subgraph cluster_simulateur {
       style=bold
       color=darksalmon
-      coq_src1 [shape=note, color=darksalmon, style=filled, fillcolor=papayawhip, texlbl="O{S.Manual.Sh.coq}O"]
-      coq_src_simul_dot [shape=note, color=darksalmon, texlbl="O{ multiline [ S.SL.coq ; "libraries" ] }O"]
+      coq_src1 [shape=note, style=filled, fillcolor=papayawhip, texlbl="O{B S.Manual.Sh.coq}O"]
+      coq_src_simul_dot [shape=note, texlbl="O{ multiline [ S.SL.coq ; "libraries" ] }O"]
     }
 
     coq_proof [shape=note, color=firebrick, texlbl="O{ multiline [ "Correctness proof :" ; S.SL.coq ; "{leftrightarrow_}" ; "{S.SL.Coq.Deep.compcert} ?" ] }O"]
@@ -482,7 +458,7 @@ digraph G {
   coq_src_dot -> mid [ltail=cluster_compcert_simlight, dir=back]
   coq_src_dot -> coq_proof [color=O{firebrick}O, ltail=cluster_compcert_simlight]
   coq_src_simul_dot -> coq_proof [color=O{firebrick}O, ltail=cluster_simulateur]
-}
+
 O>")
 
 (* ********************************************************* *)
