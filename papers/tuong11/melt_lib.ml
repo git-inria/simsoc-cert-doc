@@ -342,7 +342,11 @@ struct
 
   let brack l = concat [ text \"{\" ; l ; text \"}\" ]
   let scope ~x ~y cts = environment \"scope\" ~opt:(A, "shift={brack "({latex_of_float x},{latex_of_float y})"}") (A, cts) A
-  let tikzpicture ?shift opt cts = environment \"tikzpicture\" ~opt:(A, concat [ ">=latex,line join=bevel," ; opt ]) (A, match shift with None -> cts | Some (x, y) -> scope ~x ~y cts) A
+  let tikzpicture ?shift opt cts = environment \"tikzpicture\" ~opt:(A, concat [ ">=latex,line width=1pt, join=rounded," ; opt ]) (A, match shift with None -> cts | Some (x, y) -> scope ~x ~y cts) A
+  let usetikzlibrary x = \"usetikzlibrary\" @ ([x], A)
+
+  let blacktriangleleft =  \"blacktriangleleft\" @ ([], M)
+  let blacktriangleright =  \"blacktriangleright\" @ ([], M)
 
   let s_concat s =
     let rec aux = function
@@ -472,7 +476,8 @@ struct
       :: B.useinnertheme "shadow" "rounded"
       :: match page_width with
          | None -> []
-         | Some (left, right) -> [ B.setbeamersize ("text margin left=" ^^ latex_of_size left ^^ ",text margin right=" ^^ latex_of_size right) ])
+         | Some (left, right) -> [ B.setbeamersize ("text margin left=" ^^ latex_of_size left ^^ ",text margin right=" ^^ latex_of_size right)
+                                 ; usetikzlibrary "arrows" ])
     | PaperA4 l -> l, [ `A4paper ; `Pt 11 ], `Article, []
 
   module Label =

@@ -50,9 +50,14 @@ let () =
             let open Code.Dot in
             let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
             let module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = Some deepskyblue end) in
-            let dodgerblue = color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
+            let dodgerblue = Color.color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
             let floralwhite = B "deepskyblue" in
-"<OO{ Header { shift_x = 0. ; shift_y = -8.3 ; scale = Some 0.6 ; node = { color = \"darksalmon\" ; shape = Note } } }O
+            let style_back = B "[style=\"angle 45-\"]" in
+"<OO{ Header { shift_x = 0.
+             ; shift_y = -8.3
+             ; scale = Some 0.6
+             ; node = { n_color = \"darksalmon\" ; shape = Note }
+             ; edge = { e_color = Some dodgerblue ; style = Some \"-angle 45\" } } }O
 
   arm_pdf [texlbl="ARMv6.pdf"]
   arm_txt [texlbl="ARMv6.txt"]
@@ -105,7 +110,6 @@ let () =
   cluster_simcoq_title -> simcoq_iss [style=invis]
 
   /* */
-  edge [color=O{dodgerblue}O]
   arm_pdf -> arm_txt [label="pdftotext", constraint=false]
   arm_txt -> patch1 -> ast_deco
   arm_txt -> patch2 -> ast_asm
@@ -120,11 +124,11 @@ let () =
   intern_ocaml -> out_coq_ -> out_coq
   intern_ocaml -> out_simlight_ -> out_simlight
 
-  simcoq_iss -> out_coq_to [dir=back]
-  out_coq_to -> out_coq [dir=back]
+  simcoq_iss -> out_coq_to O{style_back}O
+  out_coq_to -> out_coq O{style_back}O
 
-  simsoc_iss -> out_simlight_to [dir=back]
-  out_simlight_to -> out_simlight [dir=back]
+  simsoc_iss -> out_simlight_to O{style_back}O
+  out_simlight_to -> out_simlight O{style_back}O
 
 O>")
 
@@ -178,6 +182,7 @@ O>")
 
 (* ********************************************************* *)
 ; B.Abr (let open Code.Dot in
+         let edge_to_normal = \"-triangle 45\" in
          BatList.map
            (fun (fct_edge, darksalmon, draw_red, attr_error) ->
              B.Bottom
@@ -187,8 +192,13 @@ O>")
                                               ; "``{red S.C.asm}'': last AST defined in Coq"
                                               ]))
                 ^^
-                let edge_to_fct dir = B (concat [ "[" ; (match dir with `normal -> "" | `back -> "dir=back,") ; "color={darksalmon}]" ]) in
-"<OO{ Header { shift_x = -2.9 ; shift_y = -0.2 ; scale = None ; node = { color = \"mediumseagreen\" ; shape = Box true } } }O
+                let edge_to_fct dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> \"-stealth\" | `back -> \"stealth-\")) ; "color={darksalmon}]" ]) in
+                let edge_to dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> edge_to_normal | `back -> \"triangle 45-\")) ; "color={draw_red}]" ]) in
+"<OO{ Header { shift_x = -2.9
+             ; shift_y = -0.2
+             ; scale = None
+             ; node = { n_color = \"mediumseagreen\" ; shape = Box true }
+             ; edge = { e_color = None ; style = None } } }O
 
   /* nodes */
   compcert_c [texlbl="O{B S.C.compcert}O"]
@@ -233,27 +243,27 @@ O>")
   /* */
   { rank = same ;
     compcert_c -> compcert_c_fct O{edge_to_fct `normal}O
-    compcert_c_fct -> clight [color=O{draw_red}O]
+    compcert_c_fct -> clight O{edge_to `normal}O
     clight -> clight_fct O{edge_to_fct `normal}O
-    clight_fct -> c_minor [color=O{draw_red}O] }
+    clight_fct -> c_minor O{edge_to `normal}O }
   c_minor -> c_minor_fct O{edge_to_fct `normal}O
-  c_minor_fct -> cminor [color=O{draw_red}O]
+  c_minor_fct -> cminor O{edge_to `normal}O
   { rank = same ;
-    rtl -> cminorsel_fct [dir=back, color=O{draw_red}O]
+    rtl -> cminorsel_fct O{edge_to `back}O
     cminorsel_fct -> cminorsel O{edge_to_fct `back}O
-    cminorsel -> cminor_fct [dir=back, color=O{draw_red}O]
+    cminorsel -> cminor_fct O{edge_to `back}O
     cminor_fct -> cminor O{edge_to_fct `back}O }
   rtl -> rtl_fct O{edge_to_fct `normal}O
-  rtl_fct -> ltl [color=O{draw_red}O]
+  rtl_fct -> ltl O{edge_to `normal}O
   { rank = same ;
     ltl -> ltl_fct O{edge_to_fct `normal}O
-    ltl_fct -> ltlin [color=O{draw_red}O]
+    ltl_fct -> ltlin O{edge_to `normal}O
     ltlin -> ltlin_fct O{edge_to_fct `normal}O
-    ltlin_fct -> linear [color=O{draw_red}O] }
+    ltlin_fct -> linear O{edge_to `normal}O }
   linear -> linear_fct O{edge_to_fct `normal}O
-  linear_fct -> mach [color=O{draw_red}O]
+  linear_fct -> mach O{edge_to `normal}O
   { rank = same ;
-    asm -> mach_fct [dir=back, color=O{draw_red}O]
+    asm -> mach_fct O{edge_to `back}O
     mach_fct -> mach O{edge_to_fct `back}O }
 
   /* */
@@ -273,12 +283,12 @@ O>")
            [ ( let darksalmon = Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71)) in
                B "[style=invis]"
              , darksalmon
-             , B darksalmon
+             , darksalmon
              , B "[texlbl=\"{phantom "monadic error"}\", color=white]" )
 
-           ; ( B "[color={Color.color_name_ (Color.of_int_255 (0xF5, 0xA7, 0x5F))}]"
+           ; ( B ("[style=\"" ^^ text edge_to_normal ^^ "\",color={Color.color_name_ (Color.of_int_255 (0xF5, 0xA7, 0x5F))}]")
              , Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71))
-             , color_name_ (let i = 200 in Color.of_int_255 (i, i, i))
+             , Color.color_name_ (let i = 200 in Color.of_int_255 (i, i, i))
              , B "[texlbl=\"monadic error\"]" ) ])
 
 (* ********************************************************* *)
@@ -300,8 +310,12 @@ O>")
          let gcc = texttt (Color.textcolor_ deepskyblue S.C.gcc) in
          let col_fct = Color.textcolor_ darksalmon_ in
          let black s = small (emph (Color.textcolor_ (let i = 0x86 in Color.of_int_255 (i, i, i)) s)) in
-         let green = Color.textcolor_ mediumseagreen_ in
-"<OO{ Header { shift_x = -2.7 ; shift_y = -6.2 ; scale = Some 0.9 ; node = { color = \"mediumseagreen\" ; shape = Box true } } }O
+         let greentriangleright = Color.textcolor_ mediumseagreen_ "{blacktriangleright}" in
+"<OO{ Header { shift_x = -2.0
+             ; shift_y = -6.2
+             ; scale = Some 0.9
+             ; node = { n_color = \"mediumseagreen\" ; shape = Box true }
+             ; edge = { e_color = None ; style = Some \"-triangle 45\" } } }O
 
   subgraph cluster_coq {
     style="dashed, rounded"
@@ -320,7 +334,7 @@ O>")
     color=O{floralwhite}O
 
     human_c [texlbl="O{B S.C.human}O"]
-    human_c_fct [texlbl="O{multiline [ col_fct (gcc ^^ "-preprocessing {green "{longrightarrow}"} " ^^ ocaml ^^ "-parsing") ; black ("(not yet generated from " ^^ coq ^^ ")") ]}O", color=darksalmon]
+    human_c_fct [texlbl="O{multiline [ col_fct (gcc ^^ "-preprocessing {greentriangleright} " ^^ ocaml ^^ "-parsing") ; black ("(not yet generated from " ^^ coq ^^ ")") ]}O", color=darksalmon]
     human_c -> human_c_fct [color=O{mediumseagreen}O]
 
   }
@@ -329,7 +343,7 @@ O>")
     style="dashed, rounded"
     color=O{floralwhite}O
 
-    asm_fct [texlbl="O{multiline [ col_fct (ocaml ^^ "-printing {green "{longrightarrow}"} " ^^ gcc ^^ "-linking") ; black ("(not yet generated from " ^^ coq ^^ ")") ] }O", color=darksalmon]
+    asm_fct [texlbl="O{multiline [ col_fct (ocaml ^^ "-printing {greentriangleright} " ^^ gcc ^^ "-linking") ; black ("(not yet generated from " ^^ coq ^^ ")") ] }O", color=darksalmon]
     exec [texlbl="executable"]
     asm_fct -> exec [color=O{mediumseagreen}O]
   }
@@ -396,10 +410,15 @@ Z>"
             let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
             let module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = Some deepskyblue end) in
             let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            let dodgerblue = color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
+            let dodgerblue = Color.color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
             let firebrick = color_name_ (Color.of_int_255 (0xB2, 0x22, 0x22)) in
             let floralwhite = B "deepskyblue" in
-"<OO{ Header { shift_x = -0.8 ; shift_y = -6.6 ; scale = Some 0.8 ; node = { color = \"darksalmon\" ; shape = Box false } } }O
+            let style_back = B "style=\"angle 45-\"" in
+"<OO{ Header { shift_x = -0.8
+             ; shift_y = -6.6
+             ; scale = Some 0.8
+             ; node = { n_color = \"darksalmon\" ; shape = Box false }
+             ; edge = { e_color = Some dodgerblue ; style = Some \"-angle 45\" } } }O
 
   pdf_sh [shape=note, texlbl="O{multiline [S.Manual.Sh.C.human ; "(pdf)"]}O"]
   pdf_txt_sh [shape=note, style=filled, fillcolor=papayawhip, texlbl="O{multiline [S.Manual.Sh.C.human ; "(txt)"]}O"]
@@ -449,13 +468,12 @@ Z>"
   pdf_sh -> coq_src1 [style=invis]
 
   /* */
-  edge [color=O{dodgerblue}O]
   pdf_sh -> pdf_txt_sh [label="pdftotext", constraint=false]
   pdf_txt_sh -> pseudocode [constraint=false]
   pseudocode -> iss
   pseudocode -> coq_src1
   simlight_dots -> mid [ltail=cluster_simlight]
-  coq_src_dot -> mid [ltail=cluster_compcert_simlight, dir=back]
+  coq_src_dot -> mid [ltail=cluster_compcert_simlight, O{style_back}O]
   coq_src_dot -> coq_proof [color=O{firebrick}O, ltail=cluster_compcert_simlight]
   coq_src_simul_dot -> coq_proof [color=O{firebrick}O, ltail=cluster_simulateur]
 

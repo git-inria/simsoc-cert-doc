@@ -60,14 +60,19 @@ struct
     | Box of bool (* true: rounded *)
 
     type node =
-      { color : string
+      { n_color : string
       ; shape : shape }
+
+    type edge =
+      { e_color : Latex.t option
+      ; style : string option }
 
     type header =
       { shift_x : float
       ; shift_y : float
       ; scale : float option
-      ; node : node }
+      ; node : node
+      ; edge : edge }
 
     type antiquote =
     | Header of header
@@ -93,13 +98,20 @@ struct
           [ [ `V (BatString.concat \"\n\" [ \"digraph G {\"
                                           ; \"  margin=0\"
                                           ; \"  compound=true\"
+                                          ; \"  ranksep=0.01\"
+                                          ; \"  nodesep=0.1\"
                                           ; sprintf \"  node [height=0.1, color=%s, shape=%s]\"
-                                              header.node.color
+                                              header.node.n_color
                                               (match header.node.shape with
                                               | Note -> \"note\"
                                               | Box b -> \"box\" ^ if b then \", style=rounded\" else \"\")
-                                          ; \"  ranksep=0.01\"
-                                          ; \"  nodesep=0.1\" ] ) ]
+                                          ; if (header.edge.style, header.edge.e_color) = (None, None) then
+                                              \"\"
+                                            else
+                                              sprintf \"  edge [%s%s]\"
+                                                (match header.edge.style with None -> \"\" | Some s -> sprintf \"style=%S\" s)
+                                                (match header.edge.e_color with None -> \"\" | Some s -> sprintf \", color=%s\" (Latex.to_string s))
+                                          ] ) ]
           ; x
           ; [ `V \" }\" ] ]
         | `V \"\" :: `C (B _) :: x -> assert false
