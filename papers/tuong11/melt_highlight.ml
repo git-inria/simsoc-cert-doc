@@ -76,6 +76,7 @@ struct
 
     type antiquote =
     | Header of header
+    | B_escape_nl of Latex.t
     | B of Latex.t
 
     let l_to_string s =
@@ -114,7 +115,7 @@ struct
                                           ] ) ]
           ; x
           ; [ `V \" }\" ] ]
-        | `V \"\" :: `C (B _) :: x -> assert false
+        | `V \"\" :: `C (B_escape_nl _ | B _) :: x -> assert false
         | _ ->
           \"--figonly\", (fun x -> x), [x] in
 
@@ -128,7 +129,8 @@ struct
                    (match o with
                    | `V s -> s
                    | `C (Header _) -> assert false
-                   | `C (B s) -> l_to_string s
+                   | `C (B_escape_nl s) -> l_to_string s
+                   | `C (B s) -> Latex.to_string s
                    | _ -> failwith \"to complete !\")))
             x;
           BatInnerIO.close_out oc;
@@ -137,9 +139,9 @@ struct
       f_after (text (BatInnerIO.read_all ic))
 
     let color_name_ c = B (Color.color_name_ c)
-    let multiline_ x = B (multiline_ x)
+    let multiline_ x = B_escape_nl (multiline_ x)
     let textcolor_ c s = B (Color.textcolor_  c s)
-    let multiline x = B (multiline x)
+    let multiline x = B_escape_nl (multiline x)
     let symbolc x = B (symbolc x)
   end
 
