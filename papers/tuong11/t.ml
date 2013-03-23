@@ -53,7 +53,7 @@ As for ARM, we show at section~{ref_ Label.simu_sh4} how to automatically genera
 ; "
 This section introduces the concept of software simulation by explaining how simulations work and what informations we need to import from the constructor manual. For the following, we restrict our attention to the simulation of the processor as it is the first and existing component studied in {P.simcert}. We also present the current state of {P.simsoc} and {P.simcert}, and explain at the end the principle and goal of the {P.compcert} compiler.
 
-{Th.env Label.note "
+{Label.notation_ "
 For the following, we will use the symbols
   {itemize
       [ "{S.C.human} to designate an arbitrary sequence of character, "
@@ -271,7 +271,7 @@ Besides the target fixed at this advanced {S.simgen_ast}, we show at the next pa
 (* ************************ *)
 The {S.Manual.Sh.C.human} totals about 450 pages, informations corresponding to the pseudocode and decoder occupy an important part, approximately the half of these pages. Building directly a model at hand in Coq is thus long or with a non negligible risk of errors.
 Furthermore, while reading it briefly, we have been having a strong conjecture that the {S.C.human} code specified in the instructions can be easily translated to {S.C.gcc}. To experiment our intuition, we have planned to use the FrontC package as type representing our futur {S.C.gcc} program in OCaml.
-{Th.env Label.note "
+{Label.notation_ "
 Let us name
 {itemize
 [ "{S.CP.frontc} for programs parsed successfully with the OCaml package {texttt "FrontC"} {Version.frontc} (tested at least one time). For a demonstration, check if the result of the function <!Frontc.parse_file!> is ``<!PARSING_OK _!>''." ]}
@@ -291,7 +291,7 @@ Corrections needed to bring to the {S.Manual.Sh.C.human} are essentially compose
 ; "
 Besides the obtaining of the {S.CP.frontc} AST, we think that all the {S.C.human} code behind each instructions are predestined to be ultimately executed. Hence, we can extend our test protocol by compiling them with {P.compcert}.
 In fact, the program behind the {P.compcert} parsing step is taken from the CIL library (with some minor modifications)~{cite ["necula"]}. The CIL library includes itself a modified version of the {S.CP.frontc} files. Because our goal is to remove as soon as possible the most errors from {S.Manual.Sh.C.human}, it is then interesting to iterate the parse-checking among all these tools.
-{Th.env Label.note "
+{Label.notation_ "
 We introduce
 {itemize
 [ "{S.CP.cil} for programs parsed successfully with the OCaml package {texttt "cil"} {Version.cil} (tested at least one time). For a demonstration, check if the result of the function <!Frontc.parse!> returns a value of type <!file!> without raising an exception."
@@ -353,7 +353,7 @@ Generating the Coq code was rather long but easy, because a lot of factorization
 ; "The default case for the <!switch!> option is also present in several SH instructions, then the necessary changes in {S.simgen_ast} has been done." ]
 }"
 (* Replace_all ("&&", "&"), p [ 1065 ] (* Sh4_Inst.v is not Coq well typed otherwise *) *)
-; Th.env Label.fact "
+; Label.fact "
 Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}."
 
 ; subsubsection "{lambda}-optimization of the {S.Manual.ArmSh.coq}"
@@ -664,7 +664,7 @@ Each number corresponds exactly to the arity attended by the respective construc
 All the informations present until now are sufficient for the type-checker to automatically deduce the remaining type. With only these declarations, our Coq library of pretty-printing considered as a functor is finished, its instantiation by a module and the definition of <!_INDUCTIVE!> being a secondary task.
 "
 ; (let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-Th.env Label.fact "
+Label.fact "
 The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} to a Coq representation. For the rest, this associated deep embedded Coq program will be named as : {SL_p.Coq.Deep.compcert}.
 ")
 ; subsubsection "Programming discussions"
@@ -701,14 +701,14 @@ We have mentioned at the beginning that one motivation of choosing {S.C.compcert
 
 Thus, we are attentive at the result of every compilation steps of {S.SL.C.gcc} with {P.compcert}, this includes the success to obtain a {S.C.compcert} code as well as, at the end, an assembly file.
 
-{Th.env Label.note "
+{Label.notation_ "
 For the following, let us introduce
 {itemize
     [ "{S.C.asm} for programs for which a generated assembly file can be successfully dumped (tested at least one time), in general at the end of the compilation. For a demonstration with {Version.compcert}, see the option <!-dasm!>." ]
 }
 "}
 {let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
+Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
 
 Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 "}
@@ -830,7 +830,7 @@ Remark that some reorganizations have been done in the last version of {P.compce
 
 {let s = "S" in
 let module SL_p = S.SL_gen (struct let sl = s end) in
-Th.env Label.def "
+Label.definition_ "
 We define :
 {itemize
 [ "{S.C.lambda_l} for {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:" ^^
@@ -842,7 +842,7 @@ We define :
 "}
 Now enriched by this definition, can we apply the main CompCert theorem to {S.SL.C.asm} ? Is the {S.SL.C.asm} a {S.C.lambda_l} program ? After careful considerations, we think to answer negatively here. Indeed, a {S.C.lambda_l} program is in particular close with regard to its initial environment : it can not receive arguments from the outside world.
 
-{Th.env Label.ex "
+{Label.example "
 This {S.C.asm} code is not a {S.C.lambda_l} program :
 <@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
 int main(int _) {
@@ -852,7 +852,7 @@ int main(int _) {
 because the type of the main function (called from {English.outworld}) is not of the form {texttt "unit {rightarrow} int"}. Thus it initially goes wrong by definition.
 "}
 We conclude straightforwardly~:
-{Th.env Label.fact "
+{Label.fact "
 The {S.SL.C.asm} is not a {S.C.lambda_l} program because as a simulator, its task is to simulate an arbitrary assembly file given in input.
 
 More clearly~:
@@ -890,7 +890,7 @@ Then, instead of searching if {S.SL.C.asm} {in_} {S.C.lambda_l}, one could deter
 
 {let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
 let i_sqcup x = index sqcup (tiny x) in
-Th.env Label.def "
+Label.definition_ "
 We present here
 {itemize
 [ "{S.C.infty} being the smallest set satisfying these properties~:" ^^

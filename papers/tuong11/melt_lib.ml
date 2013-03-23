@@ -149,11 +149,8 @@ struct
 
   module type TH =
   sig
-    type label
-    val newtheorem : ?opt:t -> t -> label * t
-    val newtheorem' : ?opt:t -> t -> label * t
-    val environment : ?packages:(string * string) list -> label -> ?opt:mode * t -> ?args:(mode * t) list -> mode * t -> mode -> t
-    val env : label -> t -> t (* shortcut *)
+    val newtheorem : ?opt:t -> t -> (t -> t) * t
+    val newtheorem' : ?opt:t -> t -> (t -> t) * t
   end
 
   module Th : TH =
@@ -168,9 +165,14 @@ struct
 
     let string_of_name (L l) = sprintf \"latex_libth_label_%d\" l
 
+    let environment ?packages name ?opt ?args body mode =
+      environment ?packages (string_of_name name) ?opt ?args body mode
+
+    let env name body = environment name (A, body) A
+
     let newtheorem_ star ?opt param =
       let lab = mk_new () in
-      L lab,
+      env (L lab),
       unusual_command
         (Printf.sprintf \"newtheorem%s\" (if star then \"*\" else \"\"))
         ((A, brace, text (string_of_name (L lab)))
@@ -179,11 +181,6 @@ struct
 
     let newtheorem = newtheorem_ false
     let newtheorem' = newtheorem_ true
-
-    let environment ?packages name ?opt ?args body mode =
-      environment ?packages (string_of_name name) ?opt ?args body mode
-
-    let env name body = environment name (A, body) A
   end
 
   let cite refe = \"cite\" @ ([concat (list_insert "," refe)], A)
@@ -482,13 +479,13 @@ struct
 
   module Label =
   struct
-    let ex, newth_ex = Th.newtheorem "Example" ~opt:"subsection"
-    let ex_, newth_ex_ = Th.newtheorem' "Example"
-    let note, newth_note = Th.newtheorem' "Notation"
+    let example, newth_example = Th.newtheorem "Example" ~opt:"subsection"
+    let example_, newth_example_ = Th.newtheorem' "Example"
+    let notation_, newth_notation_ = Th.newtheorem' "Notation"
     let fact, newth_fact = Th.newtheorem "Fact"
-    let def, newth_def = Th.newtheorem' "Definition"
-    let remark, newth_remark = Th.newtheorem' "Remark"
-    let warn, newth_warn = Th.newtheorem' "Warning"
+    let definition_, newth_definition_ = Th.newtheorem' "Definition"
+    let remark_, newth_remark_ = Th.newtheorem' "Remark"
+    let warning_, newth_warning_ = Th.newtheorem' "Warning"
   end
 
   let latex_main ~packages ?author ?title ?date l =
@@ -513,13 +510,13 @@ struct
          ?title:(BatOption.map (fun title -> large3 (textbf (concat_line_string (upper_important title)))) title)
          ?date
          ~prelude:(concat (BatList.append
-                             [ Label.newth_ex
-                             ; Label.newth_ex_
-                             ; Label.newth_note
+                             [ Label.newth_example
+                             ; Label.newth_example_
+                             ; Label.newth_notation_
                              ; Label.newth_fact
-                             ; Label.newth_def
-                             ; Label.newth_remark
-                             ; Label.newth_warn
+                             ; Label.newth_definition_
+                             ; Label.newth_remark_
+                             ; Label.newth_warning_
                              ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
                              ; hypersetup l_hypersetup ]
                              prelude2))

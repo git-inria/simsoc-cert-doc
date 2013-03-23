@@ -540,7 +540,7 @@ let th_same_source l =
   let l, last =
     let last :: l = List.rev l in
     List.rev l, last in
-  Th.env Label.fact "
+  Label.fact "
 However their possible different behavior at runtime, {concat (BatList.map (fun x -> x ^^ ", ") l)}and {last} come from an initial same source. This source belongs to :
 { let module Comment = Comment_sz
         (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = None end)

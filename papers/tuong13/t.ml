@@ -188,9 +188,9 @@ O>")
              B.Bottom
                ("CompCert, semantic preservation proved in {P.coq}",
                 minipage (`Cm 3.5)
-                  (Th.env Label.note (itemize [ "``{red S.C.compcert}'': first AST defined in Coq"
-                                              ; "``{red S.C.asm}'': last AST defined in Coq"
-                                              ]))
+                  (Label.notation_ (itemize [ "``{red S.C.compcert}'': first AST defined in Coq"
+                                           ; "``{red S.C.asm}'': last AST defined in Coq"
+                                           ]))
                 ^^
                 let edge_to_fct dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> \"-stealth\" | `back -> \"stealth-\")) ; "color={darksalmon}]" ]) in
                 let edge_to dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> edge_to_normal | `back -> \"triangle 45-\")) ; "color={draw_red}]" ]) in
@@ -294,9 +294,9 @@ O>")
 (* ********************************************************* *)
 ; B.Top ("CompCert, the generation{newline}from {P.coq} to {P.ocaml}",
          minipage (`Cm 5.)
-           (Th.env Label.note (itemize [ "``{red S.C.human}'': an arbitrary sequence of character"
-                                       ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
-                                       ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
+           (Label.notation_ (itemize [ "``{red S.C.human}'': an arbitrary sequence of character"
+                                    ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
+                                    ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
          ^^
          let open Code.Dot in
          let darksalmon_ = Color.of_int_255 (0xF5, 0xA7, 0x5F) in
@@ -378,7 +378,7 @@ main () {}
 
 (* ********************************************************* *)
 ; B.Center ("zz",
-            Th.env Label.fact "
+            Label.fact "
 Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}.")
 
 (* ********************************************************* *)
@@ -580,14 +580,14 @@ Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
 (* ********************************************************* *)
 ; B.Center ("zz",
             let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            Th.env Label.fact "
+            Label.fact "
 The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} to a Coq representation. For the rest, this associated deep embedded Coq program will be named as : {SL_p.Coq.Deep.compcert}.
 ")
 
 (* ********************************************************* *)
 ; B.Center ("zz",
             let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            Th.env Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
+            Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
 
 Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 ")
@@ -632,7 +632,7 @@ texttt (tabular (interl 4 `L)
 ; B.Center ("zz",
             let s = "S" in
             let module SL_p = S.SL_gen (struct let sl = s end) in
-            Th.env Label.def "
+            Label.definition_ "
 We define :
 {itemize
 [ "{S.C.lambda_l} for {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:" ^^
@@ -645,7 +645,7 @@ We define :
 
 (* ********************************************************* *)
 ; B.Center ("zz",
-            Th.env Label.ex "
+            Label.example "
 This {S.C.asm} code is not a {S.C.lambda_l} program :
 <@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
 int main(int _) {
@@ -657,7 +657,7 @@ because the type of the main function (called from {English.outworld}) is not of
 
 (* ********************************************************* *)
 ; B.Center ("zz",
-            Th.env Label.fact "
+            Label.fact "
 The {S.SL.C.asm} is not a {S.C.lambda_l} program because as a simulator, its task is to simulate an arbitrary assembly file given in input.
 
 More clearly~:
@@ -688,7 +688,7 @@ Proposition wrong_behavior :
 ; B.Center ("zz",
             let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
             let i_sqcup x = index sqcup (tiny x) in
-            Th.env Label.def "
+            Label.definition_ "
 We present here
 {itemize
 [ "{S.C.infty} being the smallest set satisfying these properties~:" ^^
