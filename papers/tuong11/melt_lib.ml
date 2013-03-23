@@ -138,7 +138,7 @@ struct
     struct
       open Caml2html.Output_latex
 
-      let comment = of_int_255 (153, 0, 0)
+      let comment = of_int_255 (0x79, 0x2D, 0xB5)
       let alpha_keyword = of_int_255 (128, 128, 128)
       let nonalpha_keyword = black
       let string = of_int_255 (170, 68, 68)
