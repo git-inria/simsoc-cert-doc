@@ -486,6 +486,11 @@ struct
     let definition_, newth_definition_ = Th.newtheorem' "Definition"
     let remark_, newth_remark_ = Th.newtheorem' "Remark"
     let warning_, newth_warning_ = Th.newtheorem' "Warning"
+    let fix_, newth_fix_ = Th.newtheorem' "Fix"
+    let question_, newth_question_ = Th.newtheorem' "Question"
+    let problem_, newth_problem_ = Th.newtheorem' "Problem"
+
+    let prelude = [ newth_example ; newth_example_ ; newth_notation_ ; newth_fact ; newth_definition_ ; newth_remark_ ; newth_warning_ ; newth_fix_ ; newth_question_ ; newth_problem_ ]
   end
 
   let latex_main ~packages ?author ?title ?date l =
@@ -509,17 +514,11 @@ struct
          ?author
          ?title:(BatOption.map (fun title -> large3 (textbf (concat_line_string (upper_important title)))) title)
          ?date
-         ~prelude:(concat (BatList.append
-                             [ Label.newth_example
-                             ; Label.newth_example_
-                             ; Label.newth_notation_
-                             ; Label.newth_fact
-                             ; Label.newth_definition_
-                             ; Label.newth_remark_
-                             ; Label.newth_warning_
-                             ; Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
-                             ; hypersetup l_hypersetup ]
-                             prelude2))
+         ~prelude:(concat (BatList.flatten
+                             [ Label.prelude
+                             ; [ Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
+                               ; hypersetup l_hypersetup ]
+                             ; prelude2 ]))
          (concat l))
 
 (* \ifhevea\setboolean{footer}{false}\fi *)
