@@ -2,7 +2,7 @@ open Melt_lib open L
 
 open Printf
 
-type ppp = PPP
+type ppp = PPP | PPP_full | PPP_empty
 
 module Code =
 struct
@@ -40,17 +40,20 @@ struct
     let verbatim = if output_code then verbatim else fun _ -> ""
   end
 
-  let unique_string_of_ppp =
-    let s = sprintf \"(*%s*)\" (Int64.to_string (Random.int64 Int64.max_int)) in
-    fun PPP -> s
+  let string_of_ppp, ppp_of_string =
+    BatList.split
+      (BatList.map
+         (fun p ->
+           let s = sprintf \"(*%s*)\" (Int64.to_string (Random.int64 Int64.max_int)) in
+           (p, s), (s, p))
+         [ PPP ; PPP_full ; PPP_empty ])
 
-  let latex_of_ppp PPP = textit (Color.textcolor_ Color.green (LV.verbatim \"[...]\"))
-
-  module Raw_ =
-  struct
-    let verbatim x =
-      concat (BatList.map (function `V s -> text s | _ -> failwith \"to complete !\") x)
-  end
+  let latex_of_ppp =
+    let rose = Color.of_int_255 (0xFF, 0x4D, 0xE6) in
+    function
+    | PPP -> textit (Color.textcolor_ Color.green (LV.verbatim \"[...]\"))
+    | PPP_full -> Color.textcolor_ rose "{bullet}"
+    | PPP_empty -> Color.textcolor_ rose "{circ}"
 
   module Dot =
   struct
@@ -145,14 +148,27 @@ struct
     let symbolc x = B (symbolc x)
   end
 
+  module Raw_ =
+  struct
+    open Dot
+
+    let verbatim x =
+      concat (BatList.map (function
+      | `V s -> text s
+      | `C (Header _) -> assert false
+      | `C (B l) -> l
+      | `C (B_escape_nl l) -> text (l_to_string l)
+      | _ -> failwith \"to complete !\") x)
+  end
+
   module Raw =
   struct
     let verbatim x =
       concat (BatList.map (function
-        | `V s -> texttt (LV.verbatim s)
-        | `C p -> texttt (latex_of_ppp p)
-        | `M m -> failwith \"to complete !\"
-        | `T t -> failwith \"to complete !\") x)
+      | `V s -> texttt (LV.verbatim s)
+      | `C p -> texttt (latex_of_ppp p)
+      | `M m -> failwith \"to complete !\"
+      | `T t -> failwith \"to complete !\") x)
   end
 
   module Raw__ =
@@ -273,7 +289,7 @@ struct
         BatIO.to_string (BatList.print ~first:\"\" ~last:\"\" ~sep:\"\" BatString.print)
           (BatList.map (function
             | `V s -> s
-            | `C p -> unique_string_of_ppp p
+            | `C p -> List.assoc p string_of_ppp
             | _ -> failwith \"to complete !\") x) in
       let s = LV.trim ['\n'] s in
 
@@ -296,7 +312,7 @@ struct
             BatList.flatten
               (BatList.flatten
                  ([ BatList.map (function
-                   | Text (s, Coq_lex.Comment) when s = unique_string_of_ppp PPP -> [ Text (latex_of_ppp PPP) ]
+                   | Text (s, Coq_lex.Comment) when List.exists (fun (s0, _) -> s = s0) ppp_of_string -> [ Text (latex_of_ppp (List.assoc s ppp_of_string)) ]
                    | Text (s, tok) ->
                        let declaration_color = Color.red (*construct*) (*Color.nonalpha_keyword*) in
                        [ Text (Color.textcolor_ (let open Coq_lex in match tok with
