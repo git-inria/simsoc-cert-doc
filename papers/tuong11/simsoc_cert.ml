@@ -217,6 +217,9 @@ struct
     end
   end
 
+  module Size = struct
+    let manual_sh4 = latex_of_int 120 (* "du -sh slsh4_iss.c" -> 116K *)
+  end
 end
 
 

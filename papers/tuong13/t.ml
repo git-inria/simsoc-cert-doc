@@ -27,6 +27,7 @@ module Argument = struct
 end
 
 let red = Color.textcolor_ (Color.of_int_255 (0x9F, 0x00, 0x00))
+let sh4_intro = "The generated {S.Manual.Sh.C.gcc} ({Version.Size.manual_sh4}K) contains a part similar as this program: "
 
 let () =
   main
@@ -387,30 +388,48 @@ O>")
 O>")
 
 (* ********************************************************* *)
-; B.Center (let page = 234 in "Example: SH4 manual, AND instruction, page " ^^ latex_of_int page, includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
+; B.Abr (let title x = "Example: page in the {S.Manual.Sh.C.human} (p. " ^^ x ^^ ")" in
+         [ B.Center (let page = 234 in title (latex_of_int page), includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
+         ; B.Center (title "234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle) ])
 
 (* ********************************************************* *)
-; B.Center ("Example: SH4 manual, AND instruction, page 234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle)
+; B.Abr
+  (let sh4_example =
+     BatList.map
+       (fun (x, trim_top, img, title) ->
+         B.Center ("Example: conversion to text" ^^ title, includegraphics ~x ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~scale:0.6 img)) in
 
-(* ********************************************************* *)
-; B.Abr (BatList.map
-           (fun (x, trim_top, img) ->
-             B.Center ("Patching the SH4 manual, example ", includegraphics ~x ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~scale:0.6 img))
-           [ 0., 55., Argument.img1
-           ; -1., 52., Argument.img3 ])
+   BatList.map (fun x -> B.Abr x)
+     [ sh4_example
+         [ 0., 55., Argument.img1, " and syntax error"
+         ; -1., 52., Argument.img3, " and syntax error"
+         ; 0., 52., Argument.img2, " and type error" ]
 
-(* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 52.) ~scale:0.6 Argument.img2)
-
-(* ********************************************************* *)
-; B.Center ("ss",
-"<@@{let open English in H_comment [ yes ; yes ; no ] }@
+     ; (let l =
+          let open English in
+          let s1, s2 =
+            "The compilation correctly terminates with {Version.gcc}.",
+            Label.question_ "Does it compile with {P.compcert}?" in
+          [ [ yes ; yes   ; maybe ], Some (s1 ^^ s2)
+          ; [ yes ; yes   ; no    ], Some (s1
+                                           ^^
+                                           Label.problem_ "``<!unsigned long!>'' is not supported in {Version.compcert} (inside ``struct'')."
+                                           ^^
+                                           Label.fix_ "Generate every ``<!unsigned long!>'' to ``int'' so that {S.Manual.Sh.C.gcc} {in_} {S.C.compcert}.") ] in
+        let lg = latex_of_int (BatList.length l) in
+        BatList.mapi
+          (fun pos (h_comment, msg) ->
+            B.Top ("Example: limitation of {P.compcert}", (*  [{latex_of_int (Pervasives.succ pos)}/{lg}] *)
+                   sh4_intro
+                   ^^
+                   "<@@{H_comment h_comment }@
 struct S { unsigned long i:1 }
 main () {}
-@>")
-
-(* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 55.) ~scale:0.6 Argument.img4)
+@>"
+                   ^^
+                   (match msg with None -> "" | Some s -> s)))
+          l)
+     ; sh4_example [ 0., 55., Argument.img4, "" ] ])
 
 (* ********************************************************* *)
 ; B.Center ("Patch generation in OCaml",
@@ -481,12 +500,12 @@ texttt (tabular (interl 4 `L)
 (in OCaml: {blue "<!Int32.shift_left 1_l 32!>"} {longrightarrow} {blue "<!1_l!>"})")
 
 (* ********************************************************* *)
-; B.Center ("ast",
-"<#
+; B.Abr (BatList.map
+           (fun body -> B.Center ("Printing the {S.C.compcert} AST", body))
+[ "<#
 Inductive floatsize : Type :=
   | F32 : floatsize
   | F64 : floatsize.
-
 Inductive type : Type :=
   | Tvoid : type
   | Tfloat : floatsize -> type
@@ -494,57 +513,35 @@ Inductive type : Type :=
 with typelist : Type :=
   | Tnil : typelist
   | Tcons : type -> typelist -> typelist.
-
 Definition ident := positive.
-
-Record program (A : Type) : Type := mkprogram {
-  prog_funct : list (ident * A);
-  prog_main : ident
-}.
-
+Record program (A : Type) : Type := mkprogram
+  { prog_funct : list (ident * A);
+  ; prog_main : ident }.
 Definition ast := program type.
-#>")
-
-(* ********************************************************* *)
-; B.Center ("",
-"<#
+#>"; "<#
 Check _floatsize : floatsize -> s.
 Check _type : type -> s.
 Check _typelist : typelist -> s.
 Check _ident : ident -> s.
 Check _program : forall A, (A -> s) -> program A -> s.
 Check _ast : ast -> s.
-#>
-")
-
-(* ********************************************************* *)
-; B.Center ("",
-"<#
+#>"; "<#
 Definition _floatsize := __floatsize
   | "F32"
   | "F64".
-
 Definition _type_ T (ty : #{PPP}#) := ty _ _floatsize
   | "Tvoid"
   | "Tfloat"
   | "Tfunction"
-
   | "Tnil"
   | "Tcons".
   Definition _type := _type_ _ (@__type).
   Definition _typelist := _type_ _ (@__typelist).
-
 Definition _ident := _positive.
-
 Definition _program {A} #{PPP}# := @__program #{PPP}#
   {{ "prog_funct" ; "prog_main" }}.
-
 Definition _ast := _program _type.
-#>")
-
-(* ********************************************************* *)
-; B.Center ("",
-"<#
+#>"; "<#
   Notation "A ** n" := (A ^^ n --> A) (at level 29) : type_scope.
 
 Check _INDUCTIVE : string -> forall n, s ** n.
@@ -553,12 +550,7 @@ Check _INDUCTIVE : string -> forall n, s ** n.
 Check _RECORD : forall n, vector string n -> s ** n.
   Notation "{{ a ; .. ; b }}" :=
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
-#>
-")
-
-(* ********************************************************* *)
-; B.Center ("",
-"<#
+#>"; "<#
   Notation "A [ a ; .. ; b ] -> C" :=
     (A ** a -> .. (A ** b -> C) ..) (at level 90).
 
@@ -569,14 +561,12 @@ Definition _type_ A B (f : _ -> Type) := f (
                              A [ 0   (* Tvoid     :           _ *)
                                ; 1   (* Tfloat    : _ ->      _ *)
                                ; 2   (* Tfunction : _ -> _ -> _ *)
-
                                ; 0   (* Tnil      :           _ *)
                                ; 2 ] (* Tcons     : _ -> _ -> _ *)
                              -> B).
 Definition __type {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
 Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
-#>
-")
+#>"])
 
 (* ********************************************************* *)
 ; B.Center ("{S.Decoder.ArmSh.C.human}",
