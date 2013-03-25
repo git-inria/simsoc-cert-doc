@@ -28,7 +28,9 @@ struct
 (*    val textcolor : color -> Latex.t -> Latex.t (* nothing is stored *)*)
     val cellcolor_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
     val color_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
+    val colorbox_ : color -> Latex.t -> Latex.t (* store color used, [definecolor_used] will fold it *)
     val color_name_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
+    val arrayrulecolor_ : color -> Latex.t (* store color used, [definecolor_used] will fold it *)
 (*    val color_compare : color -> color -> int*)
 
     val comment : color
@@ -93,6 +95,8 @@ struct
       let textcolor n x = \"textcolor\" @ ([ n ; x ], A)
       let cellcolor x = \"cellcolor\" @ ([x], A)
       let color x =  \"color\" @ ([x], A)
+      let colorbox n x =  \"colorbox\" @ ([n ; x], A)
+      let arrayrulecolor x = \"arrayrulecolor\" @ ([x], A)
     end
     let color_of_name x = text (Printf.sprintf \"color%d\" x)
 
@@ -106,9 +110,11 @@ struct
     let textcolor (id, _) = L.textcolor (color_of_name id)
     let cellcolor (id, _) = L.cellcolor (color_of_name id)
     let color (id, _) = L.color (color_of_name id)
+    let colorbox (id, _) = L.colorbox (color_of_name id)
     let color_name (id, _) = color_of_name id
+    let arrayrulecolor (id, _) = L.arrayrulecolor (color_of_name id)
 
-    let definecolor_used, definecolor_reset, textcolor_, cellcolor_, color_, color_name_ =
+    let definecolor_used, definecolor_reset, textcolor_, cellcolor_, color_, color_name_, colorbox_, arrayrulecolor_ =
       let col_map = ref ColorMap.empty in
       (fun f -> ColorMap.fold (fun k _ -> f k) !col_map),
       (fun _ -> col_map := ColorMap.empty),
@@ -123,7 +129,14 @@ struct
         color c),
       (fun c ->
         let _ = col_map := ColorMap.add c () !col_map in
-        color_name c)
+        color_name c),
+      (fun c ->
+        let _ = col_map := ColorMap.add c () !col_map in
+        colorbox c),
+      (fun c ->
+        let _ = col_map := ColorMap.add c () !col_map in
+        arrayrulecolor c)
+
 
     let black = of_int_255 (let i = 0 in i, i, i)
     let green_light = of_int_255 (216, 255, 241)
@@ -214,6 +227,7 @@ struct
   type 'a row_line =
     | Data of 'a
     | Hline
+    | Arrayrulecolor of Color.color
     | Cline of int * int
 
   let title f_sz l_no o_lg (* should be greater than -> *) l_yes =
@@ -245,7 +259,7 @@ struct
 
   let tabular x body =
     environment \"tabular\" ~args:[A, concat (BatList.map latex_of_array_column x)]
-      (A, concat (BatList.map (function Data l -> concat (BatList.interleave (text \" & \") l) ^^ newline | Hline -> hline ^^ text \"\n\" | Cline (i1, i2) -> cline i1 i2 ^^ text \"\n\") body)) A
+      (A, concat (BatList.map (function Data l -> concat (BatList.interleave (text \" & \") l) ^^ newline | Hline -> hline ^^ text \"\n\" | Cline (i1, i2) -> cline i1 i2 ^^ text \"\n\" | Arrayrulecolor c -> Color.arrayrulecolor_ c) body)) A
 
   let multiline l = tabular [`C] (BatList.map (fun x -> Data [x]) l)
   let multiline_ s = multiline (BatList.map text (BatString.nsplit s ~by:\"\n\"))
@@ -413,6 +427,19 @@ struct
       Mlpost.Box.vbox l
 
     let blue_tit = `RGB (0., 0., 0.7)
+
+    let list_env l name =
+      if l = [] then failwith \"itemize or enumerate: no item given\";
+      let items = List.map (fun (o, x) -> (^^) (text (sprintf \"\\item%s \" (match o with None -> \"\" | Some s -> sprintf \"<%s>\" s))) x) l in
+      let body = concat (list_insert (text \"\n\") items) in
+      environment name (T, body) T
+
+    let itemize l = list_env l \"itemize\"
+    let enumerate l = list_env l \"enumerate\"
+
+    let onslide s = unusual_command (\"onslide<\") [A, nobr, text (s ^ \">\")] A
+    let on_after n s = onslide (sprintf \"%d-\" n) ^^ s
+    let on_before n s = onslide (sprintf \"-%d\" n) ^^ s
 
     let _, section =
       (* produce a table of contents page, highlighting section number
