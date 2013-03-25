@@ -215,6 +215,7 @@ struct
       let stat_arm2 = \"stat_arm2_1789\"
       let stat_armo = \"stat_armocaml_1789\"
     end
+    let simlight2_no_man_size = latex_of_int 130 (* "du -csh *h *c" -> 132K *)
   end
 
   module Size = struct

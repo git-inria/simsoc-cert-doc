@@ -27,7 +27,13 @@ module Argument = struct
 end
 
 let red = Color.textcolor_ (Color.of_int_255 (0x9F, 0x00, 0x00))
+let orange = Color.of_int_255 (0xFF, 0xED, 0xDF)
+let blue = Color.textcolor_ Color.blue
+
 let sh4_intro = "The generated {S.Manual.Sh.C.gcc} ({Version.Size.manual_sh4}K) contains a part similar as this program: "
+let sl_intro x = "The {x} ({Version.Cpp11_bis.simlight2_no_man_size}K without manual) contains a part similar as: "
+
+let index_ s x = index s (footnotesize x)
 
 let () =
   main
@@ -41,7 +47,7 @@ let () =
 ; B.Abr (BatList.map
            (fun (page, y, trim_top) ->
              B.Center
-               ("Example: ARMv6 manual, AND instruction, page " ^^ latex_of_int page,
+               ("Example: page in the ARMv6 manual (p. " ^^ latex_of_int page ^^ ")",
                 includegraphics ~x:(-1.) ~y ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~page ~scale:0.9 Argument.file_arm6))
            [ 158, -5.5, 25.
            ; 159, -6., 20. ])
@@ -142,8 +148,8 @@ O>")
                ("CompCert, semantic preservation proved in {P.coq}",
                 minipage (`Cm 3.5)
                   (Label.notation_ (itemize [ "``{red S.C.compcert}'': first AST defined in Coq"
-                                           ; "``{red S.C.asm}'': last AST defined in Coq"
-                                           ]))
+                                            ; "``{red S.C.asm}'': last AST defined in Coq"
+                                            ]))
                 ^^
                 let edge_to_fct dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> \"-stealth\" | `back -> \"stealth-\")) ; "color={darksalmon}]" ]) in
                 let edge_to dir = B (concat [ "[" ; text (sprintf \"style=%S,\" (match dir with `normal -> edge_to_normal | `back -> \"triangle 45-\")) ; "color={draw_red}]" ]) in
@@ -231,25 +237,25 @@ O>")
   linear_fct -> error O{fct_edge}O
   mach_fct -> error O{fct_edge}O
 
-O>")
-           )
-           [ ( let darksalmon = Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71)) in
+O>"))
+           (let monad = index_ bot "monad" in
+            [ ( let darksalmon = Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71)) in
                B "[style=invis]"
              , darksalmon
              , darksalmon
-             , B "[texlbl=\"{phantom "monadic error"}\", color=white]" )
+             , B "[texlbl=\"{phantom monad}\", color=white]" )
 
            ; ( B ("[style=\"" ^^ text edge_to_normal ^^ "\",color={Color.color_name_ (Color.of_int_255 (0xF5, 0xA7, 0x5F))}]")
              , Color.color_name_ (Color.of_int_255 (0x3C, 0xB3, 0x71))
              , Color.color_name_ (let i = 200 in Color.of_int_255 (i, i, i))
-             , B "[texlbl=\"monadic error\"]" ) ])
+             , B "[texlbl=\"{monad}\"]" ) ]))
 
 (* ********************************************************* *)
 ; B.Top ("CompCert, the generation{newline}from {P.coq} to {P.ocaml}",
          minipage (`Cm 5.)
            (Label.notation_ (itemize [ "``{red S.C.human}'': an arbitrary sequence of character"
-                                    ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
-                                    ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
+                                     ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
+                                     ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
          ^^
          let open Code.Dot in
          let darksalmon_ = Color.of_int_255 (0xF5, 0xA7, 0x5F) in
@@ -305,7 +311,7 @@ O>")
   compcert_c_fct -> asm [color=O{mediumseagreen}O]
   asm -> asm_fct [color=O{mediumseagreen}O]
 
-  error [texlbl="error"]
+  error [texlbl="O{B (index_ bot "monad")}O"]
   compcert_c_fct -> error [color=O{darksalmon}O]
   human_c_fct -> error [color=O{darksalmon}O]
   asm_fct -> error [color=O{darksalmon}O]
@@ -432,7 +438,7 @@ main () {}
      ; sh4_example [ 0., 55., Argument.img4, "" ] ])
 
 (* ********************************************************* *)
-; B.Center ("Patch generation in OCaml",
+; B.Center ("Example: fragment of patch in OCaml",
 "<~
 [ [ Replace_all ("&&", "&"), p [ 1065 ]
     (* not Coq well typed otherwise *)
@@ -450,54 +456,179 @@ main () {}
   ; Replace_first (Re "(is_dirty_block(R\\[n\\])) +write_back(R\\[n\\]);?"
                   , "_is_dirty_block_then_write_back(R[n]);"), p [ 5502 ; 5543 ] ] ]
 ~>")
+(*
+"<~
+[ [ Replace_tilde 2, p [ 1434 ; 1439 ; 4276 ; 4279 ]
+  ; Replace_tilde 1, p [ 5424 ; 6115 ; 6277 ] ]
+; [ Add_char_end ";", p [ 1502 ; 6932 ]
+  ; Replace_first (S ",", ";"), p [ 3871 ]
+  ; Replace_first (S "Lo", "lo"), p [ 3955 ]
+  ; Replace_first (S "}", "{"), p [ 4555 ]
+  ; Replace_first (S "long n", "long n)"), p [ 4979 ]
+  ; Replace_first (S "((", "("), p [ 5280 ]
+  ; Replace_all ("–=", "-="), [ R (6713, 151) ]
+  ; Replace_first (S "H'", "H_"), p [ 7302 ] ]
+
+; [ add_int_type, p [ 6103 ; 6269 ]
+  ; Replace_first (S "d, n", "int d, int n"), p [ 4746 ] ] ]
+~>"
+*)
 
 (* ********************************************************* *)
-; B.Center ("Patching the SH4 manual",
-            "Patching data = 8K (without blanks)" ^^ vspace (`Em 1.)
+; B.Center ("Patching the {S.Manual.Sh.C.human}",
+            "Patching data = 8K (without counting blanks)" ^^ vspace (`Em 1.)
             ^^
             let perc n =
               Color.textcolor_ (Color.of_int_255 (0xCF, 0x5C, 0x16)) ((latex_of_int n) ^^ "%") in
             tabular [`L;`Vert;`R;`Vert;`R;`Vert;`R;`Vert;`R]
-              [ Data ["SH4 manual"; "words" ; "common" ; "" ; "changed" ]
+              [ Data [S.Manual.Sh.C.human; "words" ; "common" ; "" ; "changed" ]
               ; Hline
               ; Data [""; "" ; "" ; "deleted" ; "" ]
               ; Data ["original.txt" ; "86980" ; "85070 {perc 98}" ; "499 {perc 1}" ; "1411 {perc 2}"]
               ; Hline
-              ; Data ["generated"; "" ; "" ; "inserted" ; "" ]
+              ; Data [""; "" ; "" ; "inserted" ; "" ]
               ; Data ["patched.txt" ; "87372" ; "85070 {perc 97}" ; "872 {perc 1}" ; "1430 {perc 2}"] ])
 
 (* ********************************************************* *)
-; B.Center ("",
-"<@@{let open English in H_comment [ yes ; yes ; no ; no ]}@
+; B.Abr
+  (let l =
+     let open English in
+     [ [ yes ; yes ; maybe ; maybe ], Some (Label.problem_ "Does it compile with {P.compcert}?")
+     ; [ yes ; yes ; no ; no ], Some (concat_line_t [ "No, 64 bits value are not supported in {Version.compcert}."
+                                                    ; "Remark: {notin} {S.C.compcert} {rightarrow_} {notin} {S.C.asm}." ]
+                                      ^^
+                                      Label.fix_ "Emulate operations on 64 bits data structure with a 32 bits library, then {S.SL.ArmSh.C.gcc} {in_} {S.C.asm}.") ] in
+   let lg = latex_of_int (BatList.length l) in
+   BatList.mapi
+     (fun pos (h_comment, msg) ->
+       B.Top ("Example: typing {S.SL.ArmSh.C.gcc} with {P.compcert}",  (*[{latex_of_int (Pervasives.succ pos)}/{lg}]*)
+              vspace (`Em 1.)
+              ^^
+              sl_intro S.SL.ArmSh.C.gcc
+              ^^
+              "<@@{H_comment h_comment}@
 #include <inttypes.h>
 
 void main() {
   int64_t x = 0;
 }
-@>")
+@>"
+              ^^
+              (match msg with None -> "" | Some s -> s)))
+     l)
 
 (* ********************************************************* *)
-; B.Center ("",
-            let blue = Color.textcolor_ Color.blue in
-"<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
-#include <stdio.h>
+; B.Abr
+  (let (tit1, l1), (tit2, l2), (tit3, l3) =
+     let open English in
+     let in__ = "{in_}" in
+  (** *)
+     ("",
+      [ [ yes ; yes   ; maybe ; maybe ], Some (tabular (BatList.init 3 (fun _ -> `L))
+                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; Data []
+                                                 ; Data [] ]
+                                               ^^
+                                               Label.problem_ "Does it compile with {P.compcert} ?")
 
-void main() {
-  int i = 32;
-  printf("line 1 %lx\n", 1lu <<  i);
-  printf("line 2 %lx\n", 1lu << 32);
-}
-@>
-{
+      ; [ yes ; yes   ; yes   ; maybe ], Some (tabular (BatList.init 3 (fun _ -> `L))
+                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; Data [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
+                                                 ; Data [] ]
+                                               ^^
+                                               Label.fact "The compilation correctly terminates with {Version.compcert} <!-dc!>.")
+
+      ; [ yes ; yes   ; yes   ; yes   ], Some (tabular (BatList.init 3 (fun _ -> `L))
+                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; Data [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
+                                                 ; Data [ "" ; "" ; "{S.SL.ArmSh.C.compcert} {in__} {S.C.asm}" ] ]
+                                               ^^
+                                               Label.fact "The compilation correctly terminates with {Version.compcert} <!-dasm!>.")
+
+      ; [ yes ; yes   ; yes   ; yes   ], Some (Label.problem_ "Where is the problem?") ]),
+
+  (** *)
+     (", towards validation",
+      [ [ yes ; yes   ; yes   ; yes   ],
+        (Some "At runtime, tests fail. Indeed, <!line 1!> is not always equal to <!line 2!>:{
 texttt (tabular (interl 4 `L)
-    [ Data [ "" ; "gcc -m64" ; "gcc -m32 -O0{textrm ","}" ; "gcc -m32 -O1" ]
-    ; Data [ "" ; "" ; "{textrm P.compcert}" ; "gcc -m32 -O2" ]
-    ; Data [ "" ; "" ; "" ; "gcc -m32 -O3" ]
+    [ Data [ "" ; "gcc -m64" ; Color.cellcolor_ orange ^^ "gcc -m32 -O0" ; "gcc -m32 -O1" ]
+    ; Data [ "" ; "" ; Color.cellcolor_ orange ^^ "{textrm P.compcert} ia32-linux" ; "gcc -m32 -O2" ]
+    ; Data [ "" ; "" ; Color.cellcolor_ orange ; "gcc -m32 -O3" ]
     ; Hline
-    ; Data [ "line 1" ; blue "100000000" ; blue "1" ; blue "0" ]
-    ; Data [ "line 2" ; blue "100000000" ; blue "0" ; blue "0" ] ]) }
+    ; Data [ "line 1" ; blue "100000000" ; Color.cellcolor_ orange ^^ blue "1" ; blue "0" ]
+    ; Data [ "line 2" ; blue "100000000" ; Color.cellcolor_ orange ^^ blue "0" ; blue "0" ] ]) }
+{newline}
+Remark: {blue "<!Int32.shift_left 1_l 32!>"} ${overset P.ocaml longrightarrow}$ {blue "<!1_l!>"}.")
 
-(in OCaml: {blue "<!Int32.shift_left 1_l 32!>"} {longrightarrow} {blue "<!1_l!>"})")
+      ; [ yes ; yes   ; yes   ; yes   ], Some (Label.warning_ "From {S.C.human}, {Version.compcert} sometimes performs as heuristic an external call to the <!gcc -m32 -O0!> preprocessor (which wrongly optimizes here)."
+                                               ^^
+                                               Label.fix_ "Regenerate the {S.Manual.ArmSh.C.compcert} so that it computes the shift ``<!<<!>'' with 64 bits value as argument everywhere used.") ]),
+
+  (** *)
+     ("", [ (*[ yes ; yes   ; yes   ; yes   ],
+       (Some "As remark:
+{
+texttt (tabular (interl 3 `L)
+    [ Data [ "" ; "gcc -m64" ; Color.cellcolor_ orange ^^ "gcc -m32 -O0" ]
+    ; Data [ "" ; "gcc -m32 -O1" ; Color.cellcolor_ orange ^^ textrm P.compcert ]
+    ; Data [ "" ; "gcc -m32 -O2" ; Color.cellcolor_ orange ]
+    ; Data [ "" ; "gcc -m32 -O3" ; Color.cellcolor_ orange ]
+    ; Hline
+    ; Data [ "line 1" ; blue "ffffffff" ; Color.cellcolor_ orange ^^ blue "0" ]
+    ; Data [ "line 2" ; blue "ffffffff" ; Color.cellcolor_ orange ^^ blue "ffffffff" ] ]) }")*) ]) in
+   let lg1, lg2 = BatList.length l1, BatList.length l2 in
+   let lg = latex_of_int (lg1 + lg2 + BatList.length l3) in
+   let title tit pos lg = "Example: limitation of {P.compcert}" ^^ tit (*^^ " [{latex_of_int (Pervasives.succ pos)}/{lg}]"*) in
+   [ B.Abr
+       (BatList.mapi
+          (fun pos (h_comment, msg) ->
+            B.Top (title tit1 pos lg,
+                   sl_intro S.SL.ArmSh.C.gcc
+                   ^^
+                   "<@@{H_comment h_comment}@
+#include <stdio.h>
+void main() {                int i = 32 ;
+  return(                1lu <<  i)     ;
+                                          }
+@>"
+                   ^^
+                   (match msg with None -> "" | Some s -> s)))
+          l1)
+
+  (* FIXME factorize with above  ***************************** *)
+   ; B.Abr
+     (BatList.mapi
+        (fun pos (h_comment, msg) ->
+          B.Top (title tit2 (lg1 + pos) lg,
+                 sl_intro S.SL.ArmSh.C.gcc
+                 ^^
+                 "<@@{H_comment h_comment}@
+#include <stdio.h>
+void main() {                int i = 32 ;
+  printf("line 1 %lx\n", 1lu <<  i)     ;
+  printf("line 2 %lx\n", 1lu << 32)     ; }
+@>"
+                 ^^
+                 (match msg with None -> "" | Some s -> s)))
+        l2)
+
+  (* FIXME factorize with above  ***************************** *)
+   ; B.Abr
+     (BatList.mapi
+        (fun pos (h_comment, msg) ->
+          B.Top (title tit3 (lg1 + lg2 + pos) lg,
+                 sl_intro S.SL.ArmSh.C.gcc
+                 ^^
+                 "<@@{H_comment h_comment}@
+#include <stdio.h>
+void main() {                 int i = 32  ;
+  printf("line 1 %lx\n", (1lu <<  i) - 1) ;
+  printf("line 2 %lx\n", (1lu << 32) - 1) ; }
+@>"
+                 ^^
+                 (match msg with None -> "" | Some s -> s)))
+        l3) ])
 
 (* ********************************************************* *)
 ; B.Abr (BatList.map
