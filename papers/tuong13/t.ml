@@ -133,54 +133,6 @@ let () =
 O>")
 
 (* ********************************************************* *)
-; B.Center (let page = 234 in "Example: SH4 manual, AND instruction, page " ^^ latex_of_int page, includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
-
-(* ********************************************************* *)
-; B.Center ("Example: SH4 manual, AND instruction, page 234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle)
-
-(* ********************************************************* *)
-; B.Abr (BatList.map
-           (fun (x, trim_top, img) ->
-             B.Center ("Patching the SH4 manual, example ", includegraphics ~x ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~scale:0.6 img))
-           [ 0., 55., Argument.img1
-           ; -1., 52., Argument.img3 ])
-
-(* ********************************************************* *)
-; B.Center ("Patch generation in OCaml",
-"<~
-[ [ Replace_all ("&&", "&"), p [ 1065 ]
-    (* not Coq well typed otherwise *)
-  ; Replace_all ("(long i)", "i"), [ R (1077, 2) ] ]
-; [ comment_first ", int *FPUL", p [ 4003 ; 4008 ; 6913 ; 6918 ]
-  ; Replace_first (S "*FPUL", "FPUL"), p [ 4005 ; 4010 ; 6915 ; 6921 ; 2113 ; 2116 ] ]
-; [ Replace_all ("TLB[MMUCR. URC] ", "TLB_MMUCR_URC"), [ R (4162, 13) ] ]
-; [ Replace_first (S "MACL", "MACL_"), p [ 4222 ]
-  ; Replace_first (S "STS", "STS_"), p [ 6924 ] ]
-(* type error *)
-; [ Replace_first (S "MACH&0x00008000",
-                   "bool_of_word(MACH&0x00008000)"), p [ 4290 ] ]
-(* simplifying *)
-; [ Replace_first (All, "if_is_write_back_memory_and_look_up_in_operand_cache_eq_miss_then_allocate_operand_cache_block(R[n]);"), [ R (5133, 3) ]
-  ; Replace_first (Re "(is_dirty_block(R\\[n\\])) +write_back(R\\[n\\]);?"
-                  , "_is_dirty_block_then_write_back(R[n]);"), p [ 5502 ; 5543 ] ] ]
-~>")
-
-(* ********************************************************* *)
-; B.Center ("Patching the SH4 manual",
-            "Patching data = 8K (without blanks)" ^^ vspace (`Em 1.)
-            ^^
-            let perc n =
-              Color.textcolor_ (Color.of_int_255 (0xCF, 0x5C, 0x16)) ((latex_of_int n) ^^ "%") in
-            tabular [`L;`Vert;`R;`Vert;`R;`Vert;`R;`Vert;`R]
-              [ Data ["SH4 manual"; "words" ; "common" ; "" ; "changed" ]
-              ; Hline
-              ; Data [""; "" ; "" ; "deleted" ; "" ]
-              ; Data ["original.txt" ; "86980" ; "85070 {perc 98}" ; "499 {perc 1}" ; "1411 {perc 2}"]
-              ; Hline
-              ; Data ["generated"; "" ; "" ; "inserted" ; "" ]
-              ; Data ["patched.txt" ; "87372" ; "85070 {perc 97}" ; "872 {perc 1}" ; "1430 {perc 2}"] ])
-
-(* ********************************************************* *)
 ; B.Abr (let open Code.Dot in
          let edge_to_normal = \"-triangle 45\" in
          BatList.map
@@ -360,51 +312,6 @@ O>")
 O>")
 
 (* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 52.) ~scale:0.6 Argument.img2)
-
-(* ********************************************************* *)
-; B.Center ("ss",
-"<@@{let open English in H_comment [ yes ; yes ; no ] }@
-struct S { unsigned long i:1 }
-main () {}
-@>")
-
-(* ********************************************************* *)
-; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 55.) ~scale:0.6 Argument.img4)
-
-(* ********************************************************* *)
-; B.Center ("z",
-            th_same_source [ S.Manual.Sh.C.gcc ; S.Manual.Sh.C.compcert ])
-
-(* ********************************************************* *)
-; B.Center ("zz",
-            Label.fact "
-Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}.")
-
-(* ********************************************************* *)
-; B.Center ("{S.Decoder.ArmSh.C.human}",
-"Decode a given word (16, 32 bits...) to instruction to execute.
-<Z
-Definition Z{PPP}Z := match Z{PPP}Z with
-(*9.1.0 - ADD*)
-| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 0 0 =>
-  DecInst _ (ADD (regnum_from_bit n4 w) (regnum_from_bit n8 w))
-(*9.1.1 - ADDI*)
-| word16 0 1 1 1 _ _ _ _ _ _ _ _ _ _ _ _ =>
-  DecInst _ (ADDI w[n7#n0] (regnum_from_bit n8 w))
-(*9.2.0 - ADDC*)
-| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 1 0 =>
-  DecInst _ (ADDC (regnum_from_bit n4 w) (regnum_from_bit n8 w))
-Z{PPP}Z
-(*9.103.0 - XTRCT*)
-| word16 0 0 1 0 _ _ _ _ _ _ _ _ 1 1 0 1 =>
-  DecInst _ (XTRCT (regnum_from_bit n4 w) (regnum_from_bit n8 w))
-| _ => DecUndefined_with_num inst 0
-end.
-Z>"
-)
-
-(* ********************************************************* *)
 ; B.Center ("{P.simcert}, towards the correctness proof",
             let open Code.Dot in
             let deepskyblue = Color.of_int_255 (0x00, 0xBF, 0xFF) in
@@ -478,6 +385,109 @@ Z>"
   coq_src_simul_dot -> coq_proof [color=O{firebrick}O, ltail=cluster_simulateur]
 
 O>")
+
+(* ********************************************************* *)
+; B.Center (let page = 234 in "Example: SH4 manual, AND instruction, page " ^^ latex_of_int page, includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
+
+(* ********************************************************* *)
+; B.Center ("Example: SH4 manual, AND instruction, page 234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle)
+
+(* ********************************************************* *)
+; B.Abr (BatList.map
+           (fun (x, trim_top, img) ->
+             B.Center ("Patching the SH4 manual, example ", includegraphics ~x ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~scale:0.6 img))
+           [ 0., 55., Argument.img1
+           ; -1., 52., Argument.img3 ])
+
+(* ********************************************************* *)
+; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 52.) ~scale:0.6 Argument.img2)
+
+(* ********************************************************* *)
+; B.Center ("ss",
+"<@@{let open English in H_comment [ yes ; yes ; no ] }@
+struct S { unsigned long i:1 }
+main () {}
+@>")
+
+(* ********************************************************* *)
+; B.Center ("Patching the SH4 manual, example ", includegraphics ~x:0. ~y:(-1.) ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm 55.) ~scale:0.6 Argument.img4)
+
+(* ********************************************************* *)
+; B.Center ("Patch generation in OCaml",
+"<~
+[ [ Replace_all ("&&", "&"), p [ 1065 ]
+    (* not Coq well typed otherwise *)
+  ; Replace_all ("(long i)", "i"), [ R (1077, 2) ] ]
+; [ comment_first ", int *FPUL", p [ 4003 ; 4008 ; 6913 ; 6918 ]
+  ; Replace_first (S "*FPUL", "FPUL"), p [ 4005 ; 4010 ; 6915 ; 6921 ; 2113 ; 2116 ] ]
+; [ Replace_all ("TLB[MMUCR. URC] ", "TLB_MMUCR_URC"), [ R (4162, 13) ] ]
+; [ Replace_first (S "MACL", "MACL_"), p [ 4222 ]
+  ; Replace_first (S "STS", "STS_"), p [ 6924 ] ]
+(* type error *)
+; [ Replace_first (S "MACH&0x00008000",
+                   "bool_of_word(MACH&0x00008000)"), p [ 4290 ] ]
+(* simplifying *)
+; [ Replace_first (All, "if_is_write_back_memory_and_look_up_in_operand_cache_eq_miss_then_allocate_operand_cache_block(R[n]);"), [ R (5133, 3) ]
+  ; Replace_first (Re "(is_dirty_block(R\\[n\\])) +write_back(R\\[n\\]);?"
+                  , "_is_dirty_block_then_write_back(R[n]);"), p [ 5502 ; 5543 ] ] ]
+~>")
+
+(* ********************************************************* *)
+; B.Center ("Patching the SH4 manual",
+            "Patching data = 8K (without blanks)" ^^ vspace (`Em 1.)
+            ^^
+            let perc n =
+              Color.textcolor_ (Color.of_int_255 (0xCF, 0x5C, 0x16)) ((latex_of_int n) ^^ "%") in
+            tabular [`L;`Vert;`R;`Vert;`R;`Vert;`R;`Vert;`R]
+              [ Data ["SH4 manual"; "words" ; "common" ; "" ; "changed" ]
+              ; Hline
+              ; Data [""; "" ; "" ; "deleted" ; "" ]
+              ; Data ["original.txt" ; "86980" ; "85070 {perc 98}" ; "499 {perc 1}" ; "1411 {perc 2}"]
+              ; Hline
+              ; Data ["generated"; "" ; "" ; "inserted" ; "" ]
+              ; Data ["patched.txt" ; "87372" ; "85070 {perc 97}" ; "872 {perc 1}" ; "1430 {perc 2}"] ])
+
+(* ********************************************************* *)
+; B.Center ("",
+"<@@{let open English in H_comment [ yes ; yes ; no ; no ]}@
+#include <inttypes.h>
+
+void main() {
+  int64_t x = 0;
+}
+@>")
+
+(* ********************************************************* *)
+; B.Center ("",
+            let blue = Color.textcolor_ Color.blue in
+"<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
+#include <stdio.h>
+
+void main() {
+  int i = 32;
+  printf("line 1 %lx\n", 1lu <<  i);
+  printf("line 2 %lx\n", 1lu << 32);
+}
+@>
+{
+texttt (tabular (interl 4 `L)
+    [ Data [ "" ; "gcc -m64" ; "gcc -m32 -O0{textrm ","}" ; "gcc -m32 -O1" ]
+    ; Data [ "" ; "" ; "{textrm P.compcert}" ; "gcc -m32 -O2" ]
+    ; Data [ "" ; "" ; "" ; "gcc -m32 -O3" ]
+    ; Hline
+    ; Data [ "line 1" ; blue "100000000" ; blue "1" ; blue "0" ]
+    ; Data [ "line 2" ; blue "100000000" ; blue "0" ; blue "0" ] ]) }
+
+(in OCaml: {blue "<!Int32.shift_left 1_l 32!>"} {longrightarrow} {blue "<!1_l!>"})")
+
+(* ********************************************************* *)
+; B.Center ("z",
+            th_same_source [ S.Manual.Sh.C.gcc ; S.Manual.Sh.C.compcert ])
+
+(* ********************************************************* *)
+; B.Center ("zz",
+            Label.fact "
+Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}.")
 
 (* ********************************************************* *)
 ; B.Center ("ast",
@@ -593,40 +603,30 @@ Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
 ")
 
 (* ********************************************************* *)
-; B.Center ("",
-"<@@{let open English in H_comment [ yes ; yes ; no ; no ]}@
-#include <inttypes.h>
-
-void main() {
-  int64_t x = 0;
-}
-@>")
-
-(* ********************************************************* *)
-; B.Center ("",
-            let blue = Color.textcolor_ Color.blue in
-"<@@{let open English in H_comment (BatList.init 4 (fun _ -> yes))}@
-#include <stdio.h>
-
-void main() {
-  int i = 32;
-  printf("line 1 %lx\n", 1lu <<  i);
-  printf("line 2 %lx\n", 1lu << 32);
-}
-@>
-{
-texttt (tabular (interl 4 `L)
-    [ Data [ "" ; "gcc -m64" ; "gcc -m32 -O0{textrm ","}" ; "gcc -m32 -O1" ]
-    ; Data [ "" ; "" ; "{textrm P.compcert}" ; "gcc -m32 -O2" ]
-    ; Data [ "" ; "" ; "" ; "gcc -m32 -O3" ]
-    ; Hline
-    ; Data [ "line 1" ; blue "100000000" ; blue "1" ; blue "0" ]
-    ; Data [ "line 2" ; blue "100000000" ; blue "0" ; blue "0" ] ]) }
-
-(in OCaml: {blue "<!Int32.shift_left 1_l 32!>"} {longrightarrow} {blue "<!1_l!>"})")
-
-(* ********************************************************* *)
 ; B.Center ("", th_same_source [ S.SL.C.gcc ; S.SL.C.compcert ; S.SL.C.asm ])
+
+(* ********************************************************* *)
+; B.Center ("{S.Decoder.ArmSh.C.human}",
+"Decode a given word (16, 32 bits...) to instruction to execute.
+<Z
+Definition Z{PPP}Z := match Z{PPP}Z with
+(*9.1.0 - ADD*)
+| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 0 0 =>
+  DecInst _ (ADD (regnum_from_bit n4 w) (regnum_from_bit n8 w))
+(*9.1.1 - ADDI*)
+| word16 0 1 1 1 _ _ _ _ _ _ _ _ _ _ _ _ =>
+  DecInst _ (ADDI w[n7#n0] (regnum_from_bit n8 w))
+(*9.2.0 - ADDC*)
+| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 1 0 =>
+  DecInst _ (ADDC (regnum_from_bit n4 w) (regnum_from_bit n8 w))
+Z{PPP}Z
+(*9.103.0 - XTRCT*)
+| word16 0 0 1 0 _ _ _ _ _ _ _ _ 1 1 0 1 =>
+  DecInst _ (XTRCT (regnum_from_bit n4 w) (regnum_from_bit n8 w))
+| _ => DecUndefined_with_num inst 0
+end.
+Z>"
+)
 
 (* ********************************************************* *)
 ; B.Center ("zz",
