@@ -26,7 +26,8 @@ module Argument = struct
   let img4 = dir_img 4
 end
 
-let red = Color.textcolor_ (Color.of_int_255 (0x9F, 0x00, 0x00))
+let red_ = Color.of_int_255 (0x9F, 0x00, 0x00)
+let red = Color.textcolor_ red_
 let orange = Color.of_int_255 (0xFF, 0xED, 0xDF)
 let blue = Color.textcolor_ Color.blue
 
@@ -700,77 +701,116 @@ Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
 #>"])
 
 (* ********************************************************* *)
-; B.Center ("{S.Decoder.ArmSh.C.human}",
-"Decode a given word (16, 32 bits...) to instruction to execute.
+; B.Center ("The generated {S.Decoder.Sh.coq}",
+"Decode a given word (16, 32 bits...) to instruction to be executed later.
 <Z
-Definition Z{PPP}Z := match Z{PPP}Z with
-(*9.1.0 - ADD*)
-| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 0 0 =>
-  DecInst _ (ADD (regnum_from_bit n4 w) (regnum_from_bit n8 w))
-(*9.1.1 - ADDI*)
-| word16 0 1 1 1 _ _ _ _ _ _ _ _ _ _ _ _ =>
-  DecInst _ (ADDI w[n7#n0] (regnum_from_bit n8 w))
-(*9.2.0 - ADDC*)
-| word16 0 0 1 1 _ _ _ _ _ _ _ _ 1 1 1 0 =>
-  DecInst _ (ADDC (regnum_from_bit n4 w) (regnum_from_bit n8 w))
+Local Notation "0" := false.
+Local Notation "1" := true.
+Definition decode (w : word) : Z{PPP}Z := match w16_of_word w with
 Z{PPP}Z
-(*9.103.0 - XTRCT*)
-| word16 0 0 1 0 _ _ _ _ _ _ _ _ 1 1 0 1 =>
-  DecInst _ (XTRCT (regnum_from_bit n4 w) (regnum_from_bit n8 w))
+(* 9.4.1 ANDI *)
+| word16 1 1 0 0 1 0 0 1 _ _ _ _ _ _ _ _ => DecInst _ (ANDI w[n7#n0])
+(* 9.4.2 ANDM *)
+| word16 1 1 0 0 1 1 0 1 _ _ _ _ _ _ _ _ => DecInst _ (ANDM w[n7#n0])
+Z{PPP}Z
 | _ => DecUndefined_with_num inst 0
 end.
-Z>"
-)
+Z>")
+(* "<~
+; ("Format                     Summary of Operation        Instruction Code       States    T Bit",
+   "AND     Rm,Rn              Rm & Rm \226\134\146 Rn               ",
+   [(I_1, 1); (I_0, 2); (I_1, 1); (I_m, 4); (I_n, 4); (I_0, 1); (I_1, 1); (I_0, 2); ])
+; ("Format                     Summary of Operation        Instruction Code       States    T Bit",
+   "AND     #imm,R0            R0 & imm \226\134\146 R0              ",
+   [(I_i, 8); (I_1, 1); (I_0, 2); (I_1, 1); (I_0, 2); (I_1, 2); ])
+; ("Format                     Summary of Operation        Instruction Code       States    T Bit",
+   "AND.B #imm,@(R0,GBR) (R0+GBR) & imm \226\134\146                 ",
+   [(I_i, 8); (I_1, 1); (I_0, 1); (I_1, 2); (I_0, 2); (I_1, 2); ])
+~>" *)
 
 (* ********************************************************* *)
-; B.Center ("zz",
-            let s = "S" in
-            let module SL_p = S.SL_gen (struct let sl = s end) in
-            Label.definition_ "
-We define :
-{itemize
-[ "{S.C.lambda_l} for {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:" ^^
-  enumerate [ "the associated {SL_p.Coq.Deep.asm} has been obtained successfully,"
-          ; "the behavior of the {SL_p.Coq.Deep.compcert} is {emph "not wrong"}." ]
-(*" can be successfully transformed to an assembly file with a certified compiler preserving its original semantic (and preserving at least from the {S.C.compcert} big-step semantic). Moreover, the behavior of the initial source is required to be proved {emph "not wrong"}."*)
-; "{SL_p.Coq.Deep.lambda_l} will naturally stand for the {SL_p.Coq.Deep.asm} (if {SL_p.C.asm} {in_} {S.C.lambda_l})." ]
+; B.Abr
+  (let s = "S" in
+   let module SL_p = S.SL_gen (struct let sl = s end) in
+   BatList.map
+     (fun after ->
+       B.Top ("{S.SL.coq} ${overset "?" "="}$ {S.SL.Coq.Deep.compcert}, towards {S.C.lambda_l}",
+                 Label.warning_
+                   (concat [ "The semantic preservation proof developed in {P.compcert} requires some non-trivial extra hypothesis to be provided:"
+                           ; newline
+                           ; "<!val compiler : !>{S.P.Coq.Deep.compcert}<! -> !>{langle}{S.P.Coq.Deep.asm}{index_ rangle "monad"}"
+                           ; newline
+                           ; "<!val proof    : !>{forall}<! behavior, !>{forall}<! P, !>{(*red*) "<!compiler P !>{ne} {index_ bot "monad"}"}<! -> !>"
+                           ; newline
+                           ; "{red "<!    exec_behaves behavior P!>"}<! -> !>{langle}<!P !>{index_ approx "<!behavior!>"}<! compiler P!>{index_ rangle "monad"}" ])
+                 ^^
+                 after ))
+     [ Label.example
+         (itemize
+            [ "{blue "<!exec_behaves converge  P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{index_ approx "<!converge!>"}<! compiler P!>"}"
+            ; "{blue "<!exec_behaves diverge   P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{index_ approx "<!diverge !>"}<! compiler P!>"}"
+            ; "{blue "<!exec_behaves get_stuck P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "{index_ bot "monad"}"}" ])
+     ; Label.problem_
+                   "Is there some {red "<!b!>"} such that ``{red "<!exec_behaves b !>{S.SL.Coq.Deep.compcert}"}''?"
+                 ^^ pause ^^
+                 Label.definition_
+                   ("``{red S.C.lambda_l}'': {S.C.asm} sources {texttt s} equipped with these proofs in Coq~:"
+                    ^^
+                      enumerate [ "{SL_p.Coq.Deep.asm} obtained successfully, i.e. {ne} {index_ bot "monad"}"
+                                ; "{exists} <!b!> {in_} \{<!converge!>, <!diverge!>\}, <!exec_behaves b !>{SL_p.Coq.Deep.compcert}" ])])
+
+(* ********************************************************* *)
+; B.Abr
+  (let l =
+     let open English in
+     let s =
+       "The compilation to {S.C.asm} succeeds. Then to be in {S.C.lambda_l}, the first hypothesis is met."
+       ^^
+       Label.question_ "What about its behavior, does this program converge, diverge or get stuck?" in
+     [ [ yes ; yes   ; yes   ; yes   ; maybe ], Some s
+     ; [ yes ; yes   ; yes   ; yes   ; no    ], Some (s
+                                                      ^^
+                                                      Label.warning_ "The type of ``main'' is not of the form {texttt "unit {rightarrow} int"}. So {S.SL.C.asm} initially goes wrong in {Version.compcert}. {footnotesize "(Proved in {P.coq}.)"}") ] in
+   let title = "The limit of {S.C.lambda_l}" in
+   let lg = latex_of_int (BatList.length l) in
+   BatList.mapi
+     (fun pos (h_comment, msg) ->
+       B.Top (title (* ^^ " [{latex_of_int (Pervasives.succ pos)}/{lg}]"*),
+              sl_intro S.SL.ArmSh.C.asm
+              ^^
+              "<@@{H_comment h_comment}@
+int main(int x) {
+  return x;
 }
-")
+@>"
+              ^^
+              (match msg with None -> "" | Some s -> s)))
+     l)
 
 (* ********************************************************* *)
-; B.Center ("zz",
-            Label.example "
-This {S.C.asm} code is not a {S.C.lambda_l} program :
-<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ no ] ])}@
-int main(int _) {
-  return 0;
-}
-@>
-because the type of the main function (called from {English.outworld}) is not of the form {texttt "unit {rightarrow} int"}. Thus it initially goes wrong by definition.
-")
-
-(* ********************************************************* *)
-; B.Center ("zz",
+; B.Center ("{S.SL.coq} ${overset "?" "="}$ {S.SL.Coq.Deep.compcert}, towards {S.C.infty}",
             let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
             let i_sqcup x = index sqcup (tiny x) in
-            Label.definition_ "
-We present here
-{itemize
-[ "{S.C.infty} being the smallest set satisfying these properties~:" ^^
-enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
-          ; "{forall} {SL_a.C.asm}, {S.P.C.infty}, {newline}
-               ({SL_a.C.asm} {i_sqcup "apply"} {S.P.C.infty}) {in_} {S.C.infty}
-               {longrightarrow_ }
-               {SL_a.C.asm} {in_} {S.C.infty}"
-           ]
-; "{S.P.Coq.Deep.infty} is introduced as a synonym of {S.P.Coq.Deep.asm} (if {S.P.C.asm} {in_} {S.C.infty})." ]
-}
-")
+
+            "By defining the pretty-printer as a morphism between categories that preserve the applicative operator ``${sqcup}$'' of languages:"
+            ^^
+            (let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in
+             align_ "$({SL_p.C.asm}, {i_sqcup "apply"}) {overset "pretty-print" longrightarrow} ({SL_p.Coq.Deep.asm}, {i_sqcup "APPLY"})$")
+            ^^
+            (let module SL_a = S.SL_gen (struct let sl = "P" end) in
+             "the goal is to determine if {align_ "{forall} {SL_a.C.asm}, ({blue S.SL.C.asm} {i_sqcup "apply"} {SL_a.C.asm}) {blue "{in_} {S.C.lambda_l}"} "}")
+            ^^
+            Label.definition_
+              ("``{red S.C.infty}'': the smallest set satisfying:"
+               ^^
+               enumerate (let module S = S_sz (struct let normal = normalsize let footnote = footnotesize let tiny = tiny let color_keyword = Some red_ end) in
+                          [ "${S.C.lambda_l} {subseteq} {red S.C.infty}$"
+                          ; "{forall} {SL_a.C.asm}, {forall} {S.P.C.infty}, {newline}
+                             ({SL_a.C.asm} {i_sqcup "apply"} {S.P.C.infty}) {in_} {red S.C.infty} {longrightarrow_ } {SL_a.C.asm} {in_} {red S.C.infty}" ]))
+            ^^ pause ^^
+            blue "Warning: ongoing work!")
 
 (* ********************************************************* *)
-; B.Center ("", bibliographystyle "alpha")
-
-(* ********************************************************* *)
-; B.Center ("", bibliography "t")
+; B.Center ("", bibliographystyle "alpha" ^^ bibliography "t")
 
 ]))
