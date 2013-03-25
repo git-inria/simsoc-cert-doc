@@ -173,9 +173,15 @@ struct
 
   module Raw__ =
   struct
-    let verbatim = function
-        | [ `V x ] -> num_line (fun s -> texttt (footnotesize (LV.verbatim s))) (LV.split_lines (LV.trim ['\n'] x))
-        | _ -> failwith \"to complete !\"
+    open Dot
+
+    let verbatim x =
+      texttt (concat (BatList.map (function
+        | `V s -> concat_line_t (BatList.map (fun x -> LV.verbatim x ^^ space) (LV.split_lines (LV.trim ['\n'] s)))
+        | `C (Header _) -> assert false
+        | `C (B l) -> l
+        | `C (B_escape_nl l) -> text (l_to_string l)
+        | _ -> failwith \"to complete !\") x))
   end
 
   module Coq =
