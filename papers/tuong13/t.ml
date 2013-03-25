@@ -8,6 +8,7 @@ open Simsoc_cert
 ##verbatim 'Z' = Code.Coq.verbatim
 ##verbatim '~' = Code.Ml.verbatim
 ##verbatim '@' = Code.Humc_.verbatim
+##verbatim ':' = Code.Humc_.verbatim
 ##verbatim 'O' = Code.Dot.verbatim
 ##verbatim 'X' = Code.Raw__.verbatim
 
@@ -43,6 +44,35 @@ let () =
 
     (Beamer (Some (`Em 1., `Em 1.), B.Abr
 [ B.Center ("", "")
+
+(* ********************************************************* *)
+; B.Center ("{P.simsoc}, simulator of Systems-on-Chip",
+            itemize
+              [ "A library for fast bit accurate simulation:
+                 {itemize
+                   [ "many processors simulated: ARM (> 10 000 LoC), PowerPC, MIPS (with GDB servers)"
+                   ; "others components ({approx} 5 000 LoC): Memory, UART, Ethernet card, Interrupt controller, Serial Flash, Timers, Bus..."
+                   ] }"
+              ; "Processors are the most complex components to simulate: optimizations are essential for high speed of simulation."
+              ; "Project developped in C++ and SystemC/TLM
+                 {https \"gforge.inria.fr/projects/simsoc\"}"
+              ; "Application to the ARMv6 instruction set simulator: this piece of code correctly compiles with GCC.
+{Label.notation_ "``{red S.C.gcc}'': programs compiled successfully with {Version.gcc}~{cite ["gcc"]}"}"
+])
+
+(* ********************************************************* *)
+; B.Center ("A lot of repetitive information in reference manuals",
+            let mk_tab l_title l_sh l_arm =
+              tabular (`L :: `L :: l_title)
+                [ Data ("SH4" :: ":" :: l_sh)
+                ; Data ("ARMv6" :: ":" :: l_arm) ] in
+            itemize
+              [ mk_tab [`R;`L] ["449 pages" ; "in total in the PDF"] ["1138 pages" ; ""]
+              ; mk_tab [`R;`R;`R;`L] ["300 pages,";"205 instructions,";"2/3";"of the PDF"] ["600 pages,";"220 instructions,";"50%";"of the PDF"]
+              ; "Both are 32 bits RISC"
+              ; "No addressing mode for SH4, 5 for ARMv6"
+              ; "In each PDF, the formatting style of each instruction looks identical."
+              ; "To take advantage of the repetition: the automated generation." ])
 
 (* ********************************************************* *)
 ; B.Abr (BatList.map
@@ -139,6 +169,12 @@ let () =
   out_simlight_to -> out_simlight O{style_back}O
 
 O>")
+
+(* ********************************************************* *)
+; B.Center ("{P.simcert}, designing a framework for proofs",
+            Label.problem_
+              (itemize [ "How to be sure that the semantic is preserved during the compilation of {S.SL.C.gcc}?"
+                       ; "How to represent {S.SL.C.gcc} in {P.coq} in order to prove its correction with {S.SL.coq}?" ]))
 
 (* ********************************************************* *)
 ; B.Abr (let open Code.Dot in
@@ -729,6 +765,134 @@ Z>")
 ~>" *)
 
 (* ********************************************************* *)
+; B.Center ("The patched {S.Pseudocode.Sh.C.human}",
+"<::{let open English in H_comment [ yes ; maybe ; maybe ; maybe ]}:
+ANDI(long i)         /* AND #imm,R0 */
+  {
+    R[0]&=(0x000000FF & (long)i);
+    PC+=2;
+  }
+
+ANDM(long i)         /* AND.B #imm,@(R0,GBR) */
+  {
+    long temp;
+    temp=(long)Read_Byte(GBR+R[0]);
+    temp&=(0x000000FF & (long)i);
+    Write_Byte(GBR+R[0],temp);
+    PC+=2;
+  }
+:>")
+
+(* ********************************************************* *)
+; B.Center ("The generated {S.Pseudocode.Sh.C.asm}",
+"<@@{let open English in H_comment [ yes ; yes ; yes ; yes ]}@
+/* 9.4.1 ANDI */
+void ANDI(struct SLSH4_Processor *proc, const long i) {
+  set_reg(proc,0,(reg(proc,0) & (0x000000FF & (long)(i))));
+  set_pc_raw(proc,(proc->pc + 2)); }
+
+/* 9.4.2 ANDM */
+void ANDM(struct SLSH4_Processor *proc, const long i) {
+  long temp;
+  temp = (long)(Read_Byte(proc->mmu_ptr, (proc->GBR + reg(proc,0))));
+  temp = (temp & (0x000000FF & (long)(i)));
+  Write_Byte(proc->mmu_ptr, (proc->GBR + reg(proc,0)), temp);
+  set_pc_raw(proc,(proc->pc + 2)); }
+@>")
+
+(* ********************************************************* *)
+; B.Top ("The generated {S.Pseudocode.Sh.coq}",
+footnotesize "(shallow embedding)"
+^^
+"<#
+  Notation "'<.' loc    '.>' A" := (_get_loc (fun loc => A))
+                            (at level 200, A at level 100, loc ident).
+  Notation "'<'      st  '>' A" := (_get_st  (fun st  => A))
+                            (at level 200, A at level 100, st  ident).
+  Notation "'<:' loc st ':>' A" := (<.loc.> <st> A) #{PPP}# .
+(* 9.4.2 ANDM *)
+Definition ANDM (i : word) : semfun _ := <s0>
+  [ <     st > bind (Read_Byte (add (reg_content st GBR)
+                                    (reg_content st (mk_regnum 0))))
+                    (update_loc n0 (*temp*))
+  ; <.loc   .> update_loc n0 (*temp*) (and (get_loc n0 (*temp*) loc)
+                                           (and (repr (Zpos 255)) i))
+  ; <:loc st:> Write_Byte (add (reg_content st GBR)
+                               (reg_content st (mk_regnum 0)))
+                          (get_loc n0 (*temp*) loc)
+  ; <     st > set_reg PC (add (reg_content st PC) (repr 2)) ].
+#>")
+
+(* ********************************************************* *)
+; B.Top ("The generated {S.Pseudocode.Sh.Coq.Deep.compcert}",
+            let o, x = PPP_empty, PPP_full in
+            let module Version = struct
+              let v0 = "<Z
+(* 9.4.2 ANDM *)
+Definition ANDM :=
+  {| fn_return := void;
+     fn_params := [
+proc -: `*` typ_struct_SLSH4_Processor;
+i -: int32];
+     fn_vars := [
+temp -: int32];
+     fn_body :=
+($ temp`:T1) `= (Ecast (call (\Read_Byte`:T84) E[(valof ((`*(\proc`:T9)`:T17)|mmu_ptr`:T71) T71); (valof ((`*(\proc`:T9)`:T17)|GBR`:T2) T2)+(call (\reg`:T12) E[\proc`:T9; #0`:T1] T2)`:T2] T10) T1)`:T1;;
+($ temp`:T1) `= ((\temp`:T1)&((#255`:T1)&(Ecast (\i`:T1) T1)`:T1)`:T1)`:T1;;
+(call (\Write_Byte`:T95) E[(valof ((`*(\proc`:T9)`:T17)|mmu_ptr`:T71) T71); (valof ((`*(\proc`:T9)`:T17)|GBR`:T2) T2)+(call (\reg`:T12) E[\proc`:T9; #0`:T1] T2)`:T2; \temp`:T1] T10);;
+(call (\set_pc_raw`:T18) E[\proc`:T9; (valof ((`*(\proc`:T9)`:T17)|pc`:T2) T2)+(#2`:T1)`:T2] T3) |}.
+Z>"
+              let v1 = "<Z
+(* 9.4.2 ANDM *)
+Definition ANDM :=
+  {| fn_return := void
+   ; fn_params := [proc -: `*` typ_struct_SLSH4_Processor; i -: int32]
+   ; fn_vars   := [temp -: int32]
+   ; fn_body   :=
+($ temp`:Z{o}Z) `= (Ecast (call (\Read_Byte`:Z{o}Z) E[(valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|mmu_ptr`:Z{o}Z) Z{o}Z); (valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|GBR`:Z{o}Z) Z{o}Z)+(call (\reg`:Z{o}Z) E[\proc`:Z{o}Z; #0`:Z{o}Z] Z{o}Z)`:Z{o}Z] Z{o}Z) Z{o}Z)`:Z{o}Z;;
+($ temp`:Z{o}Z) `= ((\temp`:Z{o}Z)&((#255`:Z{o}Z)&(Ecast (\i`:Z{o}Z) Z{o}Z)`:Z{o}Z)`:Z{o}Z)`:Z{o}Z;;
+(call (\Write_Byte`:Z{o}Z) E[(valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|mmu_ptr`:Z{o}Z) Z{o}Z); (valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|GBR`:Z{o}Z) Z{o}Z)+(call (\reg`:Z{o}Z) E[\proc`:Z{o}Z; #0`:Z{o}Z] Z{o}Z)`:Z{o}Z; \temp`:Z{o}Z] Z{o}Z);;
+(call (\set_pc_raw`:Z{o}Z) E[\proc`:Z{o}Z; (valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|pc`:Z{o}Z) Z{o}Z)+(#2`:Z{o}Z)`:Z{o}Z] Z{o}Z)
+   |}.
+Z>"
+              let v2 = "<Z
+(* 9.4.2 ANDM *)
+Definition ANDM :=
+  {| fn_return := void
+   ; fn_params := [proc -: `*` typ_struct_SLSH4_Processor; i -: int32]
+   ; fn_vars   := [temp -: int32]
+   ; fn_body   :=
+($ temp`:Z{o}Z) `= (Z{x}Z (call (\Read_Byte`:Z{o}Z)
+  E[ (valof ((`*(\proc`:Z{o}Z)`:Z{o}Z)|mmu_ptr`:Z{o}Z) Z{o}Z)
+   ;   (Z{x}Z ((`*(\proc`:Z{o}Z)`:Z{o}Z)|GBR`:Z{o}Z) Z{o}Z)
+     + (Z{x}Z (\reg`:Z{o}Z) E[\proc`:Z{o}Z; #0`:Z{o}Z] Z{o}Z)`:Z{o}Z] Z{o}Z) Z{o}Z)`:Z{o}Z              ;;
+($ temp`:Z{o}Z) `= ((\temp`:Z{o}Z)&((#255`:Z{o}Z)&(Ecast (\i`:Z{o}Z) Z{o}Z)`:Z{o}Z)`:Z{o}Z)`:Z{o}Z  ;;
+(Z{x}Z (\Write_Byte`:Z{o}Z) E[(Z{x}Z ((`*(\proc`:Z{o}Z)`:Z{o}Z)|mmu_ptr`:Z{o}Z) Z{o}Z)
+   ;   (Z{x}Z ((`*(\proc`:Z{o}Z)`:Z{o}Z)|GBR`:Z{o}Z) Z{o}Z)
+     + (Z{x}Z (\reg`:Z{o}Z) E[\proc`:Z{o}Z; #0`:Z{o}Z] Z{o}Z)`:Z{o}Z; \temp`:Z{o}Z ] Z{o}Z)         ;;
+(Z{x}Z (\set_pc_raw`:Z{o}Z) E[\proc`:Z{o}Z
+   ;   (Z{x}Z ((`*(\proc`:Z{o}Z)`:Z{o}Z)|pc`:Z{o}Z) Z{o}Z)+ (#2`:Z{o}Z)`:Z{o}Z] Z{o}Z)              |}.
+Z>"
+            end in
+footnotesize "(deep embedding) Note: ``{Melt_highlight.Code.latex_of_ppp PPP_full}'' and ``{Code.latex_of_ppp PPP_empty}'' are manually drawn to save spaces in this slide..."
+^^
+Version.v2)
+
+(* ********************************************************* *)
+; B.Center ("Expressivity of {P.compcert} in practice",
+            Label.fact ("Starting from {S.SL.C.compcert},"
+                        ^^
+                        itemize (BatList.map
+                                   (fun x ->
+                                     B.on_after 1 x ^^ newline ^^
+                                     B.on_after 2 "can be approximated as an entire type-checking process (by embedding the overall in a dependent type).")
+                                   [ "the {P.compcert} compilation translation going to {S.SL.C.asm}"
+                                   ; "the preservation proof built upon {S.SL.C.compcert} and {S.SL.C.asm}" ]))
+
+            ^^ B.on_after 3 (Label.problem_ "Any sound, decidable type system must be incomplete.")
+            ^^ B.on_after 4 (Label.question_ "How far is going the type inference with {S.SL.C.compcert}? {footnotesize "(At least until {S.SL.C.asm}...)"}"))
+
+(* ********************************************************* *)
 ; B.Abr
   (let s = "S" in
    let module SL_p = S.SL_gen (struct let sl = s end) in
@@ -788,6 +952,51 @@ int main(int x) {
      l)
 
 (* ********************************************************* *)
+; B.Abr (
+  let f_hline x = Hline :: x in
+  let f_vert = [`Vert] in
+  let f_id x = x in
+  let black = Color.of_int_255 (0, 0, 0) in
+  let white = Color.of_int_255 (0xFF, 0xFF, 0xFF) in
+  let colo n = Color.of_int_255 (50*n, 0xFF, 0xFF) in
+
+  BatList.map
+    (fun (hline, vert, id, msg, opt_box) ->
+      B.Top
+        ("The limit of {S.C.lambda_l}",
+         let rec aux n l = function
+           | [] -> l
+           | (hline, vert, id, title) :: xs ->
+             aux
+               (Pervasives.succ n)
+               (minipage (`Em (float_of_int (7 * (Pervasives.succ n))))
+                  (tabular (`R :: vert)
+                     (hline
+                        (BatList.map
+                           (fun x -> Data [Color.cellcolor_ (colo (id n)) ^^ x])
+                           [ title
+                           ; l
+                           ; space ]) )))
+               xs in
+
+         let l = [ f_hline, f_vert, f_id, S.C.lambda_l
+                 ; hline, vert, id, msg
+                 ; f_hline, f_vert, f_id, S.C.asm
+                 ; f_hline, f_vert, f_id, S.C.compcert
+                 ; f_hline, f_vert, f_id, S.C.human ] in
+         aux 0 "" l
+         ^^
+         (match opt_box with None -> "" | Some s -> s)))
+    (let box1, box2, box3 =
+       Label.fact "Only programs with no arguments in <!main!> could possibly appear in {S.C.lambda_l}.",
+       Label.problem_ "Some higher order {let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in SL_p.C.asm} are outside {S.C.lambda_l}. However some of them could have a sound semantic: {S.SL.C.asm} {notin} {S.C.lambda_l}.",
+       Label.fix_ "Design a type system (including {S.C.lambda_l}) that accepts more functional values in {S.C.asm}." in
+
+     [ (fun x -> Arrayrulecolor (colo 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (colo 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (colo 2) (phantom S.SL.C.asm) ^^ phantom " ?"), Some box1
+     ; (fun x -> Arrayrulecolor (colo 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (colo 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (Color.of_int_255 (0xFF, 0xFF, 0xFF)) S.SL.C.asm ^^ phantom " ?"), Some box2
+     ; f_hline, f_vert, f_id, Color.colorbox_ white S.SL.C.asm ^^ " ?", Some box3 ]) )
+
+(* ********************************************************* *)
 ; B.Center ("{S.SL.coq} ${overset "?" "="}$ {S.SL.Coq.Deep.compcert}, towards {S.C.infty}",
             let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
             let i_sqcup x = index sqcup (tiny x) in
@@ -809,6 +1018,43 @@ int main(int x) {
                              ({SL_a.C.asm} {i_sqcup "apply"} {S.P.C.infty}) {in_} {red S.C.infty} {longrightarrow_ } {SL_a.C.asm} {in_} {red S.C.infty}" ]))
             ^^ pause ^^
             blue "Warning: ongoing work!")
+
+(* ********************************************************* *)
+; B.Abr
+  (let title = "Future work" in
+   [ B.Center
+       (title,
+        itemize [ "correction of {S.Pseudocode.ArmSh.Coq.Deep.compcert} with respect to {S.Pseudocode.ArmSh.coq}"
+                ; "extension to the {S.Decoder.ArmSh.Coq.Deep.compcert} part"
+                ; "membership of {S.SL.C.asm} to {S.C.infty}?"
+                ; "optimization: the generation from {S.Manual.ArmSh.C.human} is in {P.ocaml}, more easy to generate from {P.coq} to facilitate the proof?" ])
+   ; B.Top
+     (title,
+      "Towards the correctness of the pseudocode: first steps with the ADC instruction, more investigated in {cite ["shi2011"]}"
+      ^^ newline ^^
+      (let open Code.Dot in
+       let module St = S.SL_gen (struct let sl = "state" end) in
+       let dodgerblue = Color.color_name_ (Color.of_int_255 (0x1E, 0x90, 0xFF)) in
+"<OO{ Header { shift_x = 1.5
+             ; shift_y = -3.
+             ; scale = None
+             ; node = { n_color = \"darksalmon\" ; shape = Box true }
+             ; edge = { e_color = Some dodgerblue ; style = Some \"-triangle 45\" } } }O
+
+comp1 [texlbl="O{B St.Coq.Deep.compcert}O"]
+comp2 [texlbl="O{B St.Coq.Deep.compcert}O'"]
+coq1 [texlbl="O{B St.coq}O"]
+coq2 [texlbl="O{B St.coq}O'"]
+
+{rank=same
+  comp1 -> coq1 [label="projection"] }
+{rank=same
+  comp2 -> coq2 [label="projection"] }
+
+comp1 -> comp2
+coq1 -> coq2
+
+O>")) ])
 
 (* ********************************************************* *)
 ; B.Center ("", bibliographystyle "alpha" ^^ bibliography "t")
