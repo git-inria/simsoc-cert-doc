@@ -589,7 +589,8 @@ let main ~packages ~author =
                    ; "multirow"
 
                    ; "hyperref"
-                   ; "soul" ]
+                   ; "soul"
+                   ; "colortbl" ]
 
                  ])
     ~author:(concat_line_t
