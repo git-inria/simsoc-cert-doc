@@ -481,15 +481,6 @@ texttt (tabular (interl 4 `L)
 (in OCaml: {blue "<!Int32.shift_left 1_l 32!>"} {longrightarrow} {blue "<!1_l!>"})")
 
 (* ********************************************************* *)
-; B.Center ("z",
-            th_same_source [ S.Manual.Sh.C.gcc ; S.Manual.Sh.C.compcert ])
-
-(* ********************************************************* *)
-; B.Center ("zz",
-            Label.fact "
-Besides some minor modifications, the existing framework generating the {S.Manual.Arm.coq} can completely be used in the same way to produce the {S.Manual.Sh.coq}.")
-
-(* ********************************************************* *)
 ; B.Center ("ast",
 "<#
 Inductive floatsize : Type :=
@@ -588,24 +579,6 @@ Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
 ")
 
 (* ********************************************************* *)
-; B.Center ("zz",
-            let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            Label.fact "
-The pretty-printer defined can be used to parse an arbitrary {SL_p.C.compcert} to a Coq representation. For the rest, this associated deep embedded Coq program will be named as : {SL_p.Coq.Deep.compcert}.
-")
-
-(* ********************************************************* *)
-; B.Center ("zz",
-            let module SL_p = S.SL_gen (struct let sl = "PROGRAM" end) in
-            Label.fact "Because the internal processing {texttt "f"} going from a {S.C.compcert} representation to a {S.C.asm} representation in {P.compcert} is written in Coq, we can name {SL_p.Coq.Deep.asm} the mapping of {texttt "f"} to the {SL_p.Coq.Deep.compcert} associated to an initial {S.C.asm}.
-
-Therefore, we now have a way to parse an arbitrary {S.C.asm} file to Coq.
-")
-
-(* ********************************************************* *)
-; B.Center ("", th_same_source [ S.SL.C.gcc ; S.SL.C.compcert ; S.SL.C.asm ])
-
-(* ********************************************************* *)
 ; B.Center ("{S.Decoder.ArmSh.C.human}",
 "Decode a given word (16, 32 bits...) to instruction to execute.
 <Z
@@ -657,35 +630,6 @@ because the type of the main function (called from {English.outworld}) is not of
 
 (* ********************************************************* *)
 ; B.Center ("zz",
-            Label.fact "
-The {S.SL.C.asm} is not a {S.C.lambda_l} program because as a simulator, its task is to simulate an arbitrary assembly file given in input.
-
-More clearly~:
-<#
-Lemma no_initial_state :
-  forall s, ~ Csem.initial_state asmC_simlight s.
-
-  Proof.
-    intuition. inversion H.
-    vm_compute in H1. inversion H1. subst b.
-    vm_compute in H2. inversion H2. subst f.
-    vm_compute in H3. inversion H3.
-  Qed.
-
-Proposition wrong_behavior :
-  program_behaves (Csem.semantics asmC_simlight) (Goes_wrong E0).
-
-  Proof.
-    apply program_goes_initially_wrong ;
-    apply no_initial_state.
-  Qed.
-#>
-(Note that, except ``<!asmC_simlight!>'' which designates {S.SL.C.asm} and has been produced by our pretty-printer, every others free variables are more explained in the original source of CompCert.)
-(* see in CompCert /common/Behaviors.v *)
-")
-
-(* ********************************************************* *)
-; B.Center ("zz",
             let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
             let i_sqcup x = index sqcup (tiny x) in
             Label.definition_ "
@@ -701,14 +645,6 @@ enumerate [ "${S.C.lambda_l} {subseteq} {S.C.infty}$"
 ; "{S.P.Coq.Deep.infty} is introduced as a synonym of {S.P.Coq.Deep.asm} (if {S.P.C.asm} {in_} {S.C.infty})." ]
 }
 ")
-
-(* ********************************************************* *)
-; B.Center ("",
-"<@@{let open English in H_comment (BatList.flatten [ BatList.init 4 (fun _ -> yes) ; [ maybe ] ])}@
-int main() {
-  return 0;
-}
-@>")
 
 (* ********************************************************* *)
 ; B.Center ("", bibliographystyle "alpha")
