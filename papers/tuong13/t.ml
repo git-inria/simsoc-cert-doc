@@ -707,7 +707,7 @@ Definition _type_ T (ty : #{PPP}#) := ty _ _floatsize
   Definition _typelist := _type_ _ (@__typelist).
 Definition _ident := _positive.
 Definition _program {A} #{PPP}# := @__program #{PPP}#
-  {{ "prog_funct" ; "prog_main" }}.
+  { "prog_funct" ; "prog_main" }.
 Definition _ast := _program _type.
 #>"; "<#
   Notation "A ** n" := (A ^^ n --> A) (at level 29) : type_scope.
@@ -716,7 +716,7 @@ Check _INDUCTIVE : string -> forall n, s ** n.
   Notation "| x" := (_INDUCTIVE x _) (at level 9).
 
 Check _RECORD : forall n, vector string n -> s ** n.
-  Notation "{{ a ; .. ; b }}" :=
+  Notation "{ a ; .. ; b }" :=
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
 #>"; "<#
   Notation "A [ a ; .. ; b ] -> C" :=

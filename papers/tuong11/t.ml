@@ -618,7 +618,7 @@ Definition _type_ T (ty : #{PPP}#) := ty _ _floatsize
 Definition _ident := _positive.
 
 Definition _program {A} #{PPP}# := @__program #{PPP}#
-  {{ "prog_funct" ; "prog_main" }}.
+  { "prog_funct" ; "prog_main" }.
 
 Definition _ast := _program _type.
 #>
@@ -631,7 +631,7 @@ Check _INDUCTIVE : string -> forall n, s ** n.
   Notation "| x" := (_INDUCTIVE x _) (at level 9).
 
 Check _RECORD : forall n, vector string n -> s ** n.
-  Notation "{{ a ; .. ; b }}" :=
+  Notation "{ a ; .. ; b }" :=
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
 #>
 where the type <!vector!> and ``<!_ ^^  _ --> _!>'' are respectively more deeply explained in the Coq libraries <!Bvector!> and <!NaryFunctions!>.
