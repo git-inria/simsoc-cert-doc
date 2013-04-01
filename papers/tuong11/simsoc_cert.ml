@@ -220,6 +220,21 @@ struct
 
   module Size = struct
     let manual_sh4 = latex_of_int 120 (* "du -sh slsh4_iss.c" -> 116K *)
+    module Slv6_iss = struct
+      (* arm6 *)
+      let size = latex_of_int 212 (* "du -sh simlight/slv6_iss.c" -> 212K *)
+      module Old = struct
+        (* svn 1088, "du -sh simlight/slv6_iss.v" *)
+        let with_indent = latex_of_int 53 (* "M", with indentation *)
+        let no_indent = latex_of_int 15 (* "M" *)
+        let facto = latex_of_int 9 (* "M", factorization definition sharing + notation number *)
+      end
+      module New = struct
+        (* svn 2028, "du -sh arm6/simlight/slv6_iss.v" *)
+        let facto_coq = latex_of_float 1.2 (* "M", factorization type sharing *)
+        let facto_ml = latex_of_int 628 (* "K", factorization type sharing *)
+      end
+    end
   end
 end
 
