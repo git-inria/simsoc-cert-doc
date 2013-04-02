@@ -996,13 +996,13 @@ Version.v2)
                            ; newline
                            ; "<!val proof    : !>{forall}<! behavior, !>{forall}<! P, !>{(*red*) "<!compiler P !>{ne} {index_ bot "monad"}"}<! -> !>"
                            ; newline
-                           ; "{red "<!    exec_behaves behavior P!>"}<! -> !>{langle}<!P !>{index_ approx "<!behavior!>"}<! compiler P!>{index_ rangle "monad"}" ])
+                           ; "{red "<!    exec_behaves behavior P!>"}<! -> !>{langle}<!P !>{approx}<! compiler P!>{index_ rangle "monad"}" ])
                  ^^
                  after ))
      [ Label.example
          (itemize
-            [ "{blue "<!exec_behaves converge  P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{index_ approx "<!converge!>"}<! compiler P!>"}"
-            ; "{blue "<!exec_behaves diverge   P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{index_ approx "<!diverge !>"}<! compiler P!>"}"
+            [ "{blue "<!exec_behaves converge  P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{approx}<! compiler P!>"}"
+            ; "{blue "<!exec_behaves diverge   P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "<!P !>{approx}<! compiler P!>"}"
             ; "{blue "<!exec_behaves get_stuck P!>"} ${overset "<!proof!>" longrightarrow}$ {blue "{index_ bot "monad"}"}" ])
      ; Label.problem_
                    "Is there some {red "<!b!>"} such that ``{red "<!exec_behaves b !>{S.SL.Coq.Deep.compcert}"}''?"
