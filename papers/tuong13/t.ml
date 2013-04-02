@@ -986,8 +986,10 @@ footnotesize "(deep embedding) Note: ``{Melt_highlight.Code.latex_of_ppp PPP_ful
 Version.v2)
 
 (* ********************************************************* *)
-; B.Abr (BatList.map (fun (on_after, msg) ->
-  B.Top ("Expressivity of {P.compcert} in practice",
+; B.Abr
+  (let phantom_vert = phantom (index "" (footnotesize (texttt "p"))) in
+   BatList.map (fun (on_after, msg) ->
+     B.Top ("Expressivity of {P.compcert} in practice",
             Label.fact ("Starting from {S.SL.C.compcert},"
                         ^^
                         itemize (BatList.map
@@ -1002,7 +1004,7 @@ Version.v2)
            [ B.on_after, (B.on_after 3 (Label.warning_ ("In the first type-system, there is no extra warranty that the semantic of {S.SL.C.asm} has been derived from {S.SL.C.compcert}."))
                           ^^
                           B.on_after 4 (Label.fix_ "Besides the first, infer {S.SL.C.compcert} with the last type-system."))
-           ; (fun _ x -> x), (Label.problem_ ("Any sound, decidable type system must be incomplete." ^^ phantom S.SL.C.asm))
+           ; (fun _ x -> x), (Label.problem_ ("Any sound, decidable type system must be incomplete." ^^ phantom_vert))
                              ^^ pause ^^
                              (Label.question_ "{S.SL.C.compcert} is accepted by the first type-system.{newline}Is it accepted or rejected by the last one?") ])
 
