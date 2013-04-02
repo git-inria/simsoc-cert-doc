@@ -437,7 +437,10 @@ struct
     let itemize l = list_env l \"itemize\"
     let enumerate l = list_env l \"enumerate\"
 
+    type 'a index = Pos of 'a | From_to of 'a * 'a
+
     let onslide s = unusual_command (\"onslide<\") [A, nobr, text (s ^ \">\")] A
+    let on_slide l s = onslide (sprintf \"%s\" (String.concat \",\" (BatList.map (function Pos x -> sprintf \"%d\" x | From_to (mi, ma) -> sprintf \"%d-%d\" mi ma) l))) ^^ s
     let on_after n s = onslide (sprintf \"%d-\" n) ^^ s
     let on_before n s = onslide (sprintf \"-%d\" n) ^^ s
 
@@ -516,8 +519,9 @@ struct
     let fix_, newth_fix_ = Th.newtheorem' "Fix"
     let question_, newth_question_ = Th.newtheorem' "Question"
     let problem_, newth_problem_ = Th.newtheorem' "Problem"
+    let conjecture_, newth_conjecture_ = Th.newtheorem' "Conjecture"
 
-    let prelude = [ newth_example ; newth_example_ ; newth_notation_ ; newth_fact ; newth_definition_ ; newth_remark_ ; newth_warning_ ; newth_fix_ ; newth_question_ ; newth_problem_ ]
+    let prelude = [ newth_example ; newth_example_ ; newth_notation_ ; newth_fact ; newth_definition_ ; newth_remark_ ; newth_warning_ ; newth_fix_ ; newth_question_ ; newth_problem_ ; newth_conjecture_ ]
   end
 
   let latex_main ~packages ?author ?title ?date l =

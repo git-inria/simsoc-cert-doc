@@ -44,6 +44,30 @@ let comp_intro = "In {S.C.compcert} AST ({Version.Size.compcert} token words), s
 
 let index_ s x = index s (footnotesize x)
 
+let draw_subset l_space colo =
+  let rec aux n l = function
+    | [] -> l
+    | (hline, vert, id, title) :: xs ->
+      aux
+        (Pervasives.succ n)
+        (minipage (`Em (float_of_int (7 * (Pervasives.succ n))))
+           (tabular (`R :: vert)
+              (hline
+                 (BatList.map
+                    (fun x -> Data [Color.cellcolor_ (colo (id n)) ^^ x])
+                    (title :: l :: l_space)) )))
+        xs in
+  aux 0 ""
+
+let degrad n = Color.of_int_255 (50*n, 0xFF, 0xFF)
+let space_nb =
+  let rec aux acc n =
+    if n = 0 then
+      acc
+    else
+      aux (space ^^ acc) (pred n) in
+  aux ""
+
 let () =
   main
     ~packages:[]
@@ -416,7 +440,7 @@ O>")
       coq_src_simul_dot [shape=note, texlbl="O{ multiline [ S.SL.coq ; "libraries" ] }O"]
     }
 
-    coq_proof [shape=note, color=firebrick, texlbl="O{ multiline [ "Correctness proof :" ; S.SL.coq ; "{leftrightarrow_}" ; "{S.SL.Coq.Deep.compcert} ?" ] }O"]
+    coq_proof [shape=note, color=firebrick, texlbl="O{ multiline [ "Correctness proof :" ; S.SL.coq ; "{index_ cong "correct"}" ; "{S.SL.Coq.Deep.compcert} ?" ] }O"]
   }
 
   /* */
@@ -1048,42 +1072,28 @@ int main(int x) {
   let f_id x = x in
   let black = Color.of_int_255 (0, 0, 0) in
   let white = Color.of_int_255 (0xFF, 0xFF, 0xFF) in
-  let colo n = Color.of_int_255 (50*n, 0xFF, 0xFF) in
 
   BatList.map
     (fun (hline, vert, id, msg, opt_box) ->
       B.Top
         ("The limit of {S.C.lambda_l}",
-         let rec aux n l = function
-           | [] -> l
-           | (hline, vert, id, title) :: xs ->
-             aux
-               (Pervasives.succ n)
-               (minipage (`Em (float_of_int (7 * (Pervasives.succ n))))
-                  (tabular (`R :: vert)
-                     (hline
-                        (BatList.map
-                           (fun x -> Data [Color.cellcolor_ (colo (id n)) ^^ x])
-                           [ title
-                           ; l
-                           ; space ]) )))
-               xs in
-
-         let l = [ f_hline, f_vert, f_id, S.C.lambda_l
-                 ; hline, vert, id, msg
-                 ; f_hline, f_vert, f_id, S.C.asm
-                 ; f_hline, f_vert, f_id, S.C.compcert
-                 ; f_hline, f_vert, f_id, S.C.human ] in
-         aux 0 "" l
+         draw_subset
+           [space]
+           degrad
+           [ f_hline, f_vert, f_id, S.C.lambda_l
+           ; hline, vert, id, msg
+           ; f_hline, f_vert, f_id, S.C.asm
+           ; f_hline, f_vert, f_id, S.C.compcert
+           ; f_hline, f_vert, f_id, S.C.human ]
          ^^
          (match opt_box with None -> "" | Some s -> s)))
     (let box1, box2, box3 =
        Label.fact "Only programs with no arguments in <!main!> could possibly appear in {S.C.lambda_l}.",
        Label.problem_ "Some higher order {let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in SL_p.C.asm} are outside {S.C.lambda_l}. However some of them could have a sound semantic: {S.SL.C.asm} {notin} {S.C.lambda_l}.",
-       Label.fix_ "Design a type system (including {S.C.lambda_l}) that accepts more functional values in {S.C.asm}." in
+       Label.fix_ "Design a type system (extending {S.C.lambda_l}) that accepts more functional values in {S.C.asm}." in
 
-     [ (fun x -> Arrayrulecolor (colo 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (colo 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (colo 2) (phantom S.SL.C.asm) ^^ phantom " ?"), Some box1
-     ; (fun x -> Arrayrulecolor (colo 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (colo 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (Color.of_int_255 (0xFF, 0xFF, 0xFF)) S.SL.C.asm ^^ phantom " ?"), Some box2
+     [ (fun x -> Arrayrulecolor (degrad 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (degrad 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (degrad 2) (phantom S.SL.C.asm) ^^ phantom " ?"), Some box1
+     ; (fun x -> Arrayrulecolor (degrad 2) :: Hline :: Arrayrulecolor black :: x), [`Raw (Color.color_ (degrad 2) ^^ vrule)], Pervasives.succ, (Color.colorbox_ (Color.of_int_255 (0xFF, 0xFF, 0xFF)) S.SL.C.asm ^^ phantom " ?"), Some box2
      ; f_hline, f_vert, f_id, Color.colorbox_ white S.SL.C.asm ^^ " ?", Some box3 ]) )
 
 (* ********************************************************* *)
@@ -1115,7 +1125,34 @@ int main(int x) {
 (* ********************************************************* *)
 ; B.Abr
   (let title = "Future work" in
-   [ B.Top
+   [ (let f_hline x = Hline :: x in
+      let f_vert = [`Vert] in
+      let f_id x = x in
+      let white = Color.of_int_255 (0xFF, 0xFF, 0xFF) in
+      let colo n = if n <= 1 then degrad n else Color.of_int_255 (let i = 0xEF in i, i, i) in
+      B.Center
+        (title,
+         let sp s =
+           let space = space_nb 9 in
+           space ^^ s ^^ space in
+         let f_conc l = newline ^^ concat (BatList.interleave space l) in
+         draw_subset
+           []
+           colo
+           [ f_hline, f_vert, f_id, S.C.lambda_l
+           ; f_hline, f_vert, f_id, S.C.infty
+           ; f_hline, f_vert, f_id, S.C.asm
+           ; f_hline, f_vert, f_id, S.C.compcert
+           ; f_hline, f_vert, f_id, S.C.human ]
+         ^^
+         Label.warning_
+           ("Being in {S.C.infty} means firstly that the behavior of {S.P.C.infty} is known: divergence or convergence. What about its correctness:"
+            ^^ f_conc [ sp "{S.P.C.asm} {in_} {S.C.infty}" ; "${overset "?" longrightarrow_}$" ; "{S.P.coq} {index_ cong "correct"} {S.P.Coq.Deep.asm}" ])
+         ^^
+         Label.conjecture_
+           ("Once a correctness proof is established, the corresponding progress proof (divergence or convergence) could be automatically generated in {P.coq}:"
+            ^^ f_conc [ "{S.P.coq} {index_ cong "correct"} {S.P.Coq.Deep.asm}" ; "{longrightarrow_}" ; sp "{S.P.C.asm} {in_} {S.C.infty}" ]) ))
+   ; B.Top
      (title,
       "Towards the correctness of the pseudocode: first steps with the ADC instruction, more investigated in {cite ["shi2011"]}"
       ^^ newline ^^
@@ -1143,11 +1180,11 @@ coq1 -> coq2
 
 O>"))
    ; B.Center
-       (title,
-        itemize [ "correction of {S.Pseudocode.ArmSh.Coq.Deep.compcert} with respect to {S.Pseudocode.ArmSh.coq}"
-                ; "extension to the {S.Decoder.ArmSh.Coq.Deep.compcert} part"
-                ; "membership of {S.SL.C.asm} to {S.C.infty}?"
-                ; "optimization: the generation from {S.Manual.ArmSh.C.human} is in {P.ocaml}, more easy to generate from {P.coq} to facilitate the proof?" ]) ])
+     (title,
+      itemize [ "Generalization to the full {S.Pseudocode.ArmSh.Coq.Deep.compcert}."
+              ; "Extension to the {S.Decoder.ArmSh.Coq.Deep.compcert} part."
+              ; "Membership of {S.SL.C.asm} to {S.C.infty}?"
+              ; "As optimization, by generating the {S.Manual.ArmSh.C.human} in {P.coq} instead of {P.ocaml}, does it simplify the correction?" ]) ])
 
 (* ********************************************************* *)
 ; B.Center ("", bibliographystyle "alpha" ^^ bibliography "t")
