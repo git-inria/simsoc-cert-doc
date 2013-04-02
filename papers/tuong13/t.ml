@@ -1188,6 +1188,22 @@ O>"))
               ; "As optimization, by generating the {S.Manual.ArmSh.C.human} in {P.coq} instead of {P.ocaml}, does it simplify the correction?" ]) ])
 
 (* ********************************************************* *)
+; B.Center ("Thanks",
+            let pos = 14 in
+            let grey = Color.of_int_255 (let i = 0x52 in i, i, i) in
+            concat
+              (BatList.map
+                 (fun s ->
+                   let pre, name = BatString.split s ~by:\" \" in
+                   space_nb pos ^^ small (Color.textcolor_ grey (text pre))
+                   ^^ newline ^^
+                   space_nb (pos + 2) ^^ large (text name)
+                   ^^ newline)
+                 [ \"Frédéric Blanqui\" ; \"Claude Helmstetter\" ; \"Vania Joloboff\" ; \"Jean-François Monin\" ; \"Xiaomu Shi\" ; \"Frédéric Tuong\" ; \"Yang Yu\" ; \"Daiwei Zhang\" ])
+            ^^
+            flushright (https \"gforge.inria.fr/projects/simsoc-cert\"))
+
+(* ********************************************************* *)
 ; B.Allowframebreaks ("", bibliographystyle "alpha" ^^ bibliography "t")
 
 ]))
