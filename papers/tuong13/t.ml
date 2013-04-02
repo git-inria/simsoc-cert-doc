@@ -1115,13 +1115,7 @@ int main(int x) {
 (* ********************************************************* *)
 ; B.Abr
   (let title = "Future work" in
-   [ B.Center
-       (title,
-        itemize [ "correction of {S.Pseudocode.ArmSh.Coq.Deep.compcert} with respect to {S.Pseudocode.ArmSh.coq}"
-                ; "extension to the {S.Decoder.ArmSh.Coq.Deep.compcert} part"
-                ; "membership of {S.SL.C.asm} to {S.C.infty}?"
-                ; "optimization: the generation from {S.Manual.ArmSh.C.human} is in {P.ocaml}, more easy to generate from {P.coq} to facilitate the proof?" ])
-   ; B.Top
+   [ B.Top
      (title,
       "Towards the correctness of the pseudocode: first steps with the ADC instruction, more investigated in {cite ["shi2011"]}"
       ^^ newline ^^
@@ -1147,7 +1141,13 @@ coq2 [texlbl="O{B St.coq}O'"]
 comp1 -> comp2
 coq1 -> coq2
 
-O>")) ])
+O>"))
+   ; B.Center
+       (title,
+        itemize [ "correction of {S.Pseudocode.ArmSh.Coq.Deep.compcert} with respect to {S.Pseudocode.ArmSh.coq}"
+                ; "extension to the {S.Decoder.ArmSh.Coq.Deep.compcert} part"
+                ; "membership of {S.SL.C.asm} to {S.C.infty}?"
+                ; "optimization: the generation from {S.Manual.ArmSh.C.human} is in {P.ocaml}, more easy to generate from {P.coq} to facilitate the proof?" ]) ])
 
 (* ********************************************************* *)
 ; B.Center ("", bibliographystyle "alpha" ^^ bibliography "t")
