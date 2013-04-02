@@ -74,10 +74,9 @@ let () =
     ~author:[ footnotesize (mail \"tuong@users.gforge.inria.fr\") ]
 
     (Beamer (Some (`Em 1., `Em 1.), B.Abr
-[ B.Center ("", "")
-
+[
 (* ********************************************************* *)
-; B.Center ("{P.simsoc}, simulator of Systems-on-Chip",
+  B.Center ("{P.simsoc}, simulator of Systems-on-Chip",
             itemize
               [ "A library for fast bit accurate simulation:
                  {itemize
