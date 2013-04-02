@@ -386,6 +386,7 @@ struct
     | Center of 'a (* center *)
     | Top of 'a (* top *)
     | Bottom of 'a (* bottom *)
+    | Allowframebreaks of 'a (* center by default *)
 
     let optcmd name = function
       | Some arg -> command name [T, arg] T
@@ -403,6 +404,7 @@ struct
       | Center (title, body) -> [Beamer.frame ~title body]
       | Top (title, body) -> [frame ~opt:(A, "t") ~title body]
       | Bottom (title, body) -> [frame ~opt:(A, "b") ~title body]
+      | Allowframebreaks (title, body) -> [frame ~opt:(A, "allowframebreaks") ~title body]
       | Abr l -> BatList.flatten (BatList.map mk_frame l)
 
     let setbeamertemplate template body =

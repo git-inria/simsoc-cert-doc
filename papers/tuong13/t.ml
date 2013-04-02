@@ -85,7 +85,7 @@ let () =
                    ; "others components ({approx} 5 000 LoC): Memory, UART, Ethernet card, Interrupt controller, Serial Flash, Timers, Bus..."
                    ] }"
               ; "Processors are the most complex components to simulate: optimizations are essential for high speed of simulation."
-              ; "Project developped in C++ and SystemC/TLM
+              ; "Project developped in C++ and SystemC/TLM~{cite ["ossc09"]}
                  {https \"gforge.inria.fr/projects/simsoc\"}"
               ; "Application to the ARMv6 instruction set simulator: this piece of code correctly compiles with GCC.
 {Label.notation_ "``{red S.C.gcc}'': programs compiled successfully with {Version.gcc}~{cite ["gcc"]}"}"
@@ -98,12 +98,12 @@ let () =
                 [ Data ("SH4" :: ":" :: l_sh)
                 ; Data ("ARMv6" :: ":" :: l_arm) ] in
             itemize
-              [ mk_tab [`R] ["449 pages in total in the PDF"] ["1138 pages in total in the PDF"]
+              [ mk_tab [`R] ["449 pages in total in the PDF~{cite ["sh4refman"]}"] ["1138 pages in total in the PDF~{cite ["arm6refman"]}"]
               ; mk_tab [`R;`Sep space;`R;`Sep space;`R] [phantom "1" ^^ "300 pages describing 205 instructions:";"2/3";"of the PDF"] [phantom "1" ^^ "600 pages describing 220 instructions:";"50%";"of the PDF"]
               ; "Both are 32 bits RISC"
               ; "No addressing mode for SH4, 5 for ARMv6"
               ; "In each PDF, the formatting style of each instruction looks identical."
-              ; "To take advantage of the repetition: the automated generation." ])
+              ; "To take advantage of the repetition: the automated generation.~{cite ["arm"]}" ])
 
 (* ********************************************************* *)
 ; B.Abr (BatList.map
@@ -205,7 +205,7 @@ O>")
 ; B.Center ("{P.simcert}, designing a framework for proofs",
             Label.problem_
               (itemize [ "How to be sure that the semantic is preserved during the compilation of {S.SL.C.gcc}?"
-                       ; "How to represent {S.SL.C.gcc} in {P.coq} in order to prove its correction with {S.SL.coq}?" ]))
+                       ; "How to represent {S.SL.C.gcc} in {P.coq}~{cite ["Coq:manual"]} in order to prove its correction with {S.SL.coq}?" ]))
 
 (* ********************************************************* *)
 ; B.Abr (let open Code.Dot in
@@ -322,7 +322,7 @@ O>"))
 ; B.Top ("CompCert, the generation{newline}from {P.coq} to {P.ocaml}",
          minipage (`Cm 5.)
            (Label.notation_ (itemize [ "``{red S.C.human}'': an arbitrary sequence of character"
-                                     ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>"
+                                     ; "``{red S.C.compcert}'': programs compiled successfully with {Version.compcert} <!-dc!>~{cite ["Leroy-Compcert-CACM"]}"
                                      ; "``{red S.C.asm}'': programs compiled successfully with {Version.compcert} <!-dasm!>" ]))
          ^^
          let open Code.Dot in
@@ -755,7 +755,7 @@ Definition _program {A} #{PPP}#         := @__program #{PPP}#
   ; "prog_main"         }.
 Definition _ast := _program _type.
 #>"
-; "Instanciate the previous functor with some monadic combinators:" ^^ "<#
+; "Instanciate the previous functor with some monadic combinators~{cite ["peyton-jones-tackling-09"]}:" ^^ "<#
   Notation "A ** n" := (A ^^ n --> A) (at level 29) : type_scope.
 
 Check _INDUCTIVE : string -> forall n, s ** n.
@@ -816,7 +816,7 @@ Definition __typelist {A} : _tt_ A _ (fun ty => _ -> ty) := #{PPP}#.
                 body))
          [ pause ^^ Label.warning_ "Each constructor in the {S.C.compcert} AST carries as extra field a type information. So the printed term contains repetitive types everywhere, at every node position."
          ; Label.fix_
-           ("Print a factorized code preserving the {English.bdiz}-convertibility with notations and definitions."
+           ("Print a smaller code preserving the {English.bdiz}-convertibility with the previous one."
             ^^
             itemize [ "Rewrite with digit-notation for numbers: e.g. ``<!16!>'' instead of ``<!xO (xO (xO (xO xH)))!>''."
                     ; "Add notations or coercions for every constructor."
@@ -1189,6 +1189,6 @@ O>"))
               ; "As optimization, by generating the {S.Manual.ArmSh.C.human} in {P.coq} instead of {P.ocaml}, does it simplify the correction?" ]) ])
 
 (* ********************************************************* *)
-; B.Center ("", bibliographystyle "alpha" ^^ bibliography "t")
+; B.Allowframebreaks ("", bibliographystyle "alpha" ^^ bibliography "t")
 
 ]))
