@@ -6,6 +6,7 @@ open Simsoc_cert
 ##verbatim '!' = Code.Raw.verbatim
 ##verbatim '#' = Code.Coq.verbatim
 ##verbatim 'Z' = Code.Coq.verbatim
+##verbatim 'U' = Code.Coq.verbatim
 ##verbatim '~' = Code.Ml.verbatim
 ##verbatim '@' = Code.Humc_.verbatim
 ##verbatim ':' = Code.Humc_.verbatim
@@ -27,13 +28,19 @@ module Argument = struct
   let img4 = dir_img 4
 end
 
+module Label_small = struct
+  let warning s = texttt "Warning:" ^^ space ^^ s
+  let fix s = texttt "Fix:" ^^ space ^^ s
+end
+
 let red_ = Color.of_int_255 (0x9F, 0x00, 0x00)
 let red = Color.textcolor_ red_
 let orange = Color.of_int_255 (0xFF, 0xED, 0xDF)
 let blue = Color.textcolor_ Color.blue
 
-let sh4_intro = "The generated {S.Manual.Sh.C.gcc} ({Version.Size.manual_sh4}K) contains a part similar as this program: "
-let sl_intro x = "The {x} ({Version.Cpp11_bis.simlight2_no_man_size}K without manual) contains a part similar as: "
+let sh4_intro = "In the generated {S.Manual.Sh.C.gcc} ({Version.Size.manual_sh4}K), several lines similar as:"
+let sl_intro x = "In {x} ({Version.Cpp11_bis.simlight2_no_man_size}K without manual), several lines similar as:"
+let comp_intro = "In {S.C.compcert} AST ({Version.Size.compcert} token words), several lines similar as:"
 
 let index_ s x = index s (footnotesize x)
 
@@ -63,12 +70,12 @@ let () =
 (* ********************************************************* *)
 ; B.Center ("A lot of repetitive information in reference manuals",
             let mk_tab l_title l_sh l_arm =
-              tabular (`L :: `L :: l_title)
+              tabular (`L :: `Sep "" ::  `L :: `Sep space :: l_title)
                 [ Data ("SH4" :: ":" :: l_sh)
                 ; Data ("ARMv6" :: ":" :: l_arm) ] in
             itemize
-              [ mk_tab [`R;`L] ["449 pages" ; "in total in the PDF"] ["1138 pages" ; ""]
-              ; mk_tab [`R;`R;`R;`L] ["300 pages,";"205 instructions,";"2/3";"of the PDF"] ["600 pages,";"220 instructions,";"50%";"of the PDF"]
+              [ mk_tab [`R] ["449 pages in total in the PDF"] ["1138 pages in total in the PDF"]
+              ; mk_tab [`R;`Sep space;`R;`Sep space;`R] [phantom "1" ^^ "300 pages describing 205 instructions:";"2/3";"of the PDF"] [phantom "1" ^^ "600 pages describing 220 instructions:";"50%";"of the PDF"]
               ; "Both are 32 bits RISC"
               ; "No addressing mode for SH4, 5 for ARMv6"
               ; "In each PDF, the formatting style of each instruction looks identical."
@@ -78,7 +85,7 @@ let () =
 ; B.Abr (BatList.map
            (fun (page, y, trim_top) ->
              B.Center
-               ("Example: page in the ARMv6 manual (p. " ^^ latex_of_int page ^^ ")",
+               ("Example: one page in the ARMv6 manual (p. " ^^ latex_of_int page ^^ ")",
                 includegraphics ~x:(-1.) ~y ~trim:(`Mm 0., `Mm 0., `Mm 0., `Mm trim_top) ~page ~scale:0.9 Argument.file_arm6))
            [ 158, -5.5, 25.
            ; 159, -6., 20. ])
@@ -431,7 +438,7 @@ O>")
 O>")
 
 (* ********************************************************* *)
-; B.Abr (let title x = "Example: page in the {S.Manual.Sh.C.human} (p. " ^^ x ^^ ")" in
+; B.Abr (let title x = "Example: one page in the {S.Manual.Sh.C.human} (p. " ^^ x ^^ ")" in
          [ B.Center (let page = 234 in title (latex_of_int page), includegraphics ~x:(-0.5) ~y:(-.5.0) ~scale:0.7 \"sh4_and.pdf\")
          ; B.Center (title "234 middle", includegraphics ~x:(-0.5) ~y:(-1.) ~scale:0.4 Argument.page_middle) ])
 
@@ -559,26 +566,27 @@ void main() {
   (let (tit1, l1), (tit2, l2), (tit3, l3) =
      let open English in
      let in__ = "{in_}" in
+     let tab l = tabular [ `L ; `Sep space ; `L ; `Sep space ; `L ] (BatList.map (fun l -> Data l) l) in
   (** *)
      ("",
-      [ [ yes ; yes   ; maybe ; maybe ], Some (tabular (BatList.init 3 (fun _ -> `L))
-                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
-                                                 ; Data []
-                                                 ; Data [] ]
+      [ [ yes ; yes   ; maybe ; maybe ], Some (tab
+                                                 [ [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; []
+                                                 ; [] ]
                                                ^^
                                                Label.problem_ "Does it compile with {P.compcert} ?")
 
-      ; [ yes ; yes   ; yes   ; maybe ], Some (tabular (BatList.init 3 (fun _ -> `L))
-                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
-                                                 ; Data [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
-                                                 ; Data [] ]
+      ; [ yes ; yes   ; yes   ; maybe ], Some (tab
+                                                 [ [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
+                                                 ; [] ]
                                                ^^
                                                Label.fact "The compilation correctly terminates with {Version.compcert} <!-dc!>.")
 
-      ; [ yes ; yes   ; yes   ; yes   ], Some (tabular (BatList.init 3 (fun _ -> `L))
-                                                 [ Data [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
-                                                 ; Data [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
-                                                 ; Data [ "" ; "" ; "{S.SL.ArmSh.C.compcert} {in__} {S.C.asm}" ] ]
+      ; [ yes ; yes   ; yes   ; yes   ], Some (tab
+                                                 [ [ "{S.SL.ArmSh.C.human} {in__}" ; S.C.gcc ; "" ]
+                                                 ; [ "" ; "{S.SL.ArmSh.C.gcc} {in__}" ; S.C.compcert ]
+                                                 ; [ "" ; "" ; "{S.SL.ArmSh.C.compcert} {in__} {S.C.asm}" ] ]
                                                ^^
                                                Label.fact "The compilation correctly terminates with {Version.compcert} <!-dasm!>.")
 
@@ -668,48 +676,62 @@ void main() {                 int i = 32  ;
         l3) ])
 
 (* ********************************************************* *)
-; B.Abr (BatList.map
-           (fun body -> B.Center ("Printing the {S.C.compcert} AST", body))
-[ "<#
-Inductive floatsize : Type :=
-  | F32 : floatsize
-  | F64 : floatsize.
-Inductive type : Type :=
-  | Tvoid : type
-  | Tfloat : floatsize -> type
-  | Tfunction : typelist -> type -> type
+; B.Abr (
+  let title = "Printing the {S.C.compcert} AST from {P.coq} to {P.coq}" in
+  let white = Color.textcolor_ (Color.of_int_255 (0xFF, 0xFF, 0xFF)) in
+  let phantom_vert = phantom (index "" (footnotesize (texttt "p"))) in
+  BatList.flatten
+    [ BatList.map (fun body -> B.Center (title, body))
+[ comp_intro ^^ "<#
+Inductive   floatsize : Type :=
+  |  F32  : floatsize |  F64  : floatsize.
+Inductive   type : Type        :=
+  |  Tvoid  : type |  Tfloat  : floatsize -> type
+  |  Tfunction  : typelist -> type -> type
 with typelist : Type :=
-  | Tnil : typelist
-  | Tcons : type -> typelist -> typelist.
-Definition ident := positive.
-Record program (A : Type) : Type := mkprogram
-  { prog_funct : list (ident * A);
-  ; prog_main : ident }.
-Definition ast := program type.
-#>"; "<#
-Check _floatsize : floatsize -> s.
-Check _type : type -> s.
-Check _typelist : typelist -> s.
-Check _ident : ident -> s.
-Check _program : forall A, (A -> s) -> program A -> s.
-Check _ast : ast -> s.
-#>"; "<#
-Definition _floatsize := __floatsize
-  | "F32"
-  | "F64".
-Definition _type_ T (ty : #{PPP}#) := ty _ _floatsize
-  | "Tvoid"
-  | "Tfloat"
+  |  Tnil  : typelist
+  |  Tcons  : type -> typelist -> typelist.
+
+
+Definition  ident :=  positive.
+Record      program (A : Type) : Type := mkprogram
+  {  prog_funct  : list (ident * A)
+  ;  prog_main  : ident }.
+Definition  ast :=  program  type.
+#>"
+; "Copy-paste constructors in the type definition." ^^ phantom_vert ^^ "<X            floatsize        :=
+  |  F32              |  F64             .
+            tt                 :=
+  |  Tvoid         |  Tfloat
+  |  Tfunction
+
+  |  Tnil
+  |  Tcons                                .
+
+
+            ident :=  positive.
+            program  A                :=
+  {  prog_funct
+  ;  prog_main          }.
+            ast :=  program  type.X>"
+; "Use recursors associated to types (automatically generated in {P.coq})." ^^ phantom_vert ^^ "<#
+Definition _floatsize        := __floatsize
+  | "F32"             | "F64"            .
+Definition _tt_ T (ty : #{PPP}#) := ty _ _floatsize
+  | "Tvoid"        | "Tfloat"
   | "Tfunction"
+
   | "Tnil"
-  | "Tcons".
-  Definition _type := _type_ _ (@__type).
-  Definition _typelist := _type_ _ (@__typelist).
+  | "Tcons"                               .
+  Definition _type := _tt_ _ (@__type).
+  Definition _typelist := _tt_ _ (@__typelist).
 Definition _ident := _positive.
-Definition _program {A} #{PPP}# := @__program #{PPP}#
-  { "prog_funct" ; "prog_main" }.
+Definition _program {A} #{PPP}#         := @__program #{PPP}#
+  { "prog_funct"
+  ; "prog_main"         }.
 Definition _ast := _program _type.
-#>"; "<#
+#>"
+; "Instanciate the previous functor with some monadic combinators:" ^^ "<#
   Notation "A ** n" := (A ^^ n --> A) (at level 29) : type_scope.
 
 Check _INDUCTIVE : string -> forall n, s ** n.
@@ -718,23 +740,84 @@ Check _INDUCTIVE : string -> forall n, s ** n.
 Check _RECORD : forall n, vector string n -> s ** n.
   Notation "{ a ; .. ; b }" :=
     (_RECORD _ (Vcons _ a _ .. (Vcons _ b _ (Vnil _)) ..)).
-#>"; "<#
+#>" ^^
+"<#
+Check _floatsize : floatsize -> s.
+Check _type : type -> s.
+Check _typelist : typelist -> s.
+Check _ident : ident -> s.
+Check _program : forall A, (A -> s) -> program A -> s.
+Check _ast : ast -> s.
+#>"
+; Label_small.warning "type reconstruction becomes undecidable."
+     ^^ newline ^^
+     Label_small.fix "manually set the arity of each constructors." ^^ "<#
   Notation "A [ a ; .. ; b ] -> C" :=
     (A ** a -> .. (A ** b -> C) ..) (at level 90).
 
 Definition __floatsize {A} : A [ 0   (* F32       :           _ *)
                                ; 0 ] (* F64       :           _ *)
                              -> _ := #{PPP}#.
-Definition _type_ A B (f : _ -> Type) := f (
+Definition _tt_ A B (f : _ -> Type) := f (
                              A [ 0   (* Tvoid     :           _ *)
                                ; 1   (* Tfloat    : _ ->      _ *)
                                ; 2   (* Tfunction : _ -> _ -> _ *)
                                ; 0   (* Tnil      :           _ *)
                                ; 2 ] (* Tcons     : _ -> _ -> _ *)
                              -> B).
-Definition __type {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
-Definition __typelist {A} : _type_ A _ (fun ty => _ -> ty) := #{PPP}#.
-#>"])
+Definition __type {A} : _tt_ A _ (fun ty => _ -> ty) := #{PPP}#.
+Definition __typelist {A} : _tt_ A _ (fun ty => _ -> ty) := #{PPP}#.
+#>"
+]
+    ; (let open Version.Size in
+       let f_size size f =
+         Data (let sz = float_of_int size /. 1024. in
+               if sz < 1. then
+                 f ".{text (String.make 1 (sprintf \"%.1f\" sz).[2])}"
+               else
+                 assert false) in
+       let tab = tabular [ `L ; `Sep space
+                         ; `R ; `Sep space
+                         ; `R ; `Sep ""
+                         ; `L ; `Sep space
+                         ; `L ] in
+       BatList.map (fun body ->
+         B.Top (title,
+                Label.problem_
+                  (tab
+                     [ f_size Slv6_iss.size (fun x -> [ "Size of the original" ; "{S.Pseudocode.C.compcert}:" ; "0" ; x ;"M" ])
+                     ; Data [ "Size of the printed" ; "{S.Pseudocode.Coq.Deep.compcert}:" ; "{Slv6_iss.Old.no_indent}";"";"M" ]
+                     ; Data [ "Size of the printed" ; "{S.Pseudocode.Coq.Deep.compcert}:" ; "{Slv6_iss.Old.with_indent}";"";"M (with indentation)" ] ])
+                ^^
+                body))
+         [ pause ^^ Label.warning_ "Each constructor in the {S.C.compcert} AST carries as extra field a type information. So the printed term contains repetitive types everywhere, at every node position."
+         ; Label.fix_
+           ("Print a factorized code preserving the {English.bdiz}-convertibility with notations and definitions."
+            ^^
+            itemize [ "Rewrite with digit-notation for numbers: e.g. ``<!16!>'' instead of ``<!xO (xO (xO (xO xH)))!>''."
+                    ; "Add notations or coercions for every constructor."
+                    ; "Automatically pattern recurring definitions and types." ]
+
+             ) ^^(tab
+               [ f_size Slv6_iss.New.facto_ml (fun x -> [ "Size of the printed" ; "{S.Pseudocode.Coq.Deep.compcert}:" ; phantom "5" ^^ "0" ; x ; "M" ]) ]) ])
+    ; BatList.map (fun body -> B.Center (title, body))
+[ "Example of coercions and notations:" ^^ "<U
+Coercion Int.repr : Z >-> int.
+Coercion Vint : int >-> val.
+Coercion Sdo : expr >-> statement.
+Notation "`* e `: t" := (Ederef e t) (at level 20).
+Notation "# v `: t" := (Eval v t) (at level 20).
+Notation "$ id `: t" := (Evar id t) (at level 20).
+Notation "\ id `: t" := (Evalof (Evar id t) t) (at level 20).
+Notation "& e `: t" := (Eaddrof e t) (at level 20).
+Notation "e1 ? e2 `: e3 `: t" := (Econdition e1 e2 e3 t) (at level 20).
+Notation "e -- `: t" := (Epostincr Decr e t) (at level 20).
+Notation "e ++ `: t" := (Epostincr Incr e t) (at level 20).
+Notation "e1 `= e2 `: t" := (Eassign e1 e2 t) (at level 8).
+Notation "e | id `: t" := (Efield e id t) (at level 20).
+U>"
+]]
+)
 
 (* ********************************************************* *)
 ; B.Center ("The generated {S.Decoder.Sh.coq}",
@@ -879,18 +962,25 @@ footnotesize "(deep embedding) Note: ``{Melt_highlight.Code.latex_of_ppp PPP_ful
 Version.v2)
 
 (* ********************************************************* *)
-; B.Center ("Expressivity of {P.compcert} in practice",
+; B.Abr (BatList.map (fun (on_after, msg) ->
+  B.Top ("Expressivity of {P.compcert} in practice",
             Label.fact ("Starting from {S.SL.C.compcert},"
                         ^^
                         itemize (BatList.map
                                    (fun x ->
-                                     B.on_after 1 x ^^ newline ^^
-                                     B.on_after 2 "can be approximated as an entire type-checking process (by embedding the overall in a dependent type).")
-                                   [ "the {P.compcert} compilation translation going to {S.SL.C.asm}"
+                                     on_after 1 x ^^ newline ^^
+                                     on_after 2 "can be approximated as an entire type inference process (by embedding the overall in a dependent type).")
+                                   [ "the translation function that produces constructively {S.SL.C.asm}"
                                    ; "the preservation proof built upon {S.SL.C.compcert} and {S.SL.C.asm}" ]))
 
-            ^^ B.on_after 3 (Label.problem_ "Any sound, decidable type system must be incomplete.")
-            ^^ B.on_after 4 (Label.question_ "How far is going the type inference with {S.SL.C.compcert}? {footnotesize "(At least until {S.SL.C.asm}...)"}"))
+            ^^ msg))
+
+           [ B.on_after, (B.on_after 3 (Label.warning_ ("In the first type-system, there is no extra warranty that the semantic of {S.SL.C.asm} has been derived from {S.SL.C.compcert}."))
+                          ^^
+                          B.on_after 4 (Label.fix_ "Besides the first, infer {S.SL.C.compcert} with the last type-system."))
+           ; (fun _ x -> x), (Label.problem_ ("Any sound, decidable type system must be incomplete." ^^ phantom S.SL.C.asm))
+                             ^^ pause ^^
+                             (Label.question_ "{S.SL.C.compcert} is accepted by the first type-system.{newline}Is it accepted or rejected by the last one?") ])
 
 (* ********************************************************* *)
 ; B.Abr
@@ -1001,13 +1091,16 @@ int main(int x) {
             let module SL_a = S.SL_gen (struct let sl = "FUN" end) in
             let i_sqcup x = index sqcup (tiny x) in
 
-            "By defining the pretty-printer as a morphism between categories that preserve the applicative operator ``${sqcup}$'' of languages:"
+            "Suppose the pretty-printer is defined as a morphism of categories with {i_sqcup "apply"} and {i_sqcup "APPLY"} as operators:"
             ^^
             (let module SL_p = S.SL_gen (struct let sl = "PROGRAMS" end) in
              align_ "$({SL_p.C.asm}, {i_sqcup "apply"}) {overset "pretty-print" longrightarrow} ({SL_p.Coq.Deep.asm}, {i_sqcup "APPLY"})$")
             ^^
-            (let module SL_a = S.SL_gen (struct let sl = "P" end) in
-             "the goal is to determine if {align_ "{forall} {SL_a.C.asm}, ({blue S.SL.C.asm} {i_sqcup "apply"} {SL_a.C.asm}) {blue "{in_} {S.C.lambda_l}"} "}")
+            "Instead of the restricting result: {align_ "{blue "{S.SL.C.asm} {notin} {S.C.lambda_l}"},"}"
+            ^^
+            (let module SL_a1 = S.SL_gen (struct let sl = index "ARG" (emph "1") end) in
+             let module SL_an = S.SL_gen (struct let sl = index "ARG" (emph "n") end) in
+             "the problem widens to: {"{forall} {SL_a1.C.asm} {dots} {forall} {SL_an.C.asm}, { align_ "({blue S.SL.C.asm} {i_sqcup "apply"} {SL_a1.C.asm} {dots} {i_sqcup "apply"} {SL_an.C.asm}) {blue "{in_} {S.C.lambda_l}"}?"}"}")
             ^^
             Label.definition_
               ("``{red S.C.infty}'': the smallest set satisfying:"
@@ -1017,7 +1110,7 @@ int main(int x) {
                           ; "{forall} {SL_a.C.asm}, {forall} {S.P.C.infty}, {newline}
                              ({SL_a.C.asm} {i_sqcup "apply"} {S.P.C.infty}) {in_} {red S.C.infty} {longrightarrow_ } {SL_a.C.asm} {in_} {red S.C.infty}" ]))
             ^^ pause ^^
-            blue "Warning: ongoing work!")
+            blue (Label_small.warning "ongoing work!"))
 
 (* ********************************************************* *)
 ; B.Abr

@@ -175,13 +175,20 @@ struct
   struct
     open Dot
 
-    let verbatim x =
-      texttt (concat (BatList.map (function
-        | `V s -> concat_line_t (BatList.map (fun x -> LV.verbatim x ^^ space) (LV.split_lines (LV.trim ['\n'] s)))
-        | `C (Header _) -> assert false
-        | `C (B l) -> l
-        | `C (B_escape_nl l) -> text (l_to_string l)
-        | _ -> failwith \"to complete !\") x))
+    let verbatim =
+      function
+        | [ `V s ] ->
+          let l = BatString.nsplit s ~by:\"\n\" in
+          num_line (fun s -> texttt (footnotesize s))
+            (BatList.flatten
+               (BatList.map (function
+                 | [] -> []
+                 | Text _ :: _ as l -> [ concat (BatList.map (function Text x -> x) l) ]
+                 | Delim _ :: l -> BatList.map (fun _ -> "") l
+                 | _ -> assert false)
+                  (BatList.nsplit (function Text _ -> true | Delim _ -> false)
+                     (BatList.interleave (Delim ()) (BatList.map (fun x -> Text (LV.verbatim x)) l)))))
+        | _ -> failwith \"to complete !\"
   end
 
   module Coq =
@@ -308,7 +315,7 @@ struct
           | [] -> List.rev l0 :: acc in
         function
           | [] -> []
-          | (Delim None :: _) :: _ -> assert false
+          | (Delim None :: x) :: xs
           | x :: xs -> List.rev (aux (List.rev x) [] xs) in
       let l = regroup_endl (BatList.map fst l) in
 
