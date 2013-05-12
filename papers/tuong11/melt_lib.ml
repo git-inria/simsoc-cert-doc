@@ -371,6 +371,9 @@ struct
       | x :: xs -> x ^^ s ^^ (aux xs) in
     aux
 
+  let titlegraphic x = \"titlegraphic\" @ ([x], A)
+  let usebackgroundtemplate x = \"usebackgroundtemplate\" @ ([x], A)
+
   open Printf
 
   let includegraphics =
@@ -383,6 +386,13 @@ struct
           (s_concat "," (List.flatten [ (match trim with None -> [] | Some (i1,i2,i3,i4) -> [ "clip" ; "trim=" ^^ concat (BatList.map (fun s -> latex_of_size s ^^ " ") [i1 ; i2 ; i3 ; i4])])
                                       ; (match page with None -> [] | Some s -> [text (sprintf \"page=%d\" s)])
                                       ; (match scale with None -> [] | Some s -> [text (sprintf \"scale=%f\" s)]) ])) filename)};" ])
+
+  let includetext txt =
+    let n = \"node\" @ ([], A) in
+    fun ~x ~y ->
+      tikzpicture
+        "overlay"
+        (concat [ n ; "[shift={brack "({latex_of_float x},{latex_of_float y})"}] at (current page.south) {brack txt};" ])
 
   module B =
   struct
@@ -531,7 +541,7 @@ struct
     let prelude = [ newth_example ; newth_example_ ; newth_notation_ ; newth_fact ; newth_definition_ ; newth_remark_ ; newth_warning_ ; newth_fix_ ; newth_question_ ; newth_problem_ ; newth_conjecture_ ]
   end
 
-  let latex_main ~packages ?author ?title ?date l =
+  let latex_main ~packages ?author ?title ?date ?titlegraphic_content ?usebackgroundtemplate_content l =
 
     let l_hypersetup = (* WARNING side effect, if delta reduced *)
       BatList.flatten
@@ -556,7 +566,9 @@ struct
                              [ Label.prelude
                              ; [ Color.definecolor_used (fun c l -> l ^^ Color.definecolor c) ""
                                ; hypersetup l_hypersetup ]
-                             ; prelude2 ]))
+                             ; prelude2
+                             ; (match titlegraphic_content with None -> [] | Some c -> [titlegraphic c])
+                             ; match usebackgroundtemplate_content with None -> [] | Some c -> [usebackgroundtemplate c] ]))
          (concat l))
 
 (* \ifhevea\setboolean{footer}{false}\fi *)
