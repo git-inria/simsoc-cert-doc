@@ -422,15 +422,22 @@ struct
       | Allowframebreaks (title, body) -> [frame ~opt:(A, "allowframebreaks") ~title body]
       | Abr l -> BatList.flatten (BatList.map mk_frame l)
 
-    let setbeamertemplate template body =
-      unusual_command \"setbeamertemplate\" [ T, brace, text template
-                                            ; T, bracket, body
-                                  (*; T, body*) ] T
+    let setbeamertemplate template ~l_bracket ~l_brace =
+      unusual_command \"setbeamertemplate\" (BatList.flatten [ [ T, brace, text template ]
+                                                             ; BatList.map (fun b -> T, bracket, b) l_bracket
+                                                             ; BatList.map (fun b -> T, brace, b) l_brace ]) T
     let usecolortheme x = \"usecolortheme\" @ ([x], A)
     let usetheme x = \"usetheme\" @ ([x], A)
     let useoutertheme o x = command \"useoutertheme\" ~opt:(A, o) [A, x] A
     let useinnertheme o x = command \"useinnertheme\" ~opt:(A, o) [A, x] A
     let setbeamersize x = \"setbeamersize\" @ ([x], A)
+    let setbeamercolor l_brace =
+      unusual_command \"setbeamercolor\" (BatList.map (fun b -> T, brace, b) l_brace) T
+    let addtobeamertemplate l_brace =
+      unusual_command \"addtobeamertemplate\" (BatList.map (fun b -> T, brace, b) l_brace) T
+    let setbeamerfont l_brace =
+      unusual_command \"setbeamerfont\" (BatList.map (fun b -> T, brace, b) l_brace) T
+
 (*    let stepcounter *)
 
 
