@@ -1194,7 +1194,7 @@ O>"))
 
 (* ********************************************************* *)
 ; B.Center ("Thanks",
-            let pos = 14 in
+            let pos = 12 in
             let grey = Color.of_int_255 (let i = 0x52 in i, i, i) in
             concat
               (BatList.map
@@ -1206,7 +1206,8 @@ O>"))
                    ^^ newline)
                  [ \"Frédéric Blanqui\" ; \"Claude Helmstetter\" ; \"Vania Joloboff\" ; \"Jean-François Monin\" ; \"Xiaomu Shi\" ; \"Frédéric Tuong\" ; \"Yang Yu\" ; \"Daiwei Zhang\" ])
             ^^
-            flushright (https \"gforge.inria.fr/projects/simsoc-cert\"))
+            flushright (http \"raweb.inria.fr/rapportsactivite/RA2011/formes\")
+)
 
 (* ********************************************************* *)
 ; B.Allowframebreaks ("", bibliographystyle "alpha" ^^ bibliography "t")
