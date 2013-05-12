@@ -1,3 +1,8 @@
+(**
+SimSoC-Cert, a toolkit for generating certified processor simulators
+See the COPYRIGHTS and LICENSE files.
+*)
+
 open Melt_lib open L
 
 type 'a humanc = H_comment of 'a list

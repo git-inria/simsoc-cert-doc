@@ -1,3 +1,8 @@
+(**
+SimSoC-Cert, a toolkit for generating certified processor simulators
+See the COPYRIGHTS and LICENSE files.
+*)
+
 module BatList =
 struct
   include BatList
