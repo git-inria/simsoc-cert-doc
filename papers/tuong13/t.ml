@@ -102,7 +102,7 @@ let () =
                 [ Data ("SH4" :: ":" :: l_sh)
                 ; Data ("ARMv6" :: ":" :: l_arm) ] in
             itemize
-              [ mk_tab [`R] ["449 pages in total in the PDF~{cite ["sh4refman"]}"] ["1138 pages in total in the PDF~{cite ["arm6refman"]}"]
+              [ mk_tab [`R;`Sep space;`L] ["449 pages in total in the PDF" ; cite ["sh4refman"]] ["1138 pages in total in the PDF" ; cite ["arm6refman"]]
               ; mk_tab [`R;`Sep space;`R;`Sep space;`R] [phantom "1" ^^ "300 pages describing 205 instructions:";"2/3";"of the PDF"] [phantom "1" ^^ "600 pages describing 220 instructions:";"50%";"of the PDF"]
               ; "Both are 32 bits RISC"
               ; "No addressing mode for SH4, 5 for ARMv6"
