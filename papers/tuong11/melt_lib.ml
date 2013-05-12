@@ -500,15 +500,18 @@ struct
   end
 
   type document =
-  | Beamer of (size (* left *) * size (* right *)) option * (Latex.t (* title *) * Latex.t (* body *)) B.frame
+  | Beamer of (size (* left *) * size (* right *)) option *
+              Latex.t list (* prelude *) *
+              (Latex.t (* title *) * Latex.t (* body *)) B.frame
   | PaperA4 of Latex.t list
 
   let latex_init = function
-    | Beamer (page_width, l) ->
+    | Beamer (page_width, prelude, l) ->
       B.mk_frame l,
       [],
       `Beamer,
-      ( Beamer.setbeamertemplate `NavigationSymbols ""
+      BatList.flatten
+      [ (Beamer.setbeamertemplate `NavigationSymbols ""
     (*:: B.setbeamertemplate \"blocks\" "rounded"*)
     (*:: B.usecolortheme "fly"*)
     (*:: B.usetheme "Boadilla"
@@ -522,6 +525,7 @@ struct
          | None -> []
          | Some (left, right) -> [ B.setbeamersize ("text margin left=" ^^ latex_of_size left ^^ ",text margin right=" ^^ latex_of_size right)
                                  ; usetikzlibrary "arrows" ])
+      ; prelude ]
     | PaperA4 l -> l, [ `A4paper ; `Pt 11 ], `Article, []
 
   module Label =
