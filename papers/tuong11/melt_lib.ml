@@ -452,14 +452,15 @@ struct
 
     let blue_tit = `RGB (0., 0., 0.7)
 
-    let list_env l name =
+    let list_env f_esc l name =
       if l = [] then failwith \"itemize or enumerate: no item given\";
-      let items = List.map (fun (o, x) -> (^^) (text (sprintf \"\\item%s \" (match o with None -> \"\" | Some s -> sprintf \"<%s>\" s))) x) l in
+      let items = List.map (fun (o, x) -> (^^) (text (sprintf \"\\item%s \" (match o with None -> \"\" | Some s -> f_esc s))) x) l in
       let body = concat (list_insert (text \"\n\") items) in
       environment name (T, body) T
 
-    let itemize l = list_env l \"itemize\"
-    let enumerate l = list_env l \"enumerate\"
+    let itemize l = list_env (sprintf \"<%s>\") l \"itemize\"
+    let itemize_ l = list_env (fun s -> sprintf \"[%s]\" (Latex.to_string s)) l \"itemize\"
+    let enumerate l = list_env (sprintf \"<%s>\") l \"enumerate\"
 
     type 'a index = Pos of 'a | From_to of 'a * 'a
 
